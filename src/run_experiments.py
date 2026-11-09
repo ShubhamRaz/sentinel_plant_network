@@ -30,6 +30,8 @@ from scipy import stats
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import warnings
+from statsmodels.formula.api import mixedlm
 
 from statistical_diagnostics import run_all_diagnostics
 
@@ -638,19 +640,27 @@ def compute_rcbd_statistics(df_plots: pd.DataFrame, df_repeated: pd.DataFrame) -
             "lsd_95": round(lsd_95, 3),
         }
 
-    yield_ms_err = anova_results["marketable_yield_t_ha"]["ms_error"]
-    yield_sed = float(np.sqrt(2.0 * yield_ms_err / 4.0))
+    # Use the unrounded RCBD error mean square for the pre-specified one-sided
+    # yield non-inferiority contrasts. The 16 plots, not plant subsamples, are
+    # the independent units (4 blocks x 4 treatments; error df = 9).
+    yield_ss = float(np.sum((df_plots["marketable_yield_t_ha"] - df_plots["marketable_yield_t_ha"].mean()) ** 2))
+    yield_trt_means = df_plots.groupby("treatment")["marketable_yield_t_ha"].mean()
+    yield_blk_means = df_plots.groupby("block")["marketable_yield_t_ha"].mean()
+    yield_ss_trt = 4 * float(np.sum((yield_trt_means - df_plots["marketable_yield_t_ha"].mean()) ** 2))
+    yield_ss_blk = 4 * float(np.sum((yield_blk_means - df_plots["marketable_yield_t_ha"].mean()) ** 2))
+    yield_mse = max(1e-12, (yield_ss - yield_ss_trt - yield_ss_blk) / 9.0)
+    yield_sed = float(np.sqrt(2.0 * yield_mse / 4.0))
     t_one_sided_95 = float(stats.t.ppf(0.95, 9))
 
     non_inferiority = {}
-    y_t4 = float(df_plots[df_plots["treatment"] == "T4"]["marketable_yield_t_ha"].mean())
+    y_t4 = float(yield_trt_means["T4"])
     for ref_trt in ["T1", "T2", "T3"]:
-        y_ref = float(df_plots[df_plots["treatment"] == ref_trt]["marketable_yield_t_ha"].mean())
+        y_ref = float(yield_trt_means[ref_trt])
         margin_abs = -0.05 * y_ref
         diff = y_t4 - y_ref
         ci_lower_95 = diff - t_one_sided_95 * yield_sed
         t_ni = (diff - margin_abs) / yield_sed
-        p_ni = float(1.0 - stats.t.cdf(t_ni, 9))
+        p_ni = float(stats.t.sf(t_ni, 9))
         non_inferiority[f"T4_vs_{ref_trt}"] = {
             "mean_diff_t_ha": round(diff, 3),
             "mean_diff_pct": round((diff / y_ref) * 100.0, 2),
@@ -658,21 +668,35 @@ def compute_rcbd_statistics(df_plots: pd.DataFrame, df_repeated: pd.DataFrame) -
             "one_sided_95_ci_lower_t_ha": round(ci_lower_95, 3),
             "one_sided_95_ci_lower_pct": round((ci_lower_95 / y_ref) * 100.0, 2),
             "t_stat_non_inferiority": round(t_ni, 3),
-            "p_value_non_inferiority": round(p_ni, 6),
+            "p_value_non_inferiority": float(p_ni),
             "non_inferiority_proven": bool(ci_lower_95 > margin_abs),
         }
 
-    y_rep = df_repeated["disease_severity_pct"].values
-    plot_means_rep = df_repeated.groupby("plot_id")["disease_severity_pct"].transform("mean").values
-    trt_time_means = df_repeated.groupby(["treatment", "day"])["disease_severity_pct"].transform("mean").values
-    resid_within = y_rep - trt_time_means - (
-        plot_means_rep - df_repeated.groupby("treatment")["disease_severity_pct"].transform("mean").values
-    )
-    sigma2_plot = float(
-        np.var(plot_means_rep - df_repeated.groupby("treatment")["disease_severity_pct"].transform("mean").values, ddof=1)
-    )
-    sigma2_resid = float(np.var(resid_within, ddof=1))
-    icc_plot = sigma2_plot / max(1e-9, sigma2_plot + sigma2_resid)
+    # Genuine random-intercept linear mixed-effects model for repeated disease
+    # assessments: categorical treatment x day fixed effects, plot random
+    # intercept, REML estimation. Report estimates and convergence explicitly.
+    lmm_status = "not_fitted"
+    sigma2_plot = sigma2_resid = icc_plot = None
+    lmm_converged = False
+    lmm_warnings = []
+    try:
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            lmm = mixedlm(
+                "disease_severity_pct ~ C(treatment) * C(day)",
+                data=df_repeated,
+                groups=df_repeated["plot_id"],
+                re_formula="1",
+            )
+            lmm_fit = lmm.fit(reml=True, method="lbfgs", maxiter=500, disp=False)
+            lmm_converged = bool(lmm_fit.converged)
+            sigma2_plot = float(max(0.0, lmm_fit.cov_re.iloc[0, 0]))
+            sigma2_resid = float(lmm_fit.scale)
+            icc_plot = float(sigma2_plot / max(1e-12, sigma2_plot + sigma2_resid))
+            lmm_status = "converged" if lmm_converged else "fit_returned_without_convergence"
+            lmm_warnings = [str(w.message) for w in caught]
+    except Exception as exc:
+        lmm_status = f"fit_failed: {type(exc).__name__}: {exc}"
 
     return {
         "rcbd_anova": anova_results,
@@ -681,9 +705,13 @@ def compute_rcbd_statistics(df_plots: pd.DataFrame, df_repeated: pd.DataFrame) -
             "n_observations": int(len(df_repeated)),
             "n_plots_clusters": 16,
             "n_timepoints": 5,
-            "between_plot_variance_sigma2_u": round(sigma2_plot, 4),
-            "within_plot_residual_variance_sigma2_e": round(sigma2_resid, 4),
-            "intraclass_correlation_icc": round(icc_plot, 4),
+            "model": "Random-intercept MixedLM; fixed C(treatment) * C(day); REML",
+            "converged": lmm_converged,
+            "status": lmm_status,
+            "between_plot_variance_sigma2_u": None if sigma2_plot is None else round(sigma2_plot, 6),
+            "within_plot_residual_variance_sigma2_e": None if sigma2_resid is None else round(sigma2_resid, 6),
+            "intraclass_correlation_icc": None if icc_plot is None else round(icc_plot, 6),
+            "warnings": lmm_warnings,
         },
     }
 
