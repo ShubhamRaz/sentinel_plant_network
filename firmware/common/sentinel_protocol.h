@@ -17,7 +17,7 @@ struct SentinelPacket {
     uint16_t vwc_centi;
     uint16_t lws_centi;
     uint16_t vbat_mv;
-    uint8_t status_flags;     // bit0 BME_OK, bit1 MLX_OK, bit2 LWS_WET, bit3 LOW_BAT
+    uint8_t status_flags;     // bit0 BME_OK, bit1 MLX_OK, bit2 LWS_WET, bit3 LOW_BAT, bit4 SOIL_OK, bit5 LWS_OK
     uint8_t reserved;
     uint16_t crc16;
 };
