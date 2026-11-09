@@ -99,13 +99,26 @@ def file_sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _quality_summary(df, ts_col):
+def _quality_summary(df, ts_col, group_col: Optional[str] = None):
+    """Summarise timestamp quality without mistaking parallel-node readings for duplicates."""
     ts = pd.to_datetime(df[ts_col], errors="coerce", utc=True)
-    delta = ts.sort_values().diff().dt.total_seconds().div(60).dropna()
+    work = pd.DataFrame({"__timestamp": ts})
+    if group_col and group_col in df.columns:
+        work["__group"] = df[group_col].astype(str)
+        duplicate_count = int(work.duplicated(["__group", "__timestamp"]).sum())
+        delta_parts = [
+            group["__timestamp"].sort_values().diff().dt.total_seconds().div(60).dropna()
+            for _, group in work.dropna(subset=["__timestamp"]).groupby("__group", sort=False)
+        ]
+    else:
+        duplicate_count = int(ts.duplicated().sum())
+        delta_parts = [ts.sort_values().diff().dt.total_seconds().div(60).dropna()]
+    delta = pd.concat(delta_parts, ignore_index=True) if delta_parts else pd.Series(dtype=float)
     return {
         "rows": int(len(df)),
         "timestamp_parse_failures": int(ts.isna().sum()),
-        "duplicate_timestamps": int(ts.duplicated().sum()),
+        "duplicate_timestamps": duplicate_count,
+        "duplicate_key": f"{group_col}+{ts_col}" if group_col else ts_col,
         "missing_cells": int(df.isna().sum().sum()),
         "median_sampling_interval_minutes": float(delta.median()) if not delta.empty else None,
         "gaps_over_20_minutes": int((delta > 20).sum()) if not delta.empty else 0,
@@ -119,7 +132,9 @@ def validate_tomato(frame: pd.DataFrame, mapping: Dict[str, str], expected_step_
     f[ts] = pd.to_datetime(f[ts], errors="coerce", utc=True)
     f[vwc] = pd.to_numeric(f[vwc], errors="coerce")
     f = f.dropna(subset=[ts, vwc]).sort_values(ts)
-    report = {"dataset": "tomato", "quality": _quality_summary(frame, ts), "vwc_column": vwc}
+    site_col = resolve_column(frame, mapping, "site", required=False)
+    quality_group = site_col or ("__source_file" if "__source_file" in frame.columns else None)
+    report = {"dataset": "tomato", "quality": _quality_summary(frame, ts, quality_group), "vwc_column": vwc}
     if len(f) >= 200:
         deltas = f[ts].diff().dt.total_seconds().div(60).dropna()
         step = expected_step_minutes or float(deltas.median())
@@ -187,7 +202,7 @@ def validate_leafwetness(
     p90 = daily.groupby("site")["leaf_wetness_hours"].quantile(0.90).sort_values(ascending=False)
     return {
         "dataset": "leafwetness",
-        "quality": _quality_summary(frame, ts),
+        "quality": _quality_summary(frame, ts, site),
         "wet_threshold": float(wet_threshold),
         "threshold_warning": "wet_threshold is a user-supplied sensor threshold; calibrate it using the source data dictionary and field reference measurements",
         "humid_pole_candidate_by_p90_daily_lwd": str(p90.index[0]),
@@ -239,7 +254,7 @@ def validate_libelium(frame: pd.DataFrame, mapping: Dict[str, str], gap_minutes:
                 "trigger_count": len(result["trigger_timestamps"]),
             }
     return {
-        "dataset": "libelium", "quality": _quality_summary(f, ts),
+        "dataset": "libelium", "quality": _quality_summary(frame, ts, node),
         "gap_threshold_minutes": gap_minutes, "node_quality": per_node,
         "two_node_sufficiency": sufficiency, "rolling_metrics": rolling,
     }
