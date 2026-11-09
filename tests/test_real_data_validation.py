@@ -34,6 +34,31 @@ def test_tomato_adapter_reports_quality_and_forecast():
     assert result["irrigation_telemetry"]["valid_records"] == n
 
 
+def test_tomato_adapter_keeps_parallel_sector_timeseries_separate():
+    n = 260
+    timestamps = pd.date_range("2026-04-01", periods=n, freq="10min", tz="UTC")
+    frames = []
+    for sector, offset in (("open_field_a", 0.0), ("open_field_b", 1.5)):
+        frames.append(pd.DataFrame({
+            "timestamp": timestamps,
+            "sector": sector,
+            "vwc": 28.0 + offset - np.linspace(0, 4, n) + 0.2 * np.sin(np.arange(n) / 8),
+            "water_l": np.where(np.arange(n) % 70 == 0, 0.8, 0.0),
+        }))
+    frame = pd.concat(frames, ignore_index=True)
+    result = validate_tomato(
+        frame,
+        {"site": "sector", "vwc": "vwc", "irrigation_volume": "water_l"},
+    )
+    assert result["sector_or_file_count"] == 2
+    assert result["quality"]["duplicate_timestamps"] == 0
+    assert set(result["per_sector"]) == {"open_field_a", "open_field_b"}
+    assert all(
+        len(entry["vwc_forecast"]["metrics"]) >= 4
+        for entry in result["per_sector"].values()
+    )
+
+
 def test_leaf_wetness_adapter_computes_daily_duration_and_site_ranking():
     records = []
     for site_idx, site in enumerate(("site_a", "site_b", "site_c")):
