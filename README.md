@@ -33,7 +33,7 @@ pytest -q
 Run reproducible synthetic digital-twin simulations:
 
 \`\`\`bash
-python src/run_experiments.py --seed 20261109 --config config.json --output-dir .
+python src/run_experiments.py --seed 20261106 --config config.json --output-dir .
 \`\`\`
 
 The runner writes generated CSVs beneath \`data/simulated_digital_twin/\`, results beneath \`results/simulated_digital_twin/\`, and figures beneath \`figures/simulated_digital_twin/\`. Use a different \`--output-dir\` to keep generated files outside the source tree. Re-running with the same seed and dependencies should produce deterministic tabular outputs.
