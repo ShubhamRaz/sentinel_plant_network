@@ -43,14 +43,14 @@ DATASETS = {
 }
 
 ALIASES = {
-    "timestamp": ("timestamp", "datetime", "date_time", "time", "date", "utc_time"),
-    "vwc": ("vwc", "soil_vwc", "soil_moisture_vwc", "volumetric_water_content", "soil_moisture", "theta_vwc"),
-    "leaf_wetness": ("leaf_wetness", "leafwetness", "lws", "leaf_wetness_pct", "wetness"),
+    "timestamp": ("timestamp", "datetime", "date_time", "time", "date", "utc_time", "ts", "timestamp_utc", "epoch"),
+    "vwc": ("vwc", "soil_vwc", "soil_moisture_vwc", "volumetric_water_content", "soil_moisture", "theta_vwc", "teros11_vwc_m3_m3", "teros12_vwc"),
+    "leaf_wetness": ("leaf_wetness", "leafwetness", "lws", "leaf_wetness_pct", "wetness", "leaf_top", "leaf_bot", "phytos31"),
     "rh": ("rh", "relative_humidity", "humidity", "air_rh", "rh_pct"),
     "air_temperature": ("air_temperature", "temperature_air", "t_air", "air_temp", "temperature", "temp_c"),
-    "site": ("site", "site_id", "station", "station_id", "location", "sector", "sector_id", "sector_name"),
-    "node": ("node", "node_id", "sensor_id", "device", "unit"),
-    "irrigation_volume": ("irrigation_volume", "irrigation_volume_l", "water_volume_l", "applied_water_l", "irrigation_l"),
+    "site": ("site", "site_id", "station", "station_id", "location", "sector", "sector_id", "sector_name", "__source_file"),
+    "node": ("node", "node_id", "sensor_id", "device", "unit", "device_id", "node_name"),
+    "irrigation_volume": ("irrigation_volume", "irrigation_volume_l", "water_volume_l", "applied_water_l", "irrigation_l", "liters_total", "water_volume", "water_vol_past_4h"),
 }
 
 
@@ -270,6 +270,13 @@ def validate_libelium(frame: pd.DataFrame, mapping: Dict[str, str], gap_minutes:
     f = frame.copy()
     f[ts] = pd.to_datetime(f[ts], errors="coerce", utc=True)
     f[vwc] = pd.to_numeric(f[vwc], errors="coerce")
+    scale = float(mapping.get("scale_vwc", 1.0))
+    median_val = f[vwc].dropna().median() if not f[vwc].dropna().empty else 0.0
+    if scale == 1.0 and 0.0 < median_val < 1.0:
+        # Volumetric water content given as m3/m3 fraction; convert to percentage VWC
+        scale = 100.0
+    if scale != 1.0:
+        f[vwc] = f[vwc] * scale
     f = f.dropna(subset=[ts, node]).sort_values([node, ts])
     per_node = {}
     for node_id, g in f.groupby(node):
@@ -308,6 +315,7 @@ def validate_libelium(frame: pd.DataFrame, mapping: Dict[str, str], gap_minutes:
     return {
         "dataset": "libelium", "quality": _quality_summary(frame, ts, node),
         "gap_threshold_minutes": gap_minutes, "node_quality": per_node,
+        "vwc_scale_factor": scale, "vwc_unit": "% VWC",
         "two_node_sufficiency": sufficiency, "rolling_metrics": rolling,
     }
 
