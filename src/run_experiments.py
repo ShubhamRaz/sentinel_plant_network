@@ -48,9 +48,9 @@ from models import (
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 OUTPUT_ROOT = PROJECT_ROOT
-DATA_DIR = OUTPUT_ROOT / "data"
-RESULTS_DIR = OUTPUT_ROOT / "results"
-FIGURES_DIR = OUTPUT_ROOT / "figures"
+DATA_DIR = OUTPUT_ROOT / "data" / "simulated_digital_twin"
+RESULTS_DIR = OUTPUT_ROOT / "results" / "simulated_digital_twin"
+FIGURES_DIR = OUTPUT_ROOT / "figures" / "simulated_digital_twin"
 
 
 # ============================================================================
@@ -1023,9 +1023,9 @@ def main(argv=None):
 
     global OUTPUT_ROOT, DATA_DIR, RESULTS_DIR, FIGURES_DIR
     OUTPUT_ROOT = args.output_dir.expanduser().resolve()
-    DATA_DIR = OUTPUT_ROOT / "data"
-    RESULTS_DIR = OUTPUT_ROOT / "results"
-    FIGURES_DIR = OUTPUT_ROOT / "figures"
+    DATA_DIR = OUTPUT_ROOT / "data" / "simulated_digital_twin"
+    RESULTS_DIR = OUTPUT_ROOT / "results" / "simulated_digital_twin"
+    FIGURES_DIR = OUTPUT_ROOT / "figures" / "simulated_digital_twin"
     for directory in (DATA_DIR, RESULTS_DIR, FIGURES_DIR):
         directory.mkdir(parents=True, exist_ok=True)
 
