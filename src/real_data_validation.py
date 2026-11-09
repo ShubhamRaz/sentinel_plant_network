@@ -162,16 +162,29 @@ def validate_tomato(frame: pd.DataFrame, mapping: Dict[str, str], expected_step_
                 sector_result["vwc_forecast"] = {"skipped": "Invalid or unavailable sampling interval"}
             else:
                 horizon_steps = int(round(1440.0 / step))
-                result = benchmark_vwc_forecasting(
-                    f, timestamp_col=ts, target_col=vwc, horizon_steps=horizon_steps,
-                    expected_step_minutes=step
-                )
-                sector_result["vwc_forecast"] = {
-                    "task": result["task"], "horizon_minutes": result["horizon_minutes"],
-                    "sampling_minutes_median": result["sampling_minutes_median"],
-                    "split_rows": result["split_rows"],
-                    "metrics": result["metrics"].to_dict(orient="records"),
-                }
+                try:
+                    result = benchmark_vwc_forecasting(
+                        f, timestamp_col=ts, target_col=vwc, horizon_steps=horizon_steps,
+                        expected_step_minutes=step
+                    )
+                except ValueError as exc:
+                    message = str(exc)
+                    if any(token in message.lower() for token in (
+                        "purged", "chronological train/validation/test", "too few rows remain"
+                    )):
+                        sector_result["vwc_forecast"] = {
+                            "skipped": "Insufficient continuous history for non-overlapping purged train/validation/test splits",
+                            "detail": message,
+                        }
+                    else:
+                        raise
+                else:
+                    sector_result["vwc_forecast"] = {
+                        "task": result["task"], "horizon_minutes": result["horizon_minutes"],
+                        "sampling_minutes_median": result["sampling_minutes_median"],
+                        "split_rows": result["split_rows"], "purged_rows": result["purged_rows"],
+                        "metrics": result["metrics"].to_dict(orient="records"),
+                    }
         else:
             sector_result["vwc_forecast"] = {
                 "skipped": "Fewer than 200 valid records in this sector/file"
