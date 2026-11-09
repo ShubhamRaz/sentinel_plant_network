@@ -7,6 +7,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
+from ml_baselines import _prepare_time_series
 from real_data_validation import (
     validate_libelium,
     validate_leafwetness,
@@ -78,6 +79,23 @@ def test_leaf_wetness_adapter_computes_daily_duration_and_site_ranking():
     assert result["quality"]["duplicate_timestamps"] == 0
     assert len(result["daily_table"]) == 9
     assert result["daily_table"]["leaf_wetness_hours"].between(0, 24).all()
+
+
+def test_forecasting_supervised_rows_do_not_bridge_missing_timestamps():
+    n = 420
+    timestamps = pd.date_range("2026-05-01", periods=n, freq="10min", tz="UTC")
+    values = 29.0 - np.linspace(0, 5, n) + 0.3 * np.sin(np.arange(n) / 8)
+    continuous = pd.DataFrame({"timestamp": timestamps, "vwc": values})
+    broken = continuous.drop(index=180).reset_index(drop=True)
+
+    complete_rows, _ = _prepare_time_series(
+        continuous, "timestamp", "vwc", horizon_steps=144
+    )
+    broken_rows, _ = _prepare_time_series(
+        broken, "timestamp", "vwc", horizon_steps=144
+    )
+    assert len(broken_rows) < len(complete_rows)
+    assert (complete_rows["__timestamp"].diff().dropna().dt.total_seconds() > 0).all()
 
 
 def test_libelium_adapter_detects_gap_and_computes_two_node_sufficiency():
