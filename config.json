@@ -1,0 +1,21 @@
+{
+  "cwsi_stress_threshold": 0.40,
+  "cwsi_emergency_threshold": 0.65,
+  "vwc_mad_threshold": 22.0,
+  "vwc_emergency_floor": 16.0,
+  "vwc_field_capacity": 34.0,
+  "dsv_action_threshold": 18,
+  "midday_window_start_min": 690,
+  "midday_window_end_min": 870,
+  "pulse_on_minutes": 15,
+  "pulse_off_minutes": 45,
+  "stale_timeout_minutes": 30.0,
+  "max_lockout_hours": 36.0,
+  "sufficiency_max_vwc_divergence": 10.0,
+  "sufficiency_min_spearman_r": 0.70,
+  "thermal_anomaly_residual_c": 2.0,
+  "thermal_anomaly_consecutive_days": 2,
+  "cwsi_intercept_a": 1.35,
+  "cwsi_slope_b": -1.95,
+  "cwsi_upper_limit_c": 3.50
+}
