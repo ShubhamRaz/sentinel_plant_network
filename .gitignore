@@ -25,4 +25,5 @@ artifacts/
 data/simulated_digital_twin/**
 !data/simulated_digital_twin/README.md
 results/simulated_digital_twin/**
-figures/simulated_digital_twin/**
+figures/simulated_digital_twin/
+figures/real_data_validation/**
