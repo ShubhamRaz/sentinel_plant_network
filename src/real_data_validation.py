@@ -36,7 +36,7 @@ DATASETS = {
     },
     "libelium": {
         "url": "https://data.mendeley.com/datasets/cnfh4stzzx/2",
-        "doi": "10.17632/cnfh4stzzx.1",
+        "doi": "10.17632/cnfh4stzzx.2",
         "licence": "CC BY 4.0",
         "purpose": "real two-node telemetry quality, gaps and spatial disagreement",
     },
