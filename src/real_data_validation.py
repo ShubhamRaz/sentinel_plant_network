@@ -48,7 +48,7 @@ ALIASES = {
     "leaf_wetness": ("leaf_wetness", "leafwetness", "lws", "leaf_wetness_pct", "wetness"),
     "rh": ("rh", "relative_humidity", "humidity", "air_rh", "rh_pct"),
     "air_temperature": ("air_temperature", "temperature_air", "t_air", "air_temp", "temperature", "temp_c"),
-    "site": ("site", "site_id", "station", "station_id", "location"),
+    "site": ("site", "site_id", "station", "station_id", "location", "sector", "sector_id", "sector_name"),
     "node": ("node", "node_id", "sensor_id", "device", "unit"),
     "irrigation_volume": ("irrigation_volume", "irrigation_volume_l", "water_volume_l", "applied_water_l", "irrigation_l"),
 }
@@ -128,37 +128,89 @@ def _quality_summary(df, ts_col, group_col: Optional[str] = None):
 def validate_tomato(frame: pd.DataFrame, mapping: Dict[str, str], expected_step_minutes: Optional[float] = None):
     ts = resolve_column(frame, mapping, "timestamp")
     vwc = resolve_column(frame, mapping, "vwc")
-    f = frame.copy()
-    f[ts] = pd.to_datetime(f[ts], errors="coerce", utc=True)
-    f[vwc] = pd.to_numeric(f[vwc], errors="coerce")
-    f = f.dropna(subset=[ts, vwc]).sort_values(ts)
-    site_col = resolve_column(frame, mapping, "site", required=False)
-    quality_group = site_col or ("__source_file" if "__source_file" in frame.columns else None)
-    report = {"dataset": "tomato", "quality": _quality_summary(frame, ts, quality_group), "vwc_column": vwc}
-    if len(f) >= 200:
-        deltas = f[ts].diff().dt.total_seconds().div(60).dropna()
-        step = expected_step_minutes or float(deltas.median())
-        horizon_steps = int(round(1440.0 / step))
-        result = benchmark_vwc_forecasting(
-            f, timestamp_col=ts, target_col=vwc, horizon_steps=horizon_steps,
-            expected_step_minutes=step
-        )
-        report["vwc_forecast"] = {
-            "task": result["task"], "horizon_minutes": result["horizon_minutes"],
-            "sampling_minutes_median": result["sampling_minutes_median"],
-            "split_rows": result["split_rows"], "metrics": result["metrics"].to_dict(orient="records")
-        }
-    else:
-        report["vwc_forecast"] = {"skipped": "Fewer than 200 valid records"}
     irrigation = resolve_column(frame, mapping, "irrigation_volume", required=False)
-    if irrigation:
-        values = pd.to_numeric(frame[irrigation], errors="coerce")
-        report["irrigation_telemetry"] = {
-            "column": irrigation, "valid_records": int(values.notna().sum()),
-            "total_reported_volume": float(values.sum()), "unit": "source dataset unit; verify data dictionary"
-        }
-    return report
+    site_col = resolve_column(frame, mapping, "site", required=False)
+    # A set of processed sector files commonly shares identical timestamps.
+    # Never concatenate those rows and de-duplicate on time: evaluate each
+    # sector (or input file) independently.
+    group_col = site_col or ("__source_file" if "__source_file" in frame.columns else None)
+    quality = _quality_summary(frame, ts, group_col)
+    groups = (
+        list(frame.groupby(group_col, dropna=False, sort=False))
+        if group_col else [("all", frame)]
+    )
 
+    per_sector = {}
+    total_volume = 0.0
+    total_volume_valid = 0
+    for group_name, group_frame in groups:
+        f = group_frame.copy()
+        f[ts] = pd.to_datetime(f[ts], errors="coerce", utc=True)
+        f[vwc] = pd.to_numeric(f[vwc], errors="coerce")
+        f = f.dropna(subset=[ts, vwc]).sort_values(ts)
+        sector_result = {
+            "rows": int(len(f)),
+            "vwc_column": vwc,
+            "source_file": str(group_frame["__source_file"].iloc[0])
+                if "__source_file" in group_frame.columns else None,
+        }
+        if len(f) >= 200:
+            deltas = f[ts].diff().dt.total_seconds().div(60).dropna()
+            step = expected_step_minutes or float(deltas.median())
+            if not np.isfinite(step) or step <= 0:
+                sector_result["vwc_forecast"] = {"skipped": "Invalid or unavailable sampling interval"}
+            else:
+                horizon_steps = int(round(1440.0 / step))
+                result = benchmark_vwc_forecasting(
+                    f, timestamp_col=ts, target_col=vwc, horizon_steps=horizon_steps,
+                    expected_step_minutes=step
+                )
+                sector_result["vwc_forecast"] = {
+                    "task": result["task"], "horizon_minutes": result["horizon_minutes"],
+                    "sampling_minutes_median": result["sampling_minutes_median"],
+                    "split_rows": result["split_rows"],
+                    "metrics": result["metrics"].to_dict(orient="records"),
+                }
+        else:
+            sector_result["vwc_forecast"] = {
+                "skipped": "Fewer than 200 valid records in this sector/file"
+            }
+
+        if irrigation:
+            values = pd.to_numeric(group_frame[irrigation], errors="coerce")
+            valid = values.dropna()
+            sector_result["irrigation_telemetry"] = {
+                "column": irrigation, "valid_records": int(valid.size),
+                "total_reported_volume": float(valid.sum()),
+                "unit": "source dataset unit; verify data dictionary",
+            }
+            total_volume += float(valid.sum())
+            total_volume_valid += int(valid.size)
+        per_sector[str(group_name)] = sector_result
+
+    report = {
+        "dataset": "tomato",
+        "quality": quality,
+        "grouping_column": group_col,
+        "sector_or_file_count": len(per_sector),
+        "per_sector": per_sector,
+    }
+    if len(per_sector) == 1:
+        only = next(iter(per_sector.values()))
+        report["vwc_forecast"] = only["vwc_forecast"]
+        if "irrigation_telemetry" in only:
+            report["irrigation_telemetry"] = only["irrigation_telemetry"]
+    else:
+        report["vwc_forecast"] = {
+            "per_sector": {name: values["vwc_forecast"] for name, values in per_sector.items()}
+        }
+        if irrigation:
+            report["irrigation_telemetry"] = {
+                "column": irrigation, "valid_records": total_volume_valid,
+                "total_reported_volume": total_volume,
+                "unit": "source dataset unit; verify data dictionary",
+            }
+    return report
 
 def validate_leafwetness(
     frame: pd.DataFrame, mapping: Dict[str, str], wet_threshold: float = 50.0
