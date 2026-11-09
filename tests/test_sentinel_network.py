@@ -9,10 +9,11 @@ import unittest
 from pathlib import Path
 import numpy as np
 import pandas as pd
-from ml_baselines import chronological_indices
-from statistical_diagnostics import rcbd_diagnostics
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+
+from ml_baselines import chronological_indices
+from statistical_diagnostics import rcbd_diagnostics
 
 from models import (
     ControllerState,
