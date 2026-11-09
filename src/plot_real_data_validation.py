@@ -66,7 +66,7 @@ def plot_libelium():
 
 
 def plot_leafwetness():
-    daily_path = RESULTS_DIR / "leafwetness" / "nightly_leafwetness_dsv.csv"
+    daily_path = RESULTS_DIR / "leafwetness" / "daily_leafwetness_dsv.csv"
     rep_path = RESULTS_DIR / "leafwetness" / "validation_report.json"
     if not daily_path.exists() or not rep_path.exists():
         print("Leafwetness files missing, skipping.")
