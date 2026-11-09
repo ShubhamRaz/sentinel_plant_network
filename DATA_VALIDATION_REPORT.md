@@ -2,11 +2,18 @@
 
 **Project:** Sentinel Plant Network (Protocol v2.0)  
 **Date:** November 2026  
-**Status:** COMPLETE (All original Mendeley archives acquired, verified, and validated)  
+**Status:** CORRECTIVE RE-RUN REQUIRED (prior numeric outputs are provisional and superseded)  
 **Output Reports Directory:** `results/real_data_validation/`  
 **Figures Directory:** `figures/real_data_validation/`  
 
 ---
+
+> [!CAUTION]
+> **Correction notice — 9 November 2026:** A code review found that the first set of reported results must not be treated as final validation. The previous ML benchmark did not purge overlapping forecast-label horizons at chronological split boundaries; the previous leaf-wetness calculation accumulated all hours of the day rather than nocturnal hours; and the previous Libelium trigger count used a 0.60 Spearman threshold while Protocol v2.0 specifies 0.70 in `ProtocolConfig`. The reported tomato irrigation-volume sum may also double-count a rolling four-hour variable. **All affected numerical results, rankings, trigger counts, and figures below are historical pre-correction values and are withdrawn pending a complete rerun. Do not cite them as current validation results.**
+>
+> Raw public datasets and generated validation outputs are intentionally excluded from Git. At this repository revision, the actual source files, SHA-256 manifest, and machine-readable per-dataset result JSONs are not present on `main`; consequently, the previous numerical claims cannot be independently reproduced from the repository alone. The corrected adapters now write per-input checksums and a `DATASETS_MANIFEST.json` alongside the generated reports under `results/real_data_validation/`. Preserve those outputs with each research release.
+>
+> For the leaf-wetness dataset, the corrected default is `Europe/Rome`, 18:00 inclusive to 06:00 exclusive; verify the dataset's timestamp convention and calibrated wetness threshold before accepting the resulting humid-pole ranking. For tomato forecasting, the corrected pipeline removes training/validation labels that reach into the next partition. For Libelium, use the Protocol v2.0 correlation threshold of 0.70 and regenerate the trigger count.
 
 ## 1. Overview and Validation Objectives
 
@@ -30,7 +37,7 @@ To test these assumptions against genuine agricultural sensor measurements, the 
 | **Leaf Wetness & Agrometeorology Dataset** | `sd4b8vpvyb` / [10.17632/sd4b8vpvyb.1](https://doi.org/10.17632/sd4b8vpvyb.1) | Version 1 | CC BY-NC 4.0 | 2026-11-09 | Multi-site microclimatic LWD diversity & Wallin vs. LWS-modified DSV evaluation |
 | **Libelium Olive Grove Multi-Sensor Dataset** | `cnfh4stzzx` / [10.17632/cnfh4stzzx.2](https://doi.org/10.17632/cnfh4stzzx.2) | Version 2 | CC BY 4.0 | 2026-11-09 | Real two-node telemetry quality, packet gaps, and spatial decoupling triggers |
 
-*All downloaded archives and uncompressed files are cataloged with SHA-256 checksums in `data/raw_public/DATASETS_MANIFEST.json`.*
+*Source archives are not committed. The corrected CLI writes the SHA-256 of each supplied input file to the per-dataset JSON report and merges those file records into `results/real_data_validation/DATASETS_MANIFEST.json` when all three commands are run.**
 
 ---
 
@@ -61,8 +68,8 @@ To test these assumptions against genuine agricultural sensor measurements, the 
 - **Preprocessed Files (`dataset_zone_1_preprocessed.csv`):** Authors provided quality-controlled, regularized sequences containing continuous multi-day runs (up to 2,702 steps = 18.8 days), enabling clean train/validation/test chronological splits.
 - **Temporal Leakage Elimination:** Auditing discovered that preprocessed files contained pre-computed forward-looking target variables (`target_point_24h`, `target_mean_24h`, `water_vol_to_24h`, `real_moisture_delta`). The adapter was patched to strictly purge all columns containing tokens `("future", "target", "ahead", "label", "to_24h", "delta")`.
 
-### 3.3 Genuine 24-Hour Ahead Forecasting Results (No Leakage)
-A chronological train (70%) / validation (15%) / test (15%) split was enforced:
+### 3.3 Historical 24-Hour Forecasting Results — Withdrawn Pending Purged Re-Run
+A prior chronological train (70%) / validation (15%) / test (15%) run was reported. That run did not purge forecast labels whose target timestamps crossed into the next split; the figures below are therefore historical only and must be replaced after rerunning the corrected purged-split implementation:
 
 #### Sector 1 (Zone 1, Open Field — 652 Test Intervals):
 | Model | Split | Test RMSE (% VWC) | Test MAE (% VWC) | Test $R^2$ | Validation RMSE (% VWC) |
@@ -104,7 +111,7 @@ A chronological train (70%) / validation (15%) / test (15%) split was enforced:
   }
   ```
 
-### 4.2 Microclimatic Heterogeneity & Humid Pole Selection
+### 4.2 Historical All-Day Wetness Summary — Not a Nocturnal LWD Result
 Protocol v2.0 specifies that Node A is anchored at the location with the maximum 90th percentile of nocturnal leaf wetness duration ($P_{90}(\text{LWD})$). Evaluating the 55,550 records across the seven distinct monitoring stations reveals pronounced spatial microclimatic variation:
 
 | Station ID | Source File | Records | $P_{90}$ Daily LWD (h/day) | Mean Daily LWD (h/day) | Max Daily LWD (h/day) | Candidate Role in Protocol v2.0 |
@@ -119,8 +126,8 @@ Protocol v2.0 specifies that Node A is anchored at the location with the maximum
 
 *Site 2 is uniquely isolated as the field humid pole ($P_{90} = 24.0\text{ h/day}$), directly supporting the core architectural thesis that a single central weather station fails to capture foliar wetness in sheltered microzones.*
 
-### 4.3 Wallin DSV vs. LWS-Modified DSV Progression
-The adapter computed both standard Wallin Disease Severity Values ($\mathrm{DSV}_{\text{Wallin}}$ based solely on $\mathrm{RH} \ge 90\%$) and leaf-wetness-modified values ($\mathrm{DSV}_{\mathrm{LWS}}$ integrating physical surface wetness):
+### 4.3 Historical Wallin DSV vs. LWS-Modified DSV — Recalculation Required
+The previous all-day adapter computed both standard Wallin Disease Severity Values ($\mathrm{DSV}_{\text{Wallin}}$ based solely on $\mathrm{RH} \ge 90\%$) and leaf-wetness-modified values ($\mathrm{DSV}_{\mathrm{LWS}}$ integrating physical surface wetness):
 - During clear nights with high radiative cooling, surface wetness on lower leaves persists even when aspirated air RH drops into the 82--89% range.
 - Standard Wallin DSV recorded zero severity accumulation during these periods, whereas $\mathrm{DSV}_{\mathrm{LWS}}$ accumulated 1 to 2 severity units per day.
 - Output table generated: `results/real_data_validation/leafwetness/daily_leafwetness_dsv.csv`.
@@ -149,8 +156,8 @@ The adapter computed both standard Wallin Disease Severity Values ($\mathrm{DSV}
 - **Median Sampling Cadence:** 10.37 minutes for Goraj-1; 10.35 minutes for Goraj-2.
 - **Aligned Paired Records:** Merging nearest timestamps within a 10-minute tolerance produced 1,617 aligned simultaneous two-node observations.
 
-### 5.3 Two-Node Spatial Sufficiency & Decoupling Analysis
-Protocol v2.0 evaluates a trailing 48-hour rolling window ($W = 278$ steps at 10.3-minute cadence) to detect when two nodes decouple:
+### 5.3 Historical Two-Node Spatial Sufficiency — Threshold Count Superseded
+The previous calculation used a 48-hour rolling window, but the report used a Spearman trigger threshold of 0.60. The current ProtocolConfig threshold is 0.70. Therefore, the previously reported count of 873 triggered windows is invalid and must be recalculated using the actual protocol threshold and the original files:
 - **Mean Absolute VWC Divergence:** Latest $|\theta_1 - \theta_2| = 4.07\%$ VWC (with rolling peaks reaching $> 12\%$ VWC).
 - **Rolling Spearman Rank Correlation:** Dropped to $r_s = -0.7388$ ($p < 10^{-5}$), indicating inverse soil water dynamics between the two orchard zones.
 - **Insufficient Coverage Trigger ($\mathcal{F}_{\text{insuff}} = 1$):**
@@ -163,7 +170,7 @@ Protocol v2.0 evaluates a trailing 48-hour rolling window ($W = 278$ steps at 10
 
 ## 6. Generated Publication Figures
 
-The script `src/plot_real_data_validation.py` generated three publication-quality figures from the real dataset validation outputs:
+The previous script generated figures from the pre-correction outputs. Treat the existing images as superseded; regenerate them only after all corrected per-dataset JSON reports and CSVs have been produced:
 
 1. `figures/real_data_validation/libelium_two_node_spatial_sufficiency.png`:
    - Dual-panel time series showing trailing 48h rolling divergence $|\Delta\theta|$ and rolling Spearman rank correlation $r_s$ between Goraj-1 and Goraj-2, highlighting the 873 windows where the adaptive sufficiency trigger was active.
