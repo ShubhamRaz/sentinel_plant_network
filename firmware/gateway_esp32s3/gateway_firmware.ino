@@ -300,6 +300,14 @@ void setup() {
     startupMs=millis();
     pinMode(PIN_VALVE_OPEN,OUTPUT); pinMode(PIN_VALVE_CLOSE,OUTPUT);
     digitalWrite(PIN_VALVE_OPEN,LOW); digitalWrite(PIN_VALVE_CLOSE,LOW);
+    // A latching valve can retain its physical position across gateway reset.
+    // Force a defined CLOSED state at boot instead of assuming the RAM flag.
+    digitalWrite(PIN_VALVE_OPEN,LOW);
+    digitalWrite(PIN_VALVE_CLOSE,HIGH);
+    delay(LATCH_PULSE_MS);
+    digitalWrite(PIN_VALVE_CLOSE,LOW);
+    valveIsOpen = false;
+    valvePulseActive = false;
     pinMode(PIN_FLOW_SENSOR,INPUT_PULLUP);
     attachInterrupt(digitalPinToInterrupt(PIN_FLOW_SENSOR),onFlowPulse,RISING);
     SPI.begin(PIN_LORA_SCK,PIN_LORA_MISO,PIN_LORA_MOSI,PIN_LORA_CS);
