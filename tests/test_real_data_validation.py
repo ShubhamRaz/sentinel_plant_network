@@ -204,3 +204,22 @@ def test_purged_chronological_splits_do_not_share_forecast_target_periods():
     assert validation_end_label < test_start
     assert info["purged_train_rows"] > 0
     assert info["purged_validation_rows"] > 0
+
+
+
+def test_explicit_future_derived_forecast_features_are_rejected():
+    n = 400
+    timestamps = pd.date_range("2026-07-01", periods=n, freq="10min", tz="UTC")
+    frame = pd.DataFrame({
+        "timestamp": timestamps,
+        "vwc": 25.0 + np.sin(np.arange(n) / 12),
+        "future_dsv_target": np.where(np.arange(n) % 2, 1, 0),
+    })
+    with pytest.raises(ValueError, match="future-derived"):
+        _prepare_time_series(
+            frame,
+            "timestamp",
+            "vwc",
+            horizon_steps=144,
+            feature_cols=["future_dsv_target"],
+        )
