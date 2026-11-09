@@ -64,8 +64,9 @@ def _prepare_time_series(
     if feature_cols is None:
         excluded = {timestamp_col, target_col}
         numeric = df.select_dtypes(include=[np.number]).columns.tolist()
+        leakage_tokens = ("future", "target", "ahead", "label", "to_24h", "delta")
         feature_cols = [c for c in numeric if c not in excluded and not any(
-            token in c.lower() for token in ("future", "target_24h", "ahead", "label")
+            token in c.lower() for token in leakage_tokens
         )]
     missing = [c for c in feature_cols if c not in df.columns]
     if missing:

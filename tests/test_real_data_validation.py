@@ -118,3 +118,46 @@ def test_libelium_adapter_detects_gap_and_computes_two_node_sufficiency():
     assert result["two_node_sufficiency"]["paired_rows"] > 100
     assert result["quality"]["duplicate_timestamps"] == 0  # identical times across nodes are not duplicates
     assert result["node_quality"]["Goraj-2"]["gaps_over_threshold"] >= 1
+
+
+def test_temporal_leakage_features_excluded():
+    n = 300
+    ts = pd.date_range("2026-01-01", periods=n, freq="10min", tz="UTC")
+    target = 25.0 + 2.0 * np.sin(np.arange(n) / 10)
+    frame = pd.DataFrame({
+        "timestamp": ts,
+        "soil_moisture": target,
+        "air_temp": 20.0 + np.sin(np.arange(n) / 20),
+        "target_point_24h": np.roll(target, -144),  # future leakage
+        "water_vol_to_24h": np.full(n, 50.0),       # future leakage
+        "real_moisture_delta": np.full(n, -0.5),    # future leakage
+    })
+    prepared, step = _prepare_time_series(frame, "timestamp", "soil_moisture", horizon_steps=144)
+    # Ensure no column with leakage tokens survived in prepared features
+    leakage_tokens = ("future", "target", "ahead", "label", "to_24h", "delta")
+    feature_cols = [c for c in prepared.columns if c not in ("__target", "__timestamp")]
+    for col in feature_cols:
+        if col.startswith("origin_"):
+            orig = col.replace("origin_", "")
+            assert not any(t in orig.lower() for t in leakage_tokens), f"Leaked column found: {orig}"
+
+
+def test_libelium_scaling_fractional_vwc():
+    base = pd.date_range("2026-03-01", periods=180, freq="10min", tz="UTC")
+    rows = []
+    # Fractional m3/m3 values (e.g. 0.28 vs 0.15)
+    for node, offset in (("Goraj-1", 0.05), ("Goraj-2", -0.08)):
+        for i, stamp in enumerate(base):
+            rows.append({
+                "timestamp": stamp, "device": node,
+                "teros11_vwc_m3_m3": 0.25 + offset + 0.02 * np.sin(i / 12),
+            })
+    frame = pd.DataFrame(rows)
+    result = validate_libelium(frame, {"node": "device", "vwc": "teros11_vwc_m3_m3"})
+    assert result["vwc_scale_factor"] == 100.0
+    assert result["vwc_unit"] == "% VWC"
+    assert result["two_node_sufficiency"] is not None
+    # Divergence should be evaluated in % VWC (~13%), exceeding the 10% threshold
+    assert result["two_node_sufficiency"]["latest_mean_abs_vwc_diff"] > 10.0
+    assert result["two_node_sufficiency"]["insufficient_coverage_flag"] is True
+

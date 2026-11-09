@@ -40,52 +40,77 @@ The runner writes generated CSVs beneath \`data/simulated_digital_twin/\`, resul
 
 ## Public real-dataset validation
 
-Downloaded original files are intentionally **not committed**. Place extracted files under \`data/raw_public/\` and retain the original dataset README, data dictionary, DOI, version and licence.
+Downloaded original files are intentionally **not committed** to Git. Place extracted files under `data/raw_public/` and retain the original dataset README, data dictionary, DOI, version, and licence.
 
-Recommended sources:
+Verified public datasets:
 
-| Dataset | Use | Licence |
-|---|---|---|
-| [Tomato irrigation and weather, V2](https://data.mendeley.com/datasets/c837v6p8ph/2) | Soil-moisture forecast and irrigation/actuator benchmark | CC BY 4.0 |
-| [Seven-site leaf wetness](https://data.mendeley.com/datasets/sd4b8vpvyb/1) | Humid-pole / leaf-wetness-duration and weather-risk evaluation | CC BY-NC 4.0 |
-| [Libelium two-node olive grove](https://data.mendeley.com/datasets/cnfh4stzzx/2) | Telemetry gaps, sensor quality and two-node sufficiency tests | CC BY 4.0 |
+| Dataset | Mendeley DOI | Version | Licence | Purpose in Protocol v2.0 |
+|---|---|---|---|---|
+| [Tomato irrigation and weather](https://data.mendeley.com/datasets/c837v6p8ph/2) | 10.17632/c837v6p8ph.2 | V2 | CC BY 4.0 | 24h VWC forecasting & irrigation telemetry validation |
+| [Seven-site leaf wetness](https://data.mendeley.com/datasets/sd4b8vpvyb/1) | 10.17632/sd4b8vpvyb.1 | V1 | CC BY-NC 4.0 | Microclimatic LWD diversity & Wallin vs. LWS-modified DSV |
+| [Libelium two-node olive grove](https://data.mendeley.com/datasets/cnfh4stzzx/2) | 10.17632/cnfh4stzzx.2 | V2 | CC BY 4.0 | Two-node telemetry quality, packet gaps, and spatial decoupling |
 
-The leaf-wetness dataset is non-commercial. Do not use or redistribute it commercially unless its licence and permissions allow it. The tomato dataset's Version 2 supersedes Version 1 for new analyses; record the version you actually download. These datasets come from different crops, sites, hardware and sampling schemes: external validation does not equal validation on the target potato/tomato field.
+Canonical mappings are provided in `data/mappings/`. Run the complete validation pipeline:
 
-Inspect a source file and its column names before mapping it. An example mapping is in \`data/raw_public/column_mapping.example.json\`. Then run:
+```bash
+# 1. Tomato Multi-Sector Forecasting (Zones 1 & 2 preprocessed open-field)
+python src/real_data_validation.py \
+  --dataset tomato \
+  --input "data/raw_public/tomato/Soil Moisture, Irrigation Actuator and Weather Dat/02_processed_data/preprocessed/dataset_zone_1_preprocessed.csv" \
+          "data/raw_public/tomato/Soil Moisture, Irrigation Actuator and Weather Dat/02_processed_data/preprocessed/dataset_zone_2_preprocessed.csv" \
+  --mapping data/mappings/tomato_mapping.json \
+  --step-minutes 10.0 \
+  --output-dir results/real_data_validation
 
-\`\`\`bash
-python src/real_data_validation.py --dataset tomato --input data/raw_public/tomato/sector_open_field_1.csv --mapping data/raw_public/tomato_mapping.json
-python src/real_data_validation.py --dataset leafwetness --input data/raw_public/leafwetness/site_data.csv --mapping data/raw_public/leafwetness_mapping.json
-python src/real_data_validation.py --dataset libelium --input data/raw_public/libelium/measurements.csv --mapping data/raw_public/libelium_mapping.json
-\`\`\`
+# 2. Leaf Wetness Duration & Agrometeorology (All 7 microclimate stations)
+python src/real_data_validation.py \
+  --dataset leafwetness \
+  --input "data/raw_public/leafwetness/Leaf Wetness and Agrometeorological Dataset/site1.csv" \
+          "data/raw_public/leafwetness/Leaf Wetness and Agrometeorological Dataset/site2.csv" \
+          "data/raw_public/leafwetness/Leaf Wetness and Agrometeorological Dataset/site3.csv" \
+          "data/raw_public/leafwetness/Leaf Wetness and Agrometeorological Dataset/site4.csv" \
+          "data/raw_public/leafwetness/Leaf Wetness and Agrometeorological Dataset/site5.csv" \
+          "data/raw_public/leafwetness/Leaf Wetness and Agrometeorological Dataset/site6.csv" \
+          "data/raw_public/leafwetness/Leaf Wetness and Agrometeorological Dataset/site7.csv" \
+  --mapping data/mappings/leafwetness_mapping.json \
+  --output-dir results/real_data_validation
 
-The adapters support CSV/TSV files. For ZIP downloads, extract them first. Map file-specific column names with JSON keys such as \`timestamp\`, \`vwc\`, \`leaf_wetness\`, \`rh\`, \`air_temperature\`, \`site\`, \`node\`, and \`irrigation_volume\`. A run writes a provenance/configuration summary, descriptive quality metrics and derived tables under \`results/real_data_validation/<dataset>/\`.
+# 3. Libelium Two-Node Olive Grove (Goraj-1 and Goraj-2 telemetry)
+python src/real_data_validation.py \
+  --dataset libelium \
+  --input "data/raw_public/libelium/A Libelium-Based Multisensor Dataset for Precision/extracted/Libelium_Olive_Grove_Dataset_Goraj_Kucova_Albania/Libelium_Olive_Grove_Dataset_Goraj_Kucova_Albania/libelium_measurements_quality_controlled.csv" \
+  --mapping data/mappings/libelium_mapping.json \
+  --output-dir results/real_data_validation
 
-## Time-series ML baselines
+# 4. Generate Publication Figures from Real Data Validation
+python src/plot_real_data_validation.py
+```
 
-\`src/ml_baselines.py\` provides chronological forecast benchmarks for VWC and a next-period leaf-wetness / risk target. Baselines include persistence, Ridge, Random Forest and scikit-learn Gradient Boosting. Features are built from present/past observations only; the target is shifted into the future. The chronological train/validation/test split is by time, not random rows. Report RMSE, MAE, R² and drought-threshold recall for VWC; report precision, recall, F1 and ROC-AUC for binary risk.
+Generated metrics and tables are written to `results/real_data_validation/<dataset>/`, and high-resolution publication figures are saved to `figures/real_data_validation/`. Detailed findings, data dictionary schemas, and limitations are reported in [`DATA_VALIDATION_REPORT.md`](DATA_VALIDATION_REPORT.md).
 
-Example:
+## Firmware Build & Hardware Bench Testing
 
-\`\`\`python
-import pandas as pd
-from src.ml_baselines import benchmark_vwc_forecasting
+Firmware source is located in `firmware/`:
+- `firmware/common/sentinel_protocol.h`: Shared C++17 bit-packed protocol struct (24 bytes), CRC-16-CCITT, and 6-state controller FSM.
+- `firmware/node_esp32s3/node_firmware.ino`: Field node firmware for Node A (`SENTINEL_NODE_ID=1`) and Node B (`SENTINEL_NODE_ID=2`).
+- `firmware/gateway_esp32s3/gateway_firmware.ino`: Edge gateway firmware managing LoRa packet ingestion, sufficiency checks, flow verification, and H-bridge latching valve control.
+- `firmware/platformio.ini`: PlatformIO build configuration for ESP32-S3 targets.
 
-df = pd.read_csv("data/raw_public/tomato/sector_open_field_1.csv")
-# Replace names and cadence with those in the downloaded file.
-report = benchmark_vwc_forecasting(
-    df, timestamp_col="timestamp", target_col="soil_moisture_vwc",
-    horizon_steps=144,  # 24 h for a regular 10-minute series
-)
-print(report["metrics"])
-\`\`\`
+Compile firmware with PlatformIO:
 
-A 144-step horizon is only correct for a 10-minute cadence. For hourly observations use 24. Inspect missing timestamps and resample/regularize the series before interpreting a fixed-step horizon.
+```bash
+# Build all targets (node_a, node_b, gateway)
+pio run -c firmware/platformio.ini
+```
 
-## Firmware
+Before physical hardware deployment, execute the 7-step hardware verification plan documented in [`HARDWARE_BENCH_TEST_PLAN.md`](HARDWARE_BENCH_TEST_PLAN.md).
 
-Firmware source is under \`firmware/\`. Install the Arduino libraries or PlatformIO dependencies documented alongside the firmware. Compile both ESP32-S3 environments before hardware work. The SX1262 board's RESET/BUSY connections are module-dependent and are not fully specified by the current Protocol v2.0 pin table; assign and verify those pins for the exact radio module before flashing. The current code must pass host-side protocol tests and bench testing before live valve actuation.
+## Project Audit & Deliverables
+
+- [`FINAL_AUDIT.md`](FINAL_AUDIT.md): Comprehensive system audit of software, models, tests, statistical validity, firmware readiness, and CI status.
+- [`DATA_VALIDATION_REPORT.md`](DATA_VALIDATION_REPORT.md): Complete analysis of genuine Mendeley datasets, forecasting performance without temporal leakage, microclimatic LWD diversity, and two-node spatial decoupling.
+- [`HARDWARE_BENCH_TEST_PLAN.md`](HARDWARE_BENCH_TEST_PLAN.md): Physical hardware bench testing procedures, electrical pinout maps, calibration protocols, and acceptance criteria.
+- `paper/Sentinel_Plant_Network_Journal_Paper.tex`: Journal manuscript updated with empirical external validation findings and strict simulation boundaries.
 
 ## Paper
 
