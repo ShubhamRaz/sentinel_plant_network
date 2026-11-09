@@ -20,9 +20,10 @@ Executes:
 4. Publication-Grade Figure Generation (5 vector PDF + 300-DPI PNG figures for the journal paper).
 """
 
+import argparse
 import json
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -45,19 +46,19 @@ from models import (
 )
 
 
-PROJECT_ROOT = Path("/working_dir/c_84e07009101c028c/sentinel_plant_network")
-DATA_DIR = PROJECT_ROOT / "data"
-RESULTS_DIR = PROJECT_ROOT / "results"
-FIGURES_DIR = PROJECT_ROOT / "figures"
-INTERMEDIATE_DIR = Path("/working_dir/c_84e07009101c028c/artifacts/file_generation/ttl=63d/intermediate")
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+OUTPUT_ROOT = PROJECT_ROOT
+DATA_DIR = OUTPUT_ROOT / "data"
+RESULTS_DIR = OUTPUT_ROOT / "results"
+FIGURES_DIR = OUTPUT_ROOT / "figures"
 
 
 # ============================================================================
 # 1. PHASE 1: 10-NODE REFERENCE GRID SIMULATION & OUT-OF-SAMPLE VALIDATION
 # ============================================================================
-def run_phase1_spatial_validation(seed: int = 20261106) -> Dict[str, object]:
+def run_phase1_spatial_validation(seed: int = 20261106, cfg: Optional[ProtocolConfig] = None) -> Dict[str, object]:
     rng = np.random.default_rng(seed)
-    cfg = ProtocolConfig()
+    cfg = cfg or ProtocolConfig()
 
     n_days = 25
     steps_per_day = 144  # 10-minute intervals
@@ -302,7 +303,7 @@ def run_phase1_spatial_validation(seed: int = 20261106) -> Dict[str, object]:
 # ============================================================================
 # 2. PHASE 2: 16-PLOT RCBD DIGITAL-TWIN EVALUATION & STATISTICAL ANALYSIS
 # ============================================================================
-def run_phase2_rcbd_evaluation(seed: int = 20261109) -> Dict[str, object]:
+def run_phase2_rcbd_evaluation(seed: int = 20261109, cfg: Optional[ProtocolConfig] = None) -> Dict[str, object]:
     """
     Simulates Phase 2 Randomized Complete Block Design (RCBD):
     - 4 Treatments (T1, T2, T3, T4) x 4 Blocks (B1..B4) = 16 independent 20 m^2 plots
@@ -310,7 +311,7 @@ def run_phase2_rcbd_evaluation(seed: int = 20261109) -> Dict[str, object]:
     - 90-day potato/tomato growing season
     """
     rng = np.random.default_rng(seed)
-    cfg = ProtocolConfig()
+    cfg = cfg or ProtocolConfig()
 
     n_days = 90
     day_arr = np.arange(n_days)
@@ -736,7 +737,7 @@ def generate_publication_figures(phase1_res: Dict, phase2_res: Dict, hw_res: Dic
     saved_files = []
 
     def save_both(fig, stem: str):
-        for target_dir in [FIGURES_DIR, INTERMEDIATE_DIR]:
+        for target_dir in [FIGURES_DIR]:
             fig.savefig(target_dir / f"{stem}.pdf", bbox_inches="tight")
             fig.savefig(target_dir / f"{stem}.png", dpi=300, bbox_inches="tight")
         saved_files.append(f"{stem}.pdf")
@@ -1009,27 +1010,55 @@ def generate_publication_figures(phase1_res: Dict, phase2_res: Dict, hw_res: Dic
     return saved_files
 
 
-def main():
-    print("Running Phase 1 (25-Day 10-Node Spatial Placement Validation)...")
-    p1 = run_phase1_spatial_validation()
+def main(argv=None):
+    """Run deterministic digital-twin simulations with portable output paths."""
+    parser = argparse.ArgumentParser(description="Sentinel Plant Network digital-twin experiment runner")
+    parser.add_argument("--seed", type=int, default=20261109,
+                        help="Base random seed (Phase 2 uses seed + 1)")
+    parser.add_argument("--output-dir", type=Path, default=PROJECT_ROOT,
+                        help="Output root; data/, results/ and figures/ are created beneath it")
+    parser.add_argument("--config", type=Path, default=PROJECT_ROOT / "config.json",
+                        help="JSON file containing ProtocolConfig threshold overrides")
+    args = parser.parse_args(argv)
+
+    global OUTPUT_ROOT, DATA_DIR, RESULTS_DIR, FIGURES_DIR
+    OUTPUT_ROOT = args.output_dir.expanduser().resolve()
+    DATA_DIR = OUTPUT_ROOT / "data"
+    RESULTS_DIR = OUTPUT_ROOT / "results"
+    FIGURES_DIR = OUTPUT_ROOT / "figures"
+    for directory in (DATA_DIR, RESULTS_DIR, FIGURES_DIR):
+        directory.mkdir(parents=True, exist_ok=True)
+
+    config_values = {}
+    if args.config.exists():
+        config_values = json.loads(args.config.read_text(encoding="utf-8"))
+    allowed = set(ProtocolConfig.__dataclass_fields__)
+    unknown = sorted(set(config_values) - allowed)
+    if unknown:
+        parser.error(f"Unknown config.json ProtocolConfig keys: {unknown}")
+    cfg = ProtocolConfig(**config_values)
+
+    print("Running Phase 1 (25-day synthetic 10-node spatial simulation)...")
+    p1 = run_phase1_spatial_validation(seed=args.seed, cfg=cfg)
     print("Selected Nodes:", json.dumps(p1["selected_nodes"], indent=2))
-    print("\nPhase 1 Topology Benchmark:")
+    print("\nPhase 1 topology benchmark:")
     print(p1["strategies_table"].to_string(index=False))
 
-    print("\nRunning Phase 2 (90-Day 16-Plot RCBD Evaluation & Statistical Analysis)...")
-    p2 = run_phase2_rcbd_evaluation()
-    print("\nPhase 2 RCBD Treatment Summary:")
+    print("\nRunning Phase 2 (90-day synthetic 16-plot RCBD digital-twin simulation)...")
+    p2 = run_phase2_rcbd_evaluation(seed=args.seed + 1, cfg=cfg)
+    print("\nPhase 2 RCBD treatment summary:")
     print(json.dumps(p2["stats_summary"]["rcbd_anova"], indent=2))
-    print("\nPhase 2 5% Non-Inferiority Test:")
+    print("\nPhase 2 5% non-inferiority calculation:")
     print(json.dumps(p2["stats_summary"]["yield_non_inferiority_5pct"], indent=2))
 
-    print("\nRunning Hardware Fault-Injection & Autonomy Verification...")
+    print("\nRunning software fault-injection and autonomy calculations...")
     hw = run_fault_and_autonomy_verification()
     print(hw["fault_table"].to_string(index=False))
 
-    print("\nGenerating Publication-Grade Figures...")
+    print("\nGenerating digital-twin figures...")
     figs = generate_publication_figures(p1, p2, hw)
     print("Generated figures:", figs)
+    print(f"Outputs written under: {OUTPUT_ROOT}")
 
 
 if __name__ == "__main__":
