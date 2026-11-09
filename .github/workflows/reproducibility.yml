@@ -52,3 +52,14 @@ jobs:
         run: |
           python -m pip install platformio==6.1.19
           pio run -c firmware/platformio.ini
+      - name: Install LaTeX toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y latexmk texlive-latex-extra texlive-fonts-recommended
+      - name: Compile journal manuscript
+        run: |
+          mkdir -p "$RUNNER_TEMP/manuscript"
+          cd paper
+          latexmk -pdf -interaction=nonstopmode -halt-on-error -file-line-error \
+            -outdir="$RUNNER_TEMP/manuscript" Sentinel_Plant_Network_Journal_Paper.tex
+          test -s "$RUNNER_TEMP/manuscript/Sentinel_Plant_Network_Journal_Paper.pdf"
