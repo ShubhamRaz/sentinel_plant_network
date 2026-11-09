@@ -1015,8 +1015,8 @@ def generate_publication_figures(phase1_res: Dict, phase2_res: Dict, hw_res: Dic
 def main(argv=None):
     """Run deterministic digital-twin simulations with portable output paths."""
     parser = argparse.ArgumentParser(description="Sentinel Plant Network digital-twin experiment runner")
-    parser.add_argument("--seed", type=int, default=20261109,
-                        help="Base random seed (Phase 2 uses seed + 1)")
+    parser.add_argument("--seed", type=int, default=20261106,
+                        help="Base random seed (Phase 2 uses seed + 3 to preserve the published baseline seed)")
     parser.add_argument("--output-dir", type=Path, default=PROJECT_ROOT,
                         help="Output root; data/, results/ and figures/ are created beneath it")
     parser.add_argument("--config", type=Path, default=PROJECT_ROOT / "config.json",
@@ -1047,7 +1047,7 @@ def main(argv=None):
     print(p1["strategies_table"].to_string(index=False))
 
     print("\nRunning Phase 2 (90-day synthetic 16-plot RCBD digital-twin simulation)...")
-    p2 = run_phase2_rcbd_evaluation(seed=args.seed + 1, cfg=cfg)
+    p2 = run_phase2_rcbd_evaluation(seed=args.seed + 3, cfg=cfg)
     diagnostics = run_all_diagnostics(RESULTS_DIR / "phase2_rcbd_16plots_summary.csv")
     p2["stats_summary"]["rcbd_diagnostics"] = diagnostics
     (RESULTS_DIR / "statistical_analysis_summary.json").write_text(
