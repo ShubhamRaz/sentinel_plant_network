@@ -13,6 +13,31 @@ jobs:
           cache: pip
       - run: python -m pip install -r requirements.txt
       - run: pytest -q
+      - name: Reproduce digital-twin outputs twice and compare
+        run: |
+          python src/run_experiments.py --seed 20261106 --config config.json --output-dir "$RUNNER_TEMP/sentinel_run_a" > "$RUNNER_TEMP/run_a.log"
+          python src/run_experiments.py --seed 20261106 --config config.json --output-dir "$RUNNER_TEMP/sentinel_run_b" > "$RUNNER_TEMP/run_b.log"
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
+          root = Path(__import__("os").environ["RUNNER_TEMP"])
+          a, b = root / "sentinel_run_a", root / "sentinel_run_b"
+          rel = []
+          for folder in ("data/simulated_digital_twin", "results/simulated_digital_twin"):
+              for path in (a / folder).rglob("*"):
+                  if path.is_file() and path.suffix in {".csv", ".json"}:
+                      rel.append(path.relative_to(a))
+          if not rel:
+              raise SystemExit("No deterministic output files were generated")
+          mismatches = []
+          for relative in sorted(rel):
+              left, right = a / relative, b / relative
+              if not right.exists() or hashlib.sha256(left.read_bytes()).digest() != hashlib.sha256(right.read_bytes()).digest():
+                  mismatches.append(str(relative))
+          if mismatches:
+              raise SystemExit("Non-deterministic outputs: " + ", ".join(mismatches))
+          print(f"Verified {len(rel)} deterministic CSV/JSON outputs across two independent runs")
+          PY
       - name: Compile and run portable firmware protocol tests
         run: |
           g++ -std=c++17 -Wall -Wextra -Werror tests/test_firmware_host.cpp -o /tmp/test_firmware_host
