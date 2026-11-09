@@ -73,6 +73,9 @@ python src/real_data_validation.py \
           "data/raw_public/leafwetness/Leaf Wetness and Agrometeorological Dataset/site6.csv" \
           "data/raw_public/leafwetness/Leaf Wetness and Agrometeorological Dataset/site7.csv" \
   --mapping data/mappings/leafwetness_mapping.json \
+  --timezone Europe/Rome \
+  --night-start-hour 18 \
+  --night-end-hour 6 \
   --output-dir results/real_data_validation
 
 # 3. Libelium Two-Node Olive Grove (Goraj-1 and Goraj-2 telemetry)
@@ -86,7 +89,7 @@ python src/real_data_validation.py \
 python src/plot_real_data_validation.py
 ```
 
-Generated metrics and tables are written to `results/real_data_validation/<dataset>/`, and high-resolution publication figures are saved to `figures/real_data_validation/`. Detailed findings, data dictionary schemas, and limitations are reported in [`DATA_VALIDATION_REPORT.md`](DATA_VALIDATION_REPORT.md).
+Generated metrics and tables are written to `results/real_data_validation/<dataset>/`; each run records input SHA-256 values in its JSON report and updates `results/real_data_validation/DATASETS_MANIFEST.json`. High-resolution figures are saved to `figures/real_data_validation/`. These output directories are intentionally git-ignored: preserve them with your research records. Do not treat pre-correction metrics in [`DATA_VALIDATION_REPORT.md`](DATA_VALIDATION_REPORT.md) as final; rerun all datasets with the current code and review the source data dictionary before citing results.
 
 ## Firmware Build & Hardware Bench Testing
 
@@ -108,9 +111,9 @@ Before physical hardware deployment, execute the 7-step hardware verification pl
 ## Project Audit & Deliverables
 
 - [`FINAL_AUDIT.md`](FINAL_AUDIT.md): Comprehensive system audit of software, models, tests, statistical validity, firmware readiness, and CI status.
-- [`DATA_VALIDATION_REPORT.md`](DATA_VALIDATION_REPORT.md): Complete analysis of genuine Mendeley datasets, forecasting performance without temporal leakage, microclimatic LWD diversity, and two-node spatial decoupling.
+- [`DATA_VALIDATION_REPORT.md`](DATA_VALIDATION_REPORT.md): Dataset analysis scope, correction notice, and the rerun requirements for forecast leakage, nocturnal LWD, and spatial-threshold consistency.
 - [`HARDWARE_BENCH_TEST_PLAN.md`](HARDWARE_BENCH_TEST_PLAN.md): Physical hardware bench testing procedures, electrical pinout maps, calibration protocols, and acceptance criteria.
-- `paper/Sentinel_Plant_Network_Journal_Paper.tex`: Journal manuscript updated with empirical external validation findings and strict simulation boundaries.
+- `paper/Sentinel_Plant_Network_Journal_Paper.tex`: Manuscript with empirical numerical claims withdrawn pending corrected dataset reruns and strict simulation boundaries.
 
 ## Paper
 
