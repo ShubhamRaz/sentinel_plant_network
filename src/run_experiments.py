@@ -621,7 +621,7 @@ def compute_rcbd_statistics(df_plots: pd.DataFrame, df_repeated: pd.DataFrame) -
         ms_err = ss_err / df_err
 
         f_trt = ms_trt / ms_err
-        p_trt = float(1.0 - stats.f.cdf(f_trt, df_trt, df_err))
+        p_trt = float(stats.f.sf(f_trt, df_trt, df_err))
 
         sed = float(np.sqrt(2.0 * ms_err / n_blocks))
         t_crit_95 = float(stats.t.ppf(0.975, df_err))
@@ -1089,6 +1089,8 @@ def main(argv=None):
     print(json.dumps(p2["stats_summary"]["rcbd_anova"], indent=2))
     print("\nPhase 2 5% non-inferiority calculation:")
     print(json.dumps(p2["stats_summary"]["yield_non_inferiority_5pct"], indent=2))
+    print("\nRepeated-measures random-intercept MixedLM (REML):")
+    print(json.dumps(p2["stats_summary"]["repeated_measures_lmm"], indent=2))
 
     print("\nRunning software fault-injection and autonomy calculations...")
     hw = run_fault_and_autonomy_verification()
