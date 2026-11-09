@@ -43,7 +43,8 @@ def rcbd_diagnostics(
     fitted = pd.DataFrame(
         {t: treatment_means[t] for t in pivot.columns}, index=pivot.index
     ).add(block_means, axis=0).sub(grand)
-    residuals = (pivot - fitted).to_numpy().ravel()
+    residual_frame = pivot - fitted
+    residuals = residual_frame.to_numpy().ravel()
 
     n_blocks, n_treatments = pivot.shape
     df_error = (n_blocks - 1) * (n_treatments - 1)
@@ -56,7 +57,7 @@ def rcbd_diagnostics(
     p_treatment = float(stats.f.sf(f_treatment, n_treatments - 1, df_error))
 
     shapiro = stats.shapiro(residuals) if 3 <= len(residuals) <= 5000 else None
-    levene = stats.levene(*[pivot[c].to_numpy() for c in pivot.columns], center="median")
+    levene = stats.levene(*[residual_frame[c].to_numpy() for c in residual_frame.columns], center="median")
     assumption_checks = {
         "shapiro_wilk_residuals": None if shapiro is None else {
             "statistic": float(shapiro.statistic), "p_value": float(shapiro.pvalue),
