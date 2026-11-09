@@ -71,6 +71,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          latest_sha="$(git ls-remote origin "refs/heads/${GITHUB_REF_NAME}" | cut -f1)"
+          if [ "$latest_sha" != "$GITHUB_SHA" ]; then
+            echo "A newer branch commit exists; skip publishing from this older run."
+            exit 0
+          fi
           cp "$RUNNER_TEMP/manuscript/Sentinel_Plant_Network_Journal_Paper.pdf" paper/Sentinel_Plant_Network_Journal_Paper.pdf
           if ! git diff --quiet -- paper/Sentinel_Plant_Network_Journal_Paper.pdf; then
             git config user.name "github-actions[bot]"
@@ -84,9 +89,9 @@ jobs:
         with:
           name: sentinel-digital-twin-${{ github.sha }}
           path: |
-            data/simulated_digital_twin/
-            results/simulated_digital_twin/
-            figures/simulated_digital_twin/
+            ${{ runner.temp }}/sentinel_run_a/data/simulated_digital_twin/
+            ${{ runner.temp }}/sentinel_run_a/results/simulated_digital_twin/
+            ${{ runner.temp }}/sentinel_run_a/figures/simulated_digital_twin/
             ${{ runner.temp }}/manuscript/Sentinel_Plant_Network_Journal_Paper.pdf
           if-no-files-found: warn
           retention-days: 30
