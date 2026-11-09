@@ -112,11 +112,11 @@ A prior chronological train (70%) / validation (15%) / test (15%) run was report
   ```
 
 ### 4.2 Historical All-Day Wetness Summary — Not a Nocturnal LWD Result
-Protocol v2.0 specifies that Node A is anchored at the location with the maximum 90th percentile of nocturnal leaf wetness duration ($P_{90}(\text{LWD})$). Evaluating the 55,550 records across the seven distinct monitoring stations reveals pronounced spatial microclimatic variation:
+Protocol v2.0 selects Node A using the 90th percentile of nocturnal leaf-wetness duration ($P_{90}(\text{LWD})$). The table below is a historical **all-day** aggregation from the earlier adapter, not a nocturnal LWD analysis. Its site ranking and candidate roles are withdrawn and must not be used for Node A placement. The corrected adapter now reports a separate nocturnal-only table after the user supplies the verified dataset timezone:
 
 | Station ID | Source File | Records | $P_{90}$ Daily LWD (h/day) | Mean Daily LWD (h/day) | Max Daily LWD (h/day) | Candidate Role in Protocol v2.0 |
 | :--- | :--- | :---: | :---: | :---: | :---: | :--- |
-| **Site 2** | `site2.csv` | 7,936 | **24.0** | 16.2 | 24.0 | **Humid Pole Candidate (Node A)** |
+| **Site 2** | `site2.csv` | 7,936 | **24.0** | 16.2 | 24.0 | Historical all-day maximum; not a Node A result |
 | **Site 1** | `site1.csv` | 7,936 | **16.0** | 9.4 | 24.0 | High-humidity microzone |
 | **Site 3** | `site3.csv` | 7,936 | **12.0** | 6.8 | 24.0 | Intermediate microzone |
 | **Site 5** | `site5.csv` | 7,936 | **12.0** | 6.5 | 24.0 | Intermediate microzone |
@@ -124,7 +124,7 @@ Protocol v2.0 specifies that Node A is anchored at the location with the maximum
 | **Site 7** | `site7.csv` | 7,936 | **2.0** | 1.1 | 18.0 | Dry canopy zone |
 | **Site 6** | `site6.csv` | 7,934 | **0.0** | 0.0 | 0.0 | Arid canopy zone |
 
-*Site 2 is uniquely isolated as the field humid pole ($P_{90} = 24.0\text{ h/day}$), directly supporting the core architectural thesis that a single central weather station fails to capture foliar wetness in sheltered microzones.*
+*The historical all-day $P_{90}$ values above cannot establish a nocturnal humid pole. No Node A site is identified from these withdrawn results.*
 
 ### 4.3 Historical Wallin DSV vs. LWS-Modified DSV — Recalculation Required
 The previous adapter computed both standard daily Wallin Disease Severity Values ($\mathrm{DSV}_{\text{Wallin}}$ based solely on $\mathrm{RH} \ge 90\%$) and leaf-wetness-modified values ($\mathrm{DSV}_{\mathrm{LWS}}$ integrating physical surface wetness):
@@ -168,17 +168,20 @@ The previous calculation used a 48-hour rolling window, but the report used a Sp
 
 ---
 
-## 6. Generated Publication Figures
+## 6. Publication Figures — Regenerate After Corrected Data Runs
 
-The previous script generated figures from the pre-correction outputs. Treat the existing images as superseded; regenerate them only after all corrected per-dataset JSON reports and CSVs have been produced:
+The three pre-correction PNGs have been removed from this branch because they were generated from withdrawn metrics. After running all three corrected dataset adapters and reviewing their JSON/CSV outputs, run:
 
-1. `figures/real_data_validation/libelium_two_node_spatial_sufficiency.png`:
-   - Dual-panel time series showing trailing 48h rolling divergence $|\Delta\theta|$ and rolling Spearman rank correlation $r_s$ between Goraj-1 and Goraj-2, highlighting the 873 windows where the adaptive sufficiency trigger was active.
-2. `figures/real_data_validation/leafwetness_microclimate_dsv_ranking.png`:
-   - Panel A: Bar chart of $P_{90}$ daily nocturnal LWD across all 7 stations, isolating Site 2 ($24.0\text{ h/day}$) as the humid pole.
-   - Panel B: Boxplot distribution of daily LWS-modified Disease Severity Values across sites.
-3. `figures/real_data_validation/tomato_vwc_forecasting_benchmark.png`:
-   - Comparison of 24h VWC forecast RMSE and MAE across Persistence, Ridge, Random Forest, and GBDT across open-field Zone 1 and Zone 2 on held-out test splits.
+```bash
+python src/plot_real_data_validation.py
+```
+
+The script writes:
+- `figures/real_data_validation/tomato_vwc_forecasting_benchmark.png`
+- `figures/real_data_validation/leafwetness_microclimate_dsv_ranking.png`
+- `figures/real_data_validation/libelium_two_node_spatial_sufficiency.png`
+
+These generated figures are git-ignored by default. Archive them with the corresponding input-checksum manifest and validation reports when preparing a research release. No corrected figures or external-data metrics are included in this PR.
 
 ---
 
