@@ -75,6 +75,7 @@ def test_leaf_wetness_adapter_computes_daily_duration_and_site_ranking():
     result = validate_leafwetness(
         pd.DataFrame(records),
         {"site": "station"},
+        timezone="Europe/Rome",
     )
     assert result["humid_pole_candidate_by_p90_nocturnal_lwd"] == "site_c"
     assert result["quality"]["duplicate_timestamps"] == 0
