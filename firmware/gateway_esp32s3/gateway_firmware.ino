@@ -35,7 +35,7 @@ static constexpr uint32_t FLOW_WINDOW_MS = 10000;
 static constexpr uint32_t FLOW_FAULT_GRACE_MS = 60000;
 static constexpr float FLOW_PULSES_PER_LITRE = 450.0f;  // Field-calibrate
 static constexpr float MIN_FLOW_LPM = 0.2f;
-static constexpr uint32_t PAIR_WINDOW_MS = 120000;
+static constexpr uint32_t PAIR_WINDOW_MS = 11UL * 60UL * 1000UL;
 static constexpr size_t SUFFICIENCY_WINDOW = 288;
 
 SX1262 radio = new Module(PIN_LORA_CS, PIN_LORA_DIO1, SENTINEL_LORA_RST_PIN, SENTINEL_LORA_BUSY_PIN);
@@ -66,7 +66,7 @@ bool valveIsOpen = false, valvePulseActive = false;
 uint32_t valvePulseStopMs = 0, valveOpenedAtMs = 0;
 uint32_t lastFlowWindowMs = 0, lastFlowSnapshot = 0;
 float measuredFlowLpm = 0.0f;
-bool flowFault = false;
+bool flowFault = false, flowFaultLatched = false;
 
 float lwsHoursToday = 0.0f, rh90HoursToday = 0.0f, temperatureSumRh90 = 0.0f;
 uint32_t temperatureCountRh90 = 0;
@@ -76,9 +76,10 @@ uint32_t monotonicDay = 0;
 float vwcAHistory[SUFFICIENCY_WINDOW]{}, vwcBHistory[SUFFICIENCY_WINDOW]{};
 size_t pairHead = 0, pairCount = 0;
 uint16_t consumedASeq = 0, consumedBSeq = 0;
-bool hasConsumedPair = false, insufficientCoverage = false;
+bool hasConsumedPair = false, insufficientCoverage = true;
 float latestVwcDivergence = NAN, latestSpearman = NAN;
-uint32_t startupMs = 0, lastControllerLogMs = 0;
+uint32_t startupMs = 0, lastControllerLogMs = 0, lockoutStartedMs = 0;
+bool lockoutTimerActive = false;
 sentinel::ControllerState currentState = sentinel::ControllerState::FAULT_FALLBACK;
 sentinel::ProtocolThresholds thresholds;
 
@@ -138,8 +139,10 @@ void updateNode(NodeState& state, const sentinel::SentinelPacket& packet) {
     state.updated = true;
     const bool bmeOk = (packet.status_flags & 0x01U) != 0;
     const bool mlxOk = (packet.status_flags & 0x02U) != 0;
+    const bool soilOk = (packet.status_flags & 0x10U) != 0;
+    const bool leafWetnessOk = (packet.status_flags & 0x20U) != 0;
     const float vwc = packetValue(packet.vwc_centi);
-    state.valid = bmeOk && mlxOk && isfinite(vwc) && vwc <= 65.0f;
+    state.valid = bmeOk && mlxOk && soilOk && leafWetnessOk && isfinite(vwc) && vwc <= 65.0f;
     if (&state == &nodeA) accumulateNodeADailyWeather(packet);
 }
 
@@ -198,7 +201,7 @@ float spearmanFromHistory(size_t n) {
 
 void updateSpatialSufficiency() {
     if (!nodeA.updated || !nodeB.updated) return;
-    if (hasConsumedPair && nodeA.packet.seq_num == consumedASeq && nodeB.packet.seq_num == consumedBSeq) return;
+    if (hasConsumedPair && (nodeA.packet.seq_num == consumedASeq || nodeB.packet.seq_num == consumedBSeq)) return;
     if (!nodeA.valid || !nodeB.valid) return;
     const uint32_t delta = nodeA.last_rx_ms > nodeB.last_rx_ms
         ? nodeA.last_rx_ms-nodeB.last_rx_ms : nodeB.last_rx_ms-nodeA.last_rx_ms;
@@ -245,7 +248,9 @@ void updateFlowFault() {
     measuredFlowLpm=elapsed>0
         ? static_cast<float>(deltaPulses)*60000.0f/(FLOW_PULSES_PER_LITRE*static_cast<float>(elapsed))
         : 0.0f;
-    flowFault=valveIsOpen && (now-valveOpenedAtMs>FLOW_FAULT_GRACE_MS) && measuredFlowLpm<MIN_FLOW_LPM;
+    if (valveIsOpen && (now-valveOpenedAtMs>FLOW_FAULT_GRACE_MS) && measuredFlowLpm<MIN_FLOW_LPM)
+        flowFaultLatched = true;
+    flowFault = flowFaultLatched;
 }
 
 uint16_t minuteOfDay() {
@@ -269,11 +274,18 @@ void runController() {
         packetValue(nodeB.packet.rh_centi)
     );
     input.accumulated_dsv=accumulatedLwsDsv;
-    input.continuous_lockout_hours=0.0f; // Persistent lockout timer remains to be completed/tested.
+    input.continuous_lockout_hours = lockoutTimerActive
+        ? (millis() - lockoutStartedMs) / 3600000.0f : 0.0f;
     input.flow_fault=flowFault;
     input.uncertainty_buffered=insufficientCoverage;
     const sentinel::ControllerOutput output=sentinel::evaluateController(input,thresholds);
     currentState=output.state;
+    if (currentState == sentinel::ControllerState::PATHOGEN_LOCKOUT) {
+        if (!lockoutTimerActive) { lockoutTimerActive = true; lockoutStartedMs = millis(); }
+    } else {
+        lockoutTimerActive = false;
+        lockoutStartedMs = 0;
+    }
     commandValve(output.valve_open);
     if(millis()-lastControllerLogMs>=10000UL){
         lastControllerLogMs=millis();
