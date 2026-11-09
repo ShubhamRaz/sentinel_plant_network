@@ -147,33 +147,66 @@ def select_sentinel_nodes(
 def check_spatial_sufficiency(
     vwc_a_series: pd.Series,
     vwc_b_series: pd.Series,
-    cfg: ProtocolConfig = ProtocolConfig(),
+    window_steps: int = 288,
+    cfg: Optional[ProtocolConfig] = None,
 ) -> Dict[str, object]:
     """
-    Implements Section 6.3 Adaptive Node Sufficiency check:
-    Raises insufficient-coverage flag when rolling mean |VWC_A - VWC_B| > 10% VWC
-    or Spearman rank correlation r_s < 0.70 across wetting/drying cycles.
+    Evaluate two-node sufficiency using a true trailing rolling window.
+    Default: 288 paired samples (48 h at 10-minute cadence). Short inputs use
+    their full length. Missing pairs are removed and timestamps are preserved.
+    The third positional argument remains compatible with the former cfg API.
     """
-    abs_diff = np.abs(vwc_a_series - vwc_b_series)
-    mean_abs_diff = float(abs_diff.mean())
-    max_abs_diff = float(abs_diff.max())
-    r_s, p_val = stats.spearmanr(vwc_a_series, vwc_b_series)
-    r_s = float(r_s) if not np.isnan(r_s) else 0.0
-    
-    insufficient_flag = (
-        (mean_abs_diff > cfg.sufficiency_max_vwc_divergence)
-        or (r_s < cfg.sufficiency_min_spearman_r)
+    if isinstance(window_steps, ProtocolConfig):
+        cfg = window_steps
+        window_steps = 288
+    cfg = cfg or ProtocolConfig()
+    if window_steps < 2:
+        raise ValueError("window_steps must be >= 2")
+
+    paired = pd.concat(
+        [pd.to_numeric(vwc_a_series, errors="coerce").rename("vwc_a"),
+         pd.to_numeric(vwc_b_series, errors="coerce").rename("vwc_b")],
+        axis=1,
+    ).replace([np.inf, -np.inf], np.nan).dropna()
+    if len(paired) < 2:
+        raise ValueError("At least two finite, aligned paired observations are required")
+
+    effective_window = min(int(window_steps), len(paired))
+    a = paired["vwc_a"].to_numpy(dtype=float)
+    b = paired["vwc_b"].to_numpy(dtype=float)
+    divergence, correlations, p_values, end_positions = [], [], [], []
+    for end_pos in range(effective_window - 1, len(paired)):
+        begin = end_pos - effective_window + 1
+        aw, bw = a[begin:end_pos + 1], b[begin:end_pos + 1]
+        r, p = stats.spearmanr(aw, bw)
+        divergence.append(float(np.mean(np.abs(aw - bw))))
+        correlations.append(float(r) if np.isfinite(r) else 0.0)
+        p_values.append(float(p) if np.isfinite(p) else 1.0)
+        end_positions.append(end_pos)
+
+    metrics = pd.DataFrame(
+        {"mean_abs_vwc_diff": divergence, "spearman_r": correlations, "spearman_p": p_values},
+        index=paired.index[end_positions],
     )
+    metrics["insufficient_coverage_flag"] = (
+        (metrics["mean_abs_vwc_diff"] > cfg.sufficiency_max_vwc_divergence)
+        | (metrics["spearman_r"] < cfg.sufficiency_min_spearman_r)
+    )
+    latest = metrics.iloc[-1]
+    flagged = bool(metrics["insufficient_coverage_flag"].any())
     return {
-        "mean_abs_vwc_diff": mean_abs_diff,
-        "max_abs_vwc_diff": max_abs_diff,
-        "spearman_r": r_s,
-        "spearman_p": float(p_val) if not np.isnan(p_val) else 1.0,
-        "insufficient_coverage_flag": bool(insufficient_flag),
+        "window_steps_requested": int(window_steps),
+        "window_steps_used": effective_window,
+        "mean_abs_vwc_diff": float(latest["mean_abs_vwc_diff"]),
+        "max_abs_vwc_diff": float(np.max(np.abs(a[-effective_window:] - b[-effective_window:]))),
+        "spearman_r": float(latest["spearman_r"]),
+        "spearman_p": float(latest["spearman_p"]),
+        "insufficient_coverage_flag": flagged,
+        "trigger_timestamps": metrics.index[metrics["insufficient_coverage_flag"]].tolist(),
+        "rolling_metrics": metrics,
         "recommendation": (
             "Insert intermediate Node C or split zone into independent sub-zones (uncertainty-buffered mode)"
-            if insufficient_flag
-            else "Two-node sentinel representation sufficient"
+            if flagged else "Two-node sentinel representation sufficient"
         ),
     }
 
