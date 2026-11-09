@@ -45,6 +45,11 @@ int main() {
     assert(evaluateController(in).state==ControllerState::PATHOGEN_LOCKOUT);
     in.vwc_b_pct=21; in.minute_of_day=689;
     assert(evaluateController(in).state==ControllerState::PATHOGEN_LOCKOUT);
+    in.continuous_lockout_hours=35.99f;
+    assert(evaluateController(in).state==ControllerState::PATHOGEN_LOCKOUT);
+    in.continuous_lockout_hours=36.0f;
+    assert(evaluateController(in).state==ControllerState::STANDARD_DRIP);
+    in.continuous_lockout_hours=0.0f;
     in.minute_of_day=690;
     auto on=evaluateController(in);
     assert(on.state==ControllerState::CONFLICT_MICRO_PULSE && on.valve_open);
@@ -63,6 +68,14 @@ int main() {
     in=healthyInput(); in.flow_fault=true;
     assert(evaluateController(in).state==ControllerState::FAULT_FALLBACK);
     in=healthyInput(); in.node_a_valid=false;
+    assert(evaluateController(in).state==ControllerState::FAULT_FALLBACK);
+    in=healthyInput(); in.rh_a_pct=NAN;
+    assert(evaluateController(in).state==ControllerState::FAULT_FALLBACK);
+    in=healthyInput(); in.lws_a_pct=NAN;
+    assert(evaluateController(in).state==ControllerState::FAULT_FALLBACK);
+    in=healthyInput(); in.vwc_b_pct=NAN;
+    assert(evaluateController(in).state==ControllerState::FAULT_FALLBACK);
+    in=healthyInput(); in.cwsi_b=NAN;
     assert(evaluateController(in).state==ControllerState::FAULT_FALLBACK);
     assert(std::isfinite(calculateCwsi(29,25,50)));
     assert(std::isnan(calculateCwsi(NAN,25,50)));
