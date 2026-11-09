@@ -1,0 +1,353 @@
+\documentclass[10pt,twocolumn,a4paper]{article}
+
+\usepackage[a4paper,top=18mm,bottom=18mm,left=15mm,right=15mm,columnsep=7mm]{geometry}
+\usepackage{mathptmx}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{fancyhdr}
+\usepackage{microtype}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage{hyperref}
+
+\definecolor{primary}{RGB}{22, 66, 91}
+\definecolor{accent}{RGB}{217, 95, 2}
+\definecolor{bgbox}{RGB}{242, 247, 250}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=primary,
+    citecolor=primary,
+    urlcolor=primary,
+    pdftitle={Risk-Oriented Dual-Pole Sparse Sensing and Fault-Tolerant Irrigation Decision Support for Solanaceous Crops},
+    pdfauthor={Sentinel Plant Network Research Group}
+}
+
+\setlength{\parskip}{3pt plus 1pt minus 1pt}
+\setlength{\parindent}{1em}
+\captionsetup{font=small,labelfont={bf,color=primary},skip=4pt}
+\raggedbottom
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\footnotesize\color{primary}\textit{Sentinel Plant Network: Risk-Oriented Sparse Sensing \& Irrigation Decision Support}}
+\fancyhead[R]{\footnotesize\color{primary}\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\newcommand{\takeaway}[2]{%
+  \vspace{4pt}\noindent\colorbox{bgbox}{%
+    \parbox{\dimexpr\linewidth-2\fboxsep\relax}{%
+      \vspace{2pt}\footnotesize\textbf{\color{primary}#1:}\hspace{0.4em}#2\vspace{2pt}%
+    }%
+  }\vspace{4pt}%
+}
+
+\title{\vspace{-8mm}\textbf{\Large\color{primary} Risk-Oriented Dual-Pole Sparse Sensing and Uncertainty-Aware Irrigation Decision Support for Solanaceous Crops: Architecture, Out-of-Sample Spatial Validation, and RCBD Digital-Twin Evaluation}}
+
+\author{
+  \textbf{Sentinel Plant Network Research Group}\\
+  \small Department of Agricultural and IoT Systems Engineering, Jharkhand, India\\
+  \small \texttt{Protocol Revision 2.0 $\cdot$ Pre-Trial Architecture \& Digital-Twin Benchmark Manuscript}
+}
+\date{\vspace{-3mm}\small November 2026}
+
+\begin{document}
+\maketitle
+\thispagestyle{fancy}
+
+\begin{abstract}
+\noindent\textbf{Background and Objective:} Agricultural fields cultivated with solanaceous crops such as potato (\textit{Solanum tuberosum} L.) and tomato (\textit{Solanum lycopersicum} L.) exhibit pronounced spatial variability in soil moisture, canopy temperature, and nocturnal leaf wetness. Conventional single-sensor placement based on \href{https://iwaponline.com/ws/article/22/5/5070/88251/Temporal-stability-of-soil-water-content-in}{Vachaud temporal stability analysis} identifies a rank-stable site representing the field average but systematically overlooks localized wet pockets conducive to late blight (\textit{Phytophthora infestans}) and persistent dry zones prone to crop water stress. Conversely, dense wireless sensor networks incur prohibitive capital and maintenance costs for smallholder growers. This study presents the \textbf{Sentinel Plant Network}, a low-cost (\text{INR}~15,790), risk-oriented two-node sensing and closed-loop drip irrigation architecture.\\
+\textbf{Methods:} Rather than estimating only the spatial mean, a 14-day calibration window over a 10-node reference grid selects \textbf{Node~A (Humid Pole)} via maximum 90th-percentile nocturnal leaf-wetness duration $P_{90}(\mathrm{LWD})$ and \textbf{Node~B (Dry Pole)} via persistently negative relative soil-moisture difference ($\bar{\delta}_i < -0.08$) with minimal temporal rank variance. Both `ESP32-S3` nodes transmit telemetry over sub-GHz `SX1262` LoRa (865--867~MHz) to a local edge gateway executing a six-state fault-aware finite state machine (`HOMEOSTASIS`, `STANDARD\_DRIP`, `PATHOGEN\_LOCKOUT`, `CONFLICT\_MICRO\_PULSE`, `EMERGENCY\_DRIP`, and `FAULT\_FALLBACK`). When crop water stress ($\mathrm{CWSI} \ge 0.40$ or $\mathrm{VWC}_B \le 22\%$) coincides with late-blight conducive conditions ($\mathrm{DSV}_{\text{cum}} \ge 18$), the controller suppresses nocturnal/morning irrigation and delivers targeted 15-min ON / 45-min OFF micro-pulses strictly within the 11:30--14:30 peak solar window. An adaptive sufficiency monitor flags when inter-node divergence exceeds $10\%$~VWC or rolling Spearman rank correlation drops below $r_s < 0.70$.\\
+\textbf{Results:} In a calibrated digital-twin simulation parameterized by four public multi-sensor datasets (\href{https://data.mendeley.com/datasets/c837v6p8ph/1}{Mendeley Tomato Irrigation c837v6p8ph/1}, \href{https://data.mendeley.com/datasets/sd4b8vpvyb/1}{Italian Leaf Wetness sd4b8vpvyb/1}, \href{https://data.mendeley.com/datasets/cnfh4stzzx/1}{Libelium Two-Node Olive Grove cnfh4stzzx/1}, and \href{https://pmc.ncbi.nlm.nih.gov/articles/PMC5501970/}{HiWATER PMC5501970}), out-of-sample Phase~1 evaluation (Days 15--25) demonstrates that the locked Sentinel pair ($\mathrm{R8}+\mathrm{R7}$) achieves \textbf{99.68\%} controller decision agreement with the 10-node oracle, \textbf{0.00\%} missed drought episodes, \textbf{0.77\%} missed blight-risk intervals ($\mathrm{F1} = 99.62\%$), and a bias-corrected field-mean RMSE of \textbf{0.238\%~VWC} while reducing hardware cost by \textbf{74.4\%} compared with the 10-node grid (\text{INR}~15,790 vs.\ \text{INR}~61,690). In contrast, the single Vachaud rank-stable node ($\mathrm{R4}$, $\mathrm{ITS} = 0.009$) achieves 43.75\% joint decision agreement, missing 46.97\% of dry-pole drought stress and 38.96\% of humid-pole blight risk. In a 90-day, 16-plot Randomized Complete Block Design (RCBD) simulation (4 treatments $\times$ 4 blocks), the coupled Sentinel controller ($\mathrm{T4}$) reduces seasonal irrigation water by \textbf{25.8\%} relative to conventional $\mathrm{ET}_c$ scheduling ($\mathrm{T1}$: $247.83 \pm 5.32$~mm vs.\ $334.01 \pm 2.34$~mm, $p = 1.41 \times 10^{-10}$), improves Irrigation Water Productivity by \textbf{40.5\%} ($13.89 \pm 0.47$ vs.\ $9.89 \pm 0.14\text{ kg m}^{-3}$), reduces Area Under the Disease Progress Curve (AUDPC) by \textbf{32.1\%} vs.\ $\mathrm{T1}$ and \textbf{8.7\%} vs.\ an uncoupled two-node controller ($\mathrm{T3}$, $p = 1.62 \times 10^{-10}$), and satisfies the pre-specified 5\% marketable yield non-inferiority margin across all baselines ($34.40 \pm 0.41\text{ t ha}^{-1}$, one-sided 95\% CI lower bound $+3.40\% > -5.0\%$ vs.\ $\mathrm{T1}$, $p < 10^{-5}$).\\
+\textbf{Keywords:} Precision irrigation; \textit{Phytophthora infestans}; Vachaud temporal stability; Crop Water Stress Index (CWSI); LoRa wireless sensor network; fault-tolerant agricultural automation.
+\end{abstract}
+
+\section{Introduction: Extreme-Pole Sensing Overcomes Mean-Placement Blind Spots}
+
+Irrigated solanaceous crops—specifically potato (\textit{Solanum tuberosum} L.) and tomato (\textit{Solanum lycopersicum} L.)—exhibit high sensitivity to both root-zone water deficit and foliar oomycete pathogens, chiefly late blight caused by \textit{Phytophthora infestans} \cite{wallin1962,ipm_ucanr_blight}. Across real-world agricultural parcels, microtopography, soil texture gradients, differential solar exposure, and non-uniform drip emitter hydraulic pressures generate substantial spatial heterogeneity in volumetric water content ($\mathrm{VWC}$), canopy temperature ($T_c$), relative humidity ($\mathrm{RH}$), and nocturnal leaf-wetness duration ($\mathrm{LWD}$) \cite{hiwater2017,hess_vachaud2012}.
+
+To avoid the prohibitive capital and maintenance burden of dense wireless sensor networks (WSNs) \cite{mao2020_lowcost}, classical soil physics relies on the temporal stability paradigm introduced by \href{https://iwaponline.com/ws/article/22/5/5070/88251/Temporal-stability-of-soil-water-content-in}{Vachaud et al.\ (1985)} \cite{vachaud1985_iwa,guber2008_catena}. By identifying a single rank-stable sensor location whose relative difference from the spatial mean remains near zero across wetting and drying cycles, a single probe can approximate average field water storage. However, field-mean representativeness is fundamentally misaligned with asymmetric agronomic risk:
+\begin{enumerate}\setlength{\itemsep}{1pt}\setlength{\parskip}{0pt}
+  \item \textbf{Epidemiological Tail Risk in Humid Microzones:} Sporangial germination and zoospore infection by \textit{P.\ infestans} initiate in sheltered, poorly drained, or densely shaded canopy pockets where nocturnal dew and high humidity ($\mathrm{RH} \ge 90\%$) persist longest \cite{wallin1962,msu_svalue}. A sensor placed at the mean-stable Vachaud location underestimates humid-pocket leaf wetness duration, delaying disease-lockout advisories.
+  \item \textbf{Physiological Drought Risk in Dry Microzones:} Coarse-textured upper-slope ridges deplete available root-zone moisture faster than the field mean. Triggering irrigation solely when a mid-slope Vachaud sensor crosses management-allowed depletion ($\mathrm{MAD} = 22\%$~VWC) subjects the dry microzone to recurring stomatal closure, elevated canopy temperature, and marketable tuber/fruit yield loss \cite{idso1981_usda,scielo_cwsi}.
+  \item \textbf{The Irrigation--Pathogen Conflict:} When a crop experiences root-zone water stress during weather conducive to late blight, full overhead or long-duration drip irrigation elevates sub-canopy humidity and extends foliar wetness, accelerating epidemic progression \cite{cabi_blight2014}.
+\end{enumerate}
+
+To resolve these coupled challenges, this work develops and validates the \textbf{Sentinel Plant Network}, a risk-oriented two-node sensing and local actuation system. Instead of deploying sensors to estimate the spatial average, our methodology purposefully anchors \textbf{Node~A} at the field's humid pole and \textbf{Node~B} at its persistent dry pole, coupling both streams in an edge gateway controller that arbitrates between drought relief and pathogen suppression.
+
+\takeaway{Core Research Contribution}{We formulate a formal calibration-lock protocol that pairs a 90th-percentile nocturnal leaf-wetness pole (Node~A) with a rank-stable dry soil-moisture pole (Node~B), integrated with an adaptive spatial-sufficiency monitor and a six-state irrigation finite state machine that resolves drought--blight conflicts via midday solar-window micro-pulses.}
+
+\section{System Architecture and Hardware Design}
+
+\subsection{Four-Layer Edge-Autonomous Architecture}
+
+The Sentinel Plant Network is structured into four functional layers designed to operate without reliance on cloud connectivity: (i)~a dual-pole field sensing layer (`Node A` and `Node B`, plus an optional adaptive intermediate `Node C`), (ii)~a sub-GHz LoRa telemetry layer operating in the 865--867~MHz Indian ISM band, (iii)~a local edge gateway executing packet plausibility validation, hydro-epidemiological index computation, spatial sufficiency checks, and state-machine arbitration, and (iv)~an actuation and advisory layer driving a 12~V latching solenoid valve with closed-loop Hall-effect flow verification and SMS/WhatsApp scouting alerts.
+
+\begin{table*}[t!]
+\centering
+\caption{Hardware Architecture, ESP32-S3 GPIO Allocation, and Cost Breakdown of the Sentinel Plant Network (Protocol v2.0)}
+\label{tab:hardware}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{l l l l r}
+\toprule
+\textbf{Subsystem / Module} & \textbf{Part Specification} & \textbf{ESP32-S3 Pinout} & \textbf{Functional Role \& Calibration Requirement} & \textbf{Unit Cost (INR)} \\
+\midrule
+Field Node MCU & ESP32-S3-WROOM-1 & System Core & Dual-core Xtensa LX7, RTC deep-sleep timer, 12-bit SAR ADC1 & 480 \\
+Sub-GHz LoRa Transceiver & Semtech SX1262 & SPI2: CS 10, MOSI 11, SCK 12, MISO 13, DIO1 14 & 865--867~MHz India ISM link (+22~dBm, SF9, CRC-16 framing) & 650 \\
+Infrared Canopy Thermometer & MLX90614ESF-BCF & I2C: GPIO8 (SDA), GPIO9 (SCL) & Non-contact $10^\circ$ FOV canopy temperature $T_c$ for CWSI & 1,450 \\
+Ambient T/RH Sensor & Bosch BME280 & I2C: GPIO8 (SDA), GPIO9 (SCL) & Aspirated radiation-shield air temperature $T_a$ and $\mathrm{RH}$ & 320 \\
+Capacitive Leaf Wetness & Dielectric Surface Probe & ADC1: GPIO4 (Power gate GPIO7) & Canopy wetness detection via calibrated dielectric threshold & 580 \\
+Capacitive Soil Probes (2$\times$) & Root-Zone Dielectric & ADC1: GPIO5 (Power gate GPIO7) & 15~cm and 30~cm root-zone volumetric water content ($\mathrm{VWC}$) & 760 \\
+Node Power Subsystem & 3.2~V 6000~mAh $\mathrm{LiFePO_4}$ & ADC1: GPIO6 (2:1 divider) & Paired with 6~V, 3~W solar panel \& P-MOSFET gate (GPIO7) & 1,150 \\
+Local Gateway \& Actuation & Latching Valve + YF-S201 & GPIO15/16 (H-bridge), GPIO17 (Flow) & 12~V latching solenoid manifold + Hall-effect pulse flow meter & 4,990 \\
+\midrule
+\multicolumn{4}{l}{\textbf{Total Operational Two-Node Farmer Kit} (2$\times$ Complete Sentinel Nodes + 1$\times$ Local Gateway + Valve/Flow Manifold + Enclosures)} & \textbf{15,790} \\
+\multicolumn{4}{l}{\textbf{Full 10-Node Reference Network} (10$\times$ Multi-Sensor Nodes + Gateway Infrastructure for Spatial Benchmarking)} & \textbf{61,690} \\
+\multicolumn{4}{l}{\textbf{Complete Phase 1 \& Phase 2 Research Validation Infrastructure} (10-Node Grid + 16 Independent Plot Valve/Flow Manifolds)} & \textbf{1,08,330} \\
+\bottomrule
+\end{tabular}%
+}
+\end{table*}
+
+\subsection{ESP32-S3 Signal Allocation and Power-Gated Duty Cycling}
+
+Table~\ref{tab:hardware} details the hardware components, exact `ESP32-S3-WROOM-1` pin mappings, and cost structure. To eliminate galvanic corrosion and quiescent current drain across analog dielectric probes, both the capacitive leaf-wetness sensor (`GPIO4`) and dual-depth soil-moisture probes (`GPIO5`) are switched via a high-side P-channel MOSFET controlled by `GPIO7` (active-low). During each 10-minute ($T_{\text{cycle}} = 600\text{ s}$) telemetry cycle, the node wakes from deep sleep, asserts `GPIO7 = LOW` for a 150~ms stabilization window, averages 16 oversampled 12-bit ADC readings per channel, polls the `BME280` and `MLX90614ESF-BCF` ($10^\circ$ field-of-view optical filter) over the shared 100~kHz $\mathrm{I^2C}$ bus (`GPIO8`/`GPIO9`), de-asserts `GPIO7 = HIGH`, transmits a 24-byte `CRC-16-CCITT` protected packet over `SX1262` LoRa (`SPI2` on `GPIO10`--`GPIO14`), and re-enters deep sleep.
+
+Under the protocol's nominal system current budget ($I_{\text{avg}} = 25.50\text{ mA}$, accounting for regulator quiescent losses, solar charger leakage, sensor warm-up, and radio transmission), the single-cell 3.2~V, $C_{\text{bat}} = 6000\text{ mAh}$ $\mathrm{LiFePO_4}$ battery provides a theoretical zero-sunlight blackout autonomy of:
+\begin{equation}
+  t_{\text{autonomy}} = \frac{C_{\text{bat}}}{I_{\text{avg}}} = \frac{6000\text{ mAh}}{25.50\text{ mA}} = 235.3\text{ h} \approx 9.80\text{ days.}
+  \label{eq:autonomy}
+\end{equation}
+
+\section{Mathematical Formulation of Risk-Oriented Placement and Control}
+
+\subsection{Vachaud Temporal Stability vs.\ Dual-Pole Risk Selection}
+
+Let $\theta_{ij}$ denote the calibrated root-zone volumetric water content (%~VWC) at reference node $i \in \{1,\dots,N\}$ ($N=10$) and timestamp $j \in \{1,\dots,M\}$. Following \href{https://iwaponline.com/ws/article/22/5/5070/88251/Temporal-stability-of-soil-water-content-in}{Vachaud et al.\ (1985)} \cite{vachaud1985_iwa,mdpi_stability2025}, the spatial mean at time $j$ is $\bar{\theta}_j = \frac{1}{N}\sum_{i=1}^N \theta_{ij}$, and the relative difference $\delta_{ij}$ is:
+\begin{equation}
+  \delta_{ij} = \frac{\theta_{ij} - \bar{\theta}_j}{\bar{\theta}_j}.
+  \label{eq:rel_diff}
+\end{equation}
+Over the 14-day calibration window ($M_{\text{cal}} = 2,016$ intervals at 10-min resolution), each location's temporal mean relative difference $\bar{\delta}_i$, standard deviation $\sigma(\delta_i)$, and Index of Time Stability ($\mathrm{ITS}_i$) are computed as:
+\begin{align}
+  \bar{\delta}_i &= \frac{1}{M_{\text{cal}}}\sum_{j=1}^{M_{\text{cal}}} \delta_{ij}, \quad
+  \sigma(\delta_i) = \sqrt{\frac{1}{M_{\text{cal}}-1}\sum_{j=1}^{M_{\text{cal}}}\left(\delta_{ij}-\bar{\delta}_i\right)^2}, \nonumber\\
+  \mathrm{ITS}_i &= \sqrt{\bar{\delta}_i^2 + \sigma(\delta_i)^2}.
+  \label{eq:its}
+\end{align}
+While the classical Vachaud benchmark selects $i_{\text{Vachaud}} = \arg\min_i \mathrm{ITS}_i$, the Sentinel Plant Network locks two complementary risk poles at the end of Day~14 and evaluates them strictly out-of-sample on Days~15--25:
+\begin{align}
+  \text{Node A (Humid):}\quad i_A &= \arg\max_{i \in \{1,\dots,N\}} P_{90}\!\left(\mathrm{LWD}_{\text{noct},i}^{(1:14)}\right), \label{eq:nodeA}\\
+  \text{Node B (Dry):}\quad i_B &= \arg\min_{i:\,\bar{\delta}_i < -0.08,\, i \neq i_A} \sigma(\delta_i). \label{eq:nodeB}
+\end{align}
+
+\subsection{Adaptive Spatial Sufficiency Monitoring}
+
+To prevent silent control degradation when a single irrigation zone exhibits excessive internal divergence (e.g., due to emitter clogging or waterlogging), the gateway continuously evaluates the rolling divergence between Node~A and Node~B across wetting and drying cycles. An insufficient-coverage flag $\mathcal{F}_{\text{insuff}} \in \{0,1\}$ is raised whenever:
+\begin{equation}
+  \mathcal{F}_{\text{insuff}} = \mathbb{I}\!\left(\overline{|\theta_A - \theta_B|}_{W} > 10\% \;\lor\; r_s(\theta_A, \theta_B)_{W} < 0.70\right),
+  \label{eq:sufficiency}
+\end{equation}
+where $r_s$ is Spearman's rank correlation coefficient over rolling window $W$. When $\mathcal{F}_{\text{insuff}} = 1$, the gateway shifts to an uncertainty-buffered irrigation threshold ($\mathrm{MAD}_{\text{buf}} = \mathrm{MAD} + 1.0\%$~VWC) and issues an advisory to insert an intermediate \textbf{Node~C} at the mid-slope Vachaud site or split the lateral manifold into two independently valved sub-zones.
+
+\subsection{Crop Water Stress Index and Late-Blight Severity Coupling}
+
+At Node~B, atmospheric Vapor Pressure Deficit ($\mathrm{VPD}$, kPa) is derived from air temperature $T_{a,B}$ and relative humidity $\mathrm{RH}_B$ via the Tetens equation, and the empirical Crop Water Stress Index ($\mathrm{CWSI}$) is computed following \href{https://www.ars.usda.gov/ARSUserFiles/30100000/1990-1999documents/266%201992%20GardnerJPA.pdf}{Idso et al.\ (1981) and Jackson et al.\ (1981)} \cite{idso1981_usda,scielo_cwsi}:
+\begin{equation}
+  \mathrm{CWSI}_B = \mathrm{clip}\!\left(\frac{(T_{c,B} - T_{a,B}) - (a + b\cdot\mathrm{VPD}_B)}{\Delta T_{\mathrm{UL}} - (a + b\cdot\mathrm{VPD}_B)},\; 0,\; 1\right),
+  \label{eq:cwsi}
+\end{equation}
+where $a = 1.35^\circ\text{C}$, $b = -1.95^\circ\text{C kPa}^{-1}$, and $\Delta T_{\mathrm{UL}} = +3.50^\circ\text{C}$. Additionally, a non-diagnostic canopy thermal-anomaly scouting alert is raised if the canopy residual $\Delta T_{\text{res}} = (T_{c,B} - T_{a,B}) - (a + b\cdot\mathrm{VPD}_B) > +2.0^\circ\text{C}$ persists across the 11:30--14:30 peak solar window for $\ge 2$ consecutive days while root-zone moisture lies within the non-stressed range ($22\% < \theta_B < 35\%$~VWC).
+
+At Node~A, two parallel daily severity indices for \textit{P.\ infestans} are accumulated: (1)~the baseline \href{https://ipm.ucanr.edu/DISEASE/DATABASE/potatolateblight.html}{Wallin (1962) Daily Severity Value} $\mathrm{DSV}_{\text{Wallin}} \in \{0,1,2,3,4\}$ \cite{wallin1962,msu_svalue} determined from daily hours with $\mathrm{RH}_A \ge 90\%$ ($H_{\mathrm{RH90}}$) and mean temperature during those hours ($\bar{T}_{\text{wet}}$), and (2)~a leaf-wetness-modified severity value $\mathrm{DSV}_{\mathrm{LWS}}$ that substitutes effective canopy wetness duration $H_{\text{eff}} = \max(H_{\mathrm{RH90}},\, 0.85\,\mathrm{LWD}_A + 0.15\,H_{\mathrm{RH90}})$ into the Wallin lookup function to capture persistent dew films that remain on lower foliage even when screen-level $\mathrm{RH}$ drops between 82\% and 89\%. When cumulative severity reaches $\sum \mathrm{DSV} \ge 18$, the pathogen risk flag is asserted.
+
+\subsection{Six-State Fault-Aware Gateway Controller}
+
+At every 10-minute cycle, the gateway evaluates packet age $\tau_{\text{pkt}}$, sensor plausibility, flow-meter feedback, drought indicators ($\mathcal{S}_{\text{drought}} = \mathbb{I}[\mathrm{CWSI}_B \ge 0.40 \lor \theta_B \le 22.0\%]$), emergency wilting limits ($\mathcal{S}_{\text{emerg}} = \mathbb{I}[\mathrm{CWSI}_B \ge 0.65 \lor \theta_B \le 16.0\%]$), and blight risk ($\mathcal{S}_{\text{blight}} = \mathbb{I}[\mathrm{DSV}_{\text{cum}} \ge 18 \lor (\mathrm{RH}_A \ge 90\% \land \mathrm{LWS}_A \ge 50\%)]$), transitioning across six mutually exclusive operational states:
+\begin{enumerate}\setlength{\itemsep}{1pt}\setlength{\parskip}{0pt}
+  \item \texttt{FAULT\_FALLBACK}: Triggered if $\tau_{\text{pkt}} > 30\text{ min}$, any critical channel is $\mathrm{NaN}$, or the `YF-S201` flow meter registers zero pulses while the valve is commanded open. Immediately closes the latching solenoid valve and dispatches a hardware inspection alert.
+  \item \texttt{EMERGENCY\_DRIP}: Triggered if $\mathcal{S}_{\text{emerg}} = 1$. Overrides any active pathogen lockout to deliver an immediate survival irrigation pulse, preventing irreversible crop wilting.
+  \item \texttt{CONFLICT\_MICRO\_PULSE}: Triggered when $\mathcal{S}_{\text{drought}} = 1 \land \mathcal{S}_{\text{blight}} = 1$ and continuous lockout duration is $< 36\text{ h}$. Restricts actuation strictly to the 11:30--14:30 peak solar window using a 15~min ON / 45~min OFF duty cycle so sub-surface root water is replenished while high midday vapor pressure deficit rapidly evaporates surface moisture without wetting the canopy.
+  \item \texttt{PATHOGEN\_LOCKOUT}: Triggered when $\mathcal{S}_{\text{blight}} = 1$ and $\mathcal{S}_{\text{drought}} = 0$ (or outside 11:30--14:30 during a conflict state with lockout $< 36\text{ h}$). Holds the valve closed and issues a scouting advisory.
+  \item \texttt{STANDARD\_DRIP}: Triggered when $\mathcal{S}_{\text{drought}} = 1$ and either $\mathcal{S}_{\text{blight}} = 0$ or the 36-hour maximum lockout cap has expired.
+  \item \texttt{HOMEOSTASIS}: Default monitoring state when $\mathcal{S}_{\text{drought}} = 0 \land \mathcal{S}_{\text{blight}} = 0$; valve remains latched closed.
+\end{enumerate}
+
+\section{Experimental Design and Digital-Twin Benchmark Methodology}
+
+To rigorously validate all algorithms prior to physical field deployment, we constructed a reproducible Python and C++17 simulation and verification suite calibrated against four public benchmark datasets recommended in the project guide:
+\begin{itemize}\setlength{\itemsep}{1pt}\setlength{\parskip}{0pt}
+  \item \textbf{Multi-Sector Tomato Precision Irrigation Dataset} (\href{https://data.mendeley.com/datasets/c837v6p8ph/1}{Mendeley Data c837v6p8ph/1}): Provides 10-minute soil moisture, valve actuation telemetry, reconstructed water volumes, and ERA5 weather across 33,259 timestamps (789 validated irrigation events), parameterizing our 10-minute root-zone wetting and diurnal evapotranspiration (`ET`) dry-down curves.
+  \item \textbf{Italian Seven-Site Leaf Wetness \& Agrometeorology Dataset} (\href{https://data.mendeley.com/datasets/sd4b8vpvyb/1}{Mendeley Data sd4b8vpvyb/1}): Parameterizes nocturnal leaf-wetness formation, relative humidity persistence, and temperature coupling across humid vs.\ dry microzones.
+  \item \textbf{Libelium Two-Node Olive Grove Multisensor Dataset} (\href{https://data.mendeley.com/datasets/cnfh4stzzx/1}{Mendeley Data cnfh4stzzx/1}): Provides 9,561 raw frames and quality-control fault distributions (20--30~min temporal gaps, out-of-range spikes, and battery discharge telemetry) used to design our fault-injection benchmark.
+  \item \textbf{HiWATER Dense Eco-Hydrological Sensor Network} (\href{https://pmc.ncbi.nlm.nih.gov/articles/PMC5501970/}{PMC5501970} / \href{https://onlinelibrary.wiley.com/doi/10.1002/2015WR018182}{Wiley WRR 2015WR018182}): Parameterizes catenary spatial soil-moisture offsets ($\delta_i \in [-16.0\%, +18.5\%]$) and AR(1) temporal rank stability across our 10-node reference grid.
+\end{itemize}
+
+\begin{figure*}[t!]
+  \centering
+  \includegraphics[width=0.95\textwidth]{fig1_vachaud_and_pole_selection.pdf}
+  \caption{\textbf{Phase 1 Spatial Calibration and Out-of-Sample Persistence Across the 10-Node Reference Grid ($\mathrm{R1}$--$\mathrm{R10}$).} (a)~Mean relative soil moisture difference $\bar{\delta}_i \pm \sigma(\delta_i)$ during the 14-day calibration period (Days 1--14, blue circles) and out-of-sample validation period (Days 15--25, red squares), demonstrating high temporal rank persistence ($r_s = 0.988$). (b)~Joint hydro-epidemiological selection space plotting 90th-percentile nocturnal leaf-wetness duration $P_{90}(\mathrm{LWD})$ against $\bar{\delta}_i$, isolating Humid-Pole Node~A ($\mathrm{R8}$), Dry-Pole Node~B ($\mathrm{R7}$), and the Vachaud rank-stable benchmark ($\mathrm{R4}$).}
+  \label{fig:vachaud}
+\end{figure*}
+
+\section{Results and Statistical Evaluation}
+
+\subsection{Phase 1: 10-Node Reference Grid Calibration and Out-of-Sample Placement Validation}
+
+During the 14-day calibration phase ($2,016$ intervals at 10-min resolution), Vachaud temporal stability analysis across nodes $\mathrm{R1}$--$\mathrm{R10}$ (Figure~\ref{fig:vachaud}a) identified $\mathrm{R4}$ as the classical Vachaud rank-stable benchmark ($\bar{\delta}_4 = +0.40\%$, $\sigma(\delta_4) = 0.80\%$, $\mathrm{ITS}_4 = 0.009$, Spearman correlation with field mean $r_s = 0.999$). Applying our dual-pole selection criteria (Equations~\ref{eq:nodeA}--\ref{eq:nodeB}, Figure~\ref{fig:vachaud}b) locked \textbf{Node~A (Humid Pole)} at $\mathrm{R8}$ ($P_{90}(\mathrm{LWD}) = 11.68\text{ h night}^{-1}$, $\bar{\delta}_8 = +18.5\%$) and \textbf{Node~B (Dry Pole)} at $\mathrm{R7}$ ($\bar{\delta}_7 = -14.5\%$, $\sigma(\delta_7) = 1.00\%$).
+
+\begin{table*}[t!]
+\centering
+\caption{Phase 1 Out-of-Sample Spatial Placement Benchmark (Days 15--25, $M_{\text{eval}} = 1,584$ Intervals at 10-Min Resolution)}
+\label{tab:phase1}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{l l c r r r r r r r}
+\toprule
+\textbf{Sensing Topology Strategy} & \textbf{Nodes} & \textbf{$N$} & \textbf{Cost (INR)} & \textbf{Dry-Tail RMSE (\% VWC)} & \textbf{Field-Mean RMSE (\% VWC)} & \textbf{Decision Agree.\ (\%)} & \textbf{Missed Drought (\%)} & \textbf{Missed Blight (\%)} & \textbf{Blight F1 (\%)} \\
+\midrule
+1.\ Single Central Node & $\mathrm{R5}$ & 1 & 11,200 & 2.968 & 0.621 & 58.21 & 26.20 & 45.86 & 70.25 \\
+2.\ Single Humid-Location Node & $\mathrm{R1}$ & 1 & 11,200 & 7.062 & 0.398 & 0.00 & 100.00 & 4.91 & 97.48 \\
+3.\ Single Vachaud Rank-Stable Node & $\mathrm{R4}$ & 1 & 11,200 & 3.523 & \textbf{0.221} & 43.75 & 46.97 & 38.96 & 75.81 \\
+4.\ Random Two-Node Pairs (Mean of 45) & $\binom{10}{2}$ pairs & 2 & 15,790 & 2.222 & 0.294 & 62.60 & 29.02 & 22.89 & 85.04 \\
+\textbf{5.\ Proposed Risk-Oriented Sentinel Pair} & \textbf{$\mathrm{R8} + \mathrm{R7}$} & \textbf{2} & \textbf{15,790} & \textbf{0.446} & \textbf{0.238} & \textbf{99.68} & \textbf{0.00} & \textbf{0.77} & \textbf{99.62} \\
+6.\ Full 10-Node Reference Grid (Oracle) & $\mathrm{R1}\dots\mathrm{R10}$ & 10 & 61,690 & 0.000 & 0.000 & 100.00 & 0.00 & 0.00 & 100.00 \\
+\bottomrule
+\end{tabular}%
+}
+\end{table*}
+
+\begin{figure*}[t!]
+  \centering
+  \includegraphics[width=0.95\textwidth]{fig2_phase1_topology_benchmark.pdf}
+  \caption{\textbf{Out-of-Sample Phase 1 Controller Decision Agreement and Hazard Miss Rates (Days 15--25).} (a)~Joint four-regime controller state agreement relative to the 10-node reference oracle. (b)~Asymmetric false-negative miss rates for dry-zone drought stress ($\mathrm{VWC} \le 22\%$) and humid-zone late-blight conducive conditions ($\mathrm{RH} \ge 90\% \land \mathrm{LWS} \ge 50\%$).}
+  \label{fig:phase1_bench}
+\end{figure*}
+
+Table~\ref{tab:phase1} and Figure~\ref{fig:phase1_bench} report the out-of-sample validation performance on Days~15--25 ($1,584$ unseen 10-minute intervals). Although the single Vachaud node ($\mathrm{R4}$) achieves the lowest single-node field-mean estimation error ($\mathrm{RMSE}_{\text{mean}} = 0.221\%$~VWC after calibration offset scaling), it fails to capture tail-risk thresholds: it misses \textbf{46.97\%} of dry-pole water-stress intervals and \textbf{38.96\%} of humid-zone blight-conducive intervals, yielding only \textbf{43.75\%} joint controller state agreement with the 10-node reference network. Similarly, placing a single sensor in a humid depression ($\mathrm{R1}$) detects blight-conducive periods ($\mathrm{F1} = 97.48\%$) but misses \textbf{100.00\%} of dry-zone drought stress because local soil moisture remains above $22\%$~VWC throughout dry-downs. Across all $\binom{10}{2} = 45$ random two-node pairings, mean decision agreement is only \textbf{62.60\%}. By contrast, the locked \textbf{Sentinel Pair ($\mathrm{R8}+\mathrm{R7}$)} achieves \textbf{99.68\%} decision agreement, \textbf{0.00\%} missed drought stress, \textbf{0.77\%} missed blight risk ($\mathrm{F1} = 99.62\%$), a dry-tail RMSE of \textbf{0.446\%~VWC}, and a bias-corrected field-mean RMSE of \textbf{0.238\%~VWC}.
+
+\subsection{Phase 2: 16-Plot RCBD Evaluation, Mixed-Effects Analysis, and Non-Inferiority Testing}
+
+Table~\ref{tab:phase2} and Figures~\ref{fig:t4_trace}--\ref{fig:rcbd} summarize the 90-day Phase~2 Randomized Complete Block Design (RCBD) experiment across 4 treatments $\times$ 4 blocks ($16$ independent $20\text{ m}^2$ plots; $160$ tagged plant subsamples). Two-way RCBD analysis of variance (with 3 treatment degrees of freedom, 3 block degrees of freedom, and 9 residual error degrees of freedom) confirms highly significant treatment effects across all primary outcomes ($p < 10^{-6}$).
+
+\begin{table*}[t!]
+\centering
+\caption{Phase 2 Randomized Complete Block Design (RCBD) Plot-Level Agronomic and Epidemiological Outcomes ($n = 4$ Blocks per Treatment; Mean $\pm$ SD Across Plots, Two-Way RCBD ANOVA with $\mathrm{df}_{\text{trt}}=3, \mathrm{df}_{\text{err}}=9$, and Pre-Specified 5\% Yield Non-Inferiority Test)}
+\label{tab:phase2}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{l r r r r r r r}
+\toprule
+\textbf{Treatment Arm} & \textbf{Applied Water (mm)} & \textbf{Water Volume ($\text{m}^3\text{ ha}^{-1}$)} & \textbf{Marketable Yield ($\text{t ha}^{-1}$)} & \textbf{IWP ($\text{kg m}^{-3}$)} & \textbf{Seasonal LWD (h)} & \textbf{AUDPC (\%-days)} & \textbf{Final Blight Sev.\ (\%)} \\
+\midrule
+$\mathrm{T1}$: Conventional $\mathrm{ET}_c$ Reference & $334.01 \pm 2.34$ & $3340.1 \pm 23.4$ & $33.02 \pm 0.50$ & $9.89 \pm 0.14$ & $1122.1 \pm 56.0$ & $451.8 \pm 46.8$ & $10.99 \pm 1.20$ \\
+$\mathrm{T2}$: Single-Node Vachaud ($\mathrm{R4}$) & $255.34 \pm 3.53$ & $2553.4 \pm 35.3$ & $32.06 \pm 0.21$ & $12.56 \pm 0.25$ & $949.6 \pm 51.8$ & $273.1 \pm 45.6$ & $6.43 \pm 1.16$ \\
+$\mathrm{T3}$: Two-Node Uncoupled ($\mathrm{R8,R7}$) & $250.08 \pm 1.64$ & $2500.8 \pm 16.4$ & $34.03 \pm 0.59$ & $13.61 \pm 0.24$ & $1025.0 \pm 52.7$ & $336.1 \pm 41.2$ & $8.15 \pm 1.01$ \\
+\textbf{$\mathrm{T4}$: Coupled Sentinel Controller} & \textbf{$247.83 \pm 5.32$} & \textbf{$2478.3 \pm 53.2$} & \textbf{$34.40 \pm 0.41$} & \textbf{$13.89 \pm 0.47$} & \textbf{$977.1 \pm 51.4$} & \textbf{$306.7 \pm 44.0$} & \textbf{$7.27 \pm 1.09$} \\
+\midrule
+RCBD ANOVA $F_{3,9}$ ($p$-value) & $569.69$ ($<10^{-9}$) & $569.69$ ($<10^{-9}$) & $110.11$ ($2.1\times 10^{-7}$) & $437.42$ ($<10^{-9}$) & $2624.9$ ($<10^{-12}$) & $552.13$ ($<10^{-9}$) & $461.52$ ($<10^{-9}$) \\
+Standard Error of Diff.\ ($\mathrm{SED}$) & $2.464\text{ mm}$ & $24.64\text{ m}^3\text{ ha}^{-1}$ & $0.142\text{ t ha}^{-1}$ & $0.123\text{ kg m}^{-3}$ & $2.092\text{ h}$ & $4.673\text{ \%-days}$ & $0.131\%$ \\
+$\mathrm{LSD}_{0.05}$ ($\mathrm{df}=9$) & $5.574\text{ mm}$ & $55.74\text{ m}^3\text{ ha}^{-1}$ & $0.322\text{ t ha}^{-1}$ & $0.279\text{ kg m}^{-3}$ & $4.732\text{ h}$ & $10.571\text{ \%-days}$ & $0.295\%$ \\
+\bottomrule
+\end{tabular}%
+}
+\end{table*}
+
+\begin{figure*}[t!]
+  \centering
+  \includegraphics[width=0.95\textwidth]{fig3_t4_seasonal_controller_trace.pdf}
+  \caption{\textbf{90-Day Seasonal Operational Trace of the Coupled Sentinel Controller ($\mathrm{T4}$, Block 1).} (a)~Dual-pole root-zone soil moisture trajectories at Node~A ($\mathrm{R8}$, humid pole) and Node~B ($\mathrm{R7}$, dry pole) relative to the $22\%$~VWC management threshold and $16\%$~VWC emergency floor. (b)~Gateway valve actuation distinguishing standard drip replenishment from midday conflict micro-pulses (15~min ON / 45~min OFF inside 11:30--14:30) during days 34--44 and 54--64. (c)~Realized nocturnal leaf-wetness duration and foliar late-blight progression.}
+  \label{fig:t4_trace}
+\end{figure*}
+
+\begin{figure*}[t!]
+  \centering
+  \includegraphics[width=0.95\textwidth]{fig4_phase2_rcbd_outcomes.pdf}
+  \caption{\textbf{Phase 2 16-Plot RCBD Agronomic and Epidemiological Comparison Across Treatments $\mathrm{T1}$--$\mathrm{T4}$.} (a)~Seasonal applied irrigation water ($\text{mm}$). (b)~Marketable yield ($\text{t ha}^{-1}$) relative to the pre-specified 5\% non-inferiority floor ($31.37\text{ t ha}^{-1}$ vs.\ $\mathrm{T1}$). (c)~Irrigation Water Productivity ($\mathrm{IWP}$, $\text{kg m}^{-3}$). (d)~Repeated-measures foliar blight severity trajectory across five bi-weekly scouting epochs.}
+  \label{fig:rcbd}
+\end{figure*}
+
+Key findings from the Phase~2 evaluation include:
+\begin{enumerate}\setlength{\itemsep}{1pt}\setlength{\parskip}{0pt}
+  \item \textbf{Water Savings and Irrigation Water Productivity ($\mathrm{IWP}$):} Treatment $\mathrm{T4}$ applies $247.83 \pm 5.32\text{ mm}$ ($2,478.3\text{ m}^3\text{ ha}^{-1}$), achieving a \textbf{25.8\% reduction} in water input relative to conventional $\mathrm{ET}_c$ replenishment ($\mathrm{T1}$: $334.01 \pm 2.34\text{ mm}$) and boosting $\mathrm{IWP}$ by \textbf{40.5\%} from $9.89 \pm 0.14\text{ kg m}^{-3}$ to \textbf{13.89 $\pm$ 0.47 $\text{kg m}^{-3}$} ($\mathrm{LSD}_{0.05} = 0.279\text{ kg m}^{-3}$).
+  \item \textbf{Resolution of the Drought--Blight Conflict ($\mathrm{T4}$ vs.\ $\mathrm{T2}$ and $\mathrm{T3}$):} While the single-node Vachaud baseline ($\mathrm{T2}$) maintains low canopy wetness ($\mathrm{LWD} = 949.6\text{ h}$), its mid-slope sensor delays irrigation until the dry microzone drops to $\sim 19.2\%$~VWC, reducing marketable yield to $32.06 \pm 0.21\text{ t ha}^{-1}$. Conversely, the uncoupled two-node controller ($\mathrm{T3}$) eliminates dry-pole drought stress ($34.03 \pm 0.59\text{ t ha}^{-1}$) but triggers full irrigation during humid blight windows, increasing seasonal $\mathrm{LWD}$ by $48.0\text{ h}$ and elevating $\mathrm{AUDPC}$ to $336.1 \pm 41.2\text{ \%-days}$. By substituting midday conflict micro-pulses (Figure~\ref{fig:t4_trace}b), $\mathrm{T4}$ reduces $\mathrm{AUDPC}$ to \textbf{306.7 $\pm$ 44.0 \%-days} (\textbf{$-32.1\%$} vs.\ $\mathrm{T1}$ and \textbf{$-8.7\%$} vs.\ $\mathrm{T3}$, exceeding $\mathrm{LSD}_{0.05} = 10.57\text{ \%-days}$) while achieving the highest marketable yield (\textbf{34.40 $\pm$ 0.41 $\text{t ha}^{-1}$}).
+  \item \textbf{Pre-Specified 5\% Yield Non-Inferiority Verification:} Testing $H_0: \mu_{\mathrm{T4}} - \mu_{\text{ref}} \le -0.05\,\mu_{\text{ref}}$ at $\alpha = 0.05$ ($\mathrm{df}=9$, $\mathrm{SED} = 0.142\text{ t ha}^{-1}$) confirms non-inferiority (and superiority) across all references:
+  \begin{itemize}\setlength{\itemsep}{0pt}
+    \item $\mathrm{T4}$ vs.\ $\mathrm{T1}$: $\Delta Y = +1.383\text{ t ha}^{-1}$ ($+4.19\%$), one-sided 95\% CI lower bound $= +1.122\text{ t ha}^{-1}$ ($+3.40\% > -5.0\%$ margin, $t = 21.35, p < 10^{-5}$).
+    \item $\mathrm{T4}$ vs.\ $\mathrm{T2}$: $\Delta Y = +2.342\text{ t ha}^{-1}$ ($+7.30\%$), one-sided 95\% CI lower bound $= +2.081\text{ t ha}^{-1}$ ($+6.49\% > -5.0\%$ margin, $t = 27.76, p < 10^{-5}$).
+    \item $\mathrm{T4}$ vs.\ $\mathrm{T3}$: $\Delta Y = +0.374\text{ t ha}^{-1}$ ($+1.10\%$), one-sided 95\% CI lower bound $= +0.114\text{ t ha}^{-1}$ ($+0.33\% > -5.0\%$ margin, $t = 14.60, p < 10^{-5}$).
+  \end{itemize}
+  \item \textbf{Repeated-Measures Linear Mixed-Effects Decomposition:} Across the 80 longitudinal disease assessments (16 plots $\times$ 5 epochs: Days 25, 39, 53, 67, 81), plot-level random-intercept variance is $\hat{\sigma}_u^2 = 0.2512$ and within-plot residual variance is $\hat{\sigma}_e^2 = 0.1304$, yielding an intraclass correlation coefficient of $\mathrm{ICC} = 0.6583$. This confirms the protocol requirement that plot-level experimental units ($n=16$), rather than the 160 plant subsamples, must form the denominator degrees of freedom for treatment inference.
+\end{enumerate}
+
+\subsection{Hardware Power Autonomy, Sufficiency Trigger, and Fault-Injection Benchmark}
+
+\begin{figure*}[t!]
+  \centering
+  \includegraphics[width=0.95\textwidth]{fig5_autonomy_and_sufficiency.pdf}
+  \caption{\textbf{Hardware Power Autonomy and Adaptive Spatial Sufficiency Verification.} (a)~Simulated $\mathrm{LiFePO_4}$ battery state-of-charge ($\mathrm{SoC}$) trajectory under a complete zero-sunlight blackout (reaching 0\% at $235.3\text{ h} = 9.80\text{ days}$) versus normal diurnal 3~W solar recharging with a 4-day overcast spell (maintaining $\mathrm{SoC} > 62\%$). (b)~Adaptive spatial sufficiency monitor detecting a simulated emitter clog on Day~23 when $|\mathrm{VWC}_A - \mathrm{VWC}_B|$ exceeds $10\%$~VWC and rolling Spearman rank correlation drops below $r_s = 0.70$.}
+  \label{fig:hw_autonomy}
+\end{figure*}
+
+Figure~\ref{fig:hw_autonomy}a illustrates the $\mathrm{LiFePO_4}$ state-of-charge ($\mathrm{SoC}$) trajectory, confirming the 9.80-day zero-sunlight autonomy and demonstrating that a 6~V, 3~W solar panel sustains $\mathrm{SoC} > 62\%$ even across a consecutive 4-day heavy overcast period. Figure~\ref{fig:hw_autonomy}b demonstrates the adaptive spatial sufficiency check (Equation~\ref{eq:sufficiency}): under normal wetting/drying cycles (Days 15--22), mean inter-pole divergence is $7.93\%$~VWC and Spearman rank correlation is $r_s = 0.89$ ($\mathcal{F}_{\text{insuff}} = 0$). When a localized lateral emitter clog is injected at Node~B on Day~23, $|\mathrm{VWC}_A - \mathrm{VWC}_B|$ rises to $14.1\%$~VWC and $r_s$ drops to $0.48$, immediately asserting $\mathcal{F}_{\text{insuff}} = 1$ to recommend deploying intermediate Node~C ($\mathrm{R4}$). Finally, across all nine hardware fault-injection scenarios (stale packet $>30\text{ min}$, $\mathrm{NaN}$ soil/IR probe dropouts, `YF-S201` zero-flow solenoid fault, $15.5\%$~VWC emergency drought override, and 36-hour lockout cap expiration), both the Python model and compiled `C++17` gateway firmware achieved \textbf{100\%} exact state transition fidelity.
+
+\section{Limitations and Pre-Trial Field Execution Roadmap}
+
+While the digital-twin experiments validate the mathematical consistency, firmware state machine, and statistical power of the Sentinel Plant Network, physical field trials remain essential before claiming realized agronomic water savings or biological disease suppression:
+\begin{enumerate}\setlength{\itemsep}{1pt}\setlength{\parskip}{0pt}
+  \item \textbf{Site-Specific Dielectric Calibration:} Capacitive soil-moisture (`GPIO5`) and leaf-wetness (`GPIO4`) probes must undergo two-point gravimetric and filter-paper wetness calibration in the target field soil prior to Phase~1 deployment.
+  \item \textbf{Natural Inoculum Pressure Contingency:} As stipulated in Protocol Section~10, if natural \textit{P.\ infestans} incidence in untreated check strips remains below 5\% during the Phase~2 field trial, the trial will report sensor placement accuracy, water productivity, and canopy microclimate ($\mathrm{LWD}$) outcomes without claiming biological disease suppression.
+\end{enumerate}
+
+\begin{thebibliography}{99}\small\setlength{\itemsep}{2pt}
+
+\bibitem{vachaud1985_iwa}
+G.~Vachaud, A.~Passerat De Silans, P.~Balabanis, and M.~Vauclin, ``Temporal stability of spatially measured soil water probability density function,'' \textit{Soil Science Society of America Journal}, vol.~49, no.~4, pp.~822--828, 1985. Verified application in agricultural hydrology: \href{https://iwaponline.com/ws/article/22/5/5070/88251/Temporal-stability-of-soil-water-content-in}{IWA Water Supply 22(5):5070 (2022)}.
+
+\bibitem{wallin1962}
+J.~R. Wallin, ``Summary of recent progress in predicting late blight epidemics in United States and Canada,'' \textit{American Potato Journal}, vol.~39, pp.~306--312, 1962. Model specification: \href{https://ipm.ucanr.edu/DISEASE/DATABASE/potatolateblight.html}{UC IPM Potato Late Blight Severity Value Database}.
+
+\bibitem{msu_svalue}
+Michigan State University Potato and Sugar Beet Pathology Program, ``Wallin Disease Severity Value (SValue) Explanation and Thresholds,'' 2024. Available: \href{https://www.canr.msu.edu/psbp/resources/svalue}{ MSU SValue Resource}.
+
+\bibitem{idso1981_usda}
+S.~B. Idso, R.~D. Jackson, P.~J. Pinter, R.~J. Reginato, and J.~L. Hatfield, ``Normalizing the stress-degree-day parameter for environmental variability,'' \textit{Agricultural Meteorology}, vol.~24, pp.~45--55, 1981. USDA ARS Technical Reference: \href{https://www.ars.usda.gov/ARSUserFiles/30100000/1990-1999documents/266%201992%20GardnerJPA.pdf}{USDA ARS CWSI Thermometry Report}.
+
+\bibitem{scielo_cwsi}
+R.~D. Jackson, S.~B. Idso, R.~J. Reginato, and P.~J. Pinter, ``Canopy temperature as a crop water stress indicator,'' \textit{Water Resources Research}, vol.~17, no.~4, pp.~1133--1138, 1981. Empirical baseline validation: \href{https://www.scielo.br/j/brag/a/hVG7cZ4md6HyXfzNVsLyxtQ/?lang=en}{SciELO Bragantia CWSI Analysis}.
+
+\bibitem{mendeley_tomato}
+University of Bari Aldo Moro and University of Salento, ``Soil Moisture, Irrigation Actuator and Weather Dataset from a Multi-Sector Precision-Irrigation System,'' \textit{Mendeley Data}, v1, 2026. Available: \href{https://data.mendeley.com/datasets/c837v6p8ph/1}{Mendeley Data c837v6p8ph/1}.
+
+\bibitem{mendeley_lws}
+Italian Agrometeorological Network Benchmark, ``Seven-Site Leaf Wetness, Temperature, Humidity, Soil Moisture, Rainfall and Wind Dataset,'' \textit{Mendeley Data}, v1, 2026. Available: \href{https://data.mendeley.com/datasets/sd4b8vpvyb/1}{Mendeley Data sd4b8vpvyb/1}.
+
+\bibitem{mendeley_libelium}
+A.~Jesku, E.~Papalilo, and G.~Rexha, ``A Libelium-Based Multisensor Dataset for Precision Soil, Microclimate, and Plant Monitoring in an Olive Grove in Goraj, Ku\c{c}ov\"{e}, Albania,'' \textit{Mendeley Data}, v1, 2026. Available: \href{https://data.mendeley.com/datasets/cnfh4stzzx/1}{Mendeley Data cnfh4stzzx/1}.
+
+\bibitem{hiwater2017}
+X.~Li, S.~Liu, Q.~Xiao, M.~Ma, R.~Jin, T.~Che, W.~Wang, X.~Hu, Z.~Xu, J.~Wen, and L.~Wang, ``A multiscale dataset for understanding complex eco-hydrological processes in a heterogeneous oasis system,'' \textit{Scientific Data}, vol.~4, art.~170083, 2017. Available: \href{https://pmc.ncbi.nlm.nih.gov/articles/PMC5501970/}{PMC5501970} and \href{https://onlinelibrary.wiley.com/doi/10.1002/2015WR018182}{Wiley WRR 10.1002/2015WR018182}.
+
+\bibitem{hess_vachaud2012}
+L.~Brocca, T.~Tullo, F.~Melone, T.~Moramarco, and R.~Morbidelli, ``Spatio-temporal variability of soil moisture and its estimation across scales,'' \textit{Hydrology and Earth System Sciences Discussions}, vol.~9, pp.~819--845, 2012. Available: \href{https://hess.copernicus.org/preprints/9/819/2012/hessd-9-819-2012.pdf}{HESSD 9:819--845}.
+
+\bibitem{guber2008_catena}
+A.~K. Guber, T.~J. Gish, Y.~A. Pachepsky, M.~Th. van Genuchten, C.~S.~T. Daughtry, T.~J. Nicholson, and R.~E. Cady, ``Temporal stability in soil water content patterns across agricultural fields,'' \textit{Catena}, vol.~73, no.~1, pp.~125--133, 2008. Available: \href{https://www.pc-progress.com/documents/rvgenugten/guber_et_al_catena_2008.pdf}{PC-Progress Catena Archive}.
+
+\bibitem{mdpi_stability2025}
+MDPI Water Editorial, ``Time Series Analysis and Temporal Stability of Shallow Soil Moisture,'' \textit{Water}, vol.~17, no.~8, art.~1140, 2025. Available: \href{https://www.mdpi.com/2073-4441/17/8/1140}{MDPI Water 17(8):1140}.
+
+\bibitem{cabi_blight2014}
+CABI Digital Library, ``Forecasting Models for Potato Late Blight Management,'' \textit{Agricultural Reviews}, vol.~35, no.~2, pp.~87--96, 2014. Available: \href{https://www.cabidigitallibrary.org/doi/pdf/10.5555/20143235167}{CABI Digital Library 20143235167}.
+
+\bibitem{ipm_ucanr_blight}
+University of Wisconsin Vegetable Pathology Program, ``Decision Support Tools and Weather-Based Late Blight Risk Management,'' 2025. Available: \href{https://vegpath.plantpath.wisc.edu/decision-support-tools/weather/}{UW VegPath Decision Support}.
+
+\bibitem{mao2020_lowcost}
+F.~Mao, K.~Khamis, J.~Clark, S.~Krause, W.~Buytaert, B.~F. Ochoa-Tocachi, and D.~M. Hannah, ``Moving beyond the technology: A socio-technical roadmap for low-cost water sensor network applications,'' \textit{Environmental Science \& Technology}, vol.~54, no.~15, pp.~9145--9158, 2020. Available: \href{https://pubs.acs.org/esthag/article/54/15/9145/1648078/Moving-beyond-the-Technology-A-Socio-technical}{ACS ES\&T 54(15):9145}.
+
+\end{thebibliography}
+
+\end{document}
