@@ -6,6 +6,7 @@
 \usepackage{booktabs}
 \usepackage{tabularx}
 \usepackage{graphicx}
+\graphicspath{{../figures/}}
 \usepackage{xcolor}
 \usepackage{caption}
 \usepackage{subcaption}
@@ -82,7 +83,7 @@ To avoid the prohibitive capital and maintenance burden of dense wireless sensor
   \item \textbf{The Irrigation--Pathogen Conflict:} When a crop experiences root-zone water stress during weather conducive to late blight, full overhead or long-duration drip irrigation elevates sub-canopy humidity and extends foliar wetness, accelerating epidemic progression \cite{cabi_blight2014}.
 \end{enumerate}
 
-To resolve these coupled challenges, this work develops and validates the \textbf{Sentinel Plant Network}, a risk-oriented two-node sensing and local actuation system. Instead of deploying sensors to estimate the spatial average, our methodology purposefully anchors \textbf{Node~A} at the field's humid pole and \textbf{Node~B} at its persistent dry pole, coupling both streams in an edge gateway controller that arbitrates between drought relief and pathogen suppression.
+To investigate these coupled challenges, this work proposes and digitally evaluates the \textbf{Sentinel Plant Network}, a risk-oriented two-node sensing and local actuation system. Instead of deploying sensors to estimate the spatial average, our methodology purposefully anchors \textbf{Node~A} at the field's humid pole and \textbf{Node~B} at its persistent dry pole, coupling both streams in an edge gateway controller that arbitrates between drought relief and pathogen suppression.
 
 \takeaway{Core Research Contribution}{We formulate a formal calibration-lock protocol that pairs a 90th-percentile nocturnal leaf-wetness pole (Node~A) with a rank-stable dry soil-moisture pole (Node~B), integrated with an adaptive spatial-sufficiency monitor and a six-state irrigation finite state machine that resolves drought--blight conflicts via midday solar-window micro-pulses.}
 
@@ -186,7 +187,7 @@ At every 10-minute cycle, the gateway evaluates packet age $\tau_{\text{pkt}}$, 
 
 To rigorously validate all algorithms prior to physical field deployment, we constructed a reproducible Python and C++17 simulation and verification suite calibrated against four public benchmark datasets recommended in the project guide:
 \begin{itemize}\setlength{\itemsep}{1pt}\setlength{\parskip}{0pt}
-  \item \textbf{Multi-Sector Tomato Precision Irrigation Dataset} (\href{https://data.mendeley.com/datasets/c837v6p8ph/1}{Mendeley Data c837v6p8ph/1}): Provides 10-minute soil moisture, valve actuation telemetry, reconstructed water volumes, and ERA5 weather across 33,259 timestamps (789 validated irrigation events), parameterizing our 10-minute root-zone wetting and diurnal evapotranspiration (`ET`) dry-down curves.
+  \item \textbf{Multi-Sector Tomato Precision Irrigation Dataset} (\href{https://data.mendeley.com/datasets/c837v6p8ph/2}{Mendeley Data c837v6p8ph/2}): Provides 10-minute soil moisture, valve actuation telemetry, reconstructed water volumes, and ERA5 weather across 33,259 timestamps (789 validated irrigation events), parameterizing our 10-minute root-zone wetting and diurnal evapotranspiration (`ET`) dry-down curves.
   \item \textbf{Italian Seven-Site Leaf Wetness \& Agrometeorology Dataset} (\href{https://data.mendeley.com/datasets/sd4b8vpvyb/1}{Mendeley Data sd4b8vpvyb/1}): Parameterizes nocturnal leaf-wetness formation, relative humidity persistence, and temperature coupling across humid vs.\ dry microzones.
   \item \textbf{Libelium Two-Node Olive Grove Multisensor Dataset} (\href{https://data.mendeley.com/datasets/cnfh4stzzx/2}{Mendeley Data cnfh4stzzx/2}): Provides 9,561 raw frames and quality-control fault distributions (20--30~min temporal gaps, out-of-range spikes, and battery discharge telemetry) used to design our fault-injection benchmark.
   \item \textbf{HiWATER Dense Eco-Hydrological Sensor Network} (\href{https://pmc.ncbi.nlm.nih.gov/articles/PMC5501970/}{PMC5501970} / \href{https://onlinelibrary.wiley.com/doi/10.1002/2015WR018182}{Wiley WRR 2015WR018182}): Parameterizes catenary spatial soil-moisture offsets ($\delta_i \in [-16.0\%, +18.5\%]$) and AR(1) temporal rank stability across our 10-node reference grid.
