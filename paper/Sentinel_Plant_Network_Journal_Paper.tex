@@ -309,19 +309,19 @@ To evaluate the mathematical models, telemetry ingestion adapters, machine-learn
 \end{enumerate}
 
 \subsection{Purged Chronological Soil Moisture Forecasting (Tomato Dataset)}
-Un-preprocessed raw files (`dataset_zone_1.csv`) exhibit intermittent sensor dropouts (maximum contiguous segment of only 65 steps $= 10.8\text{ h}$), which precludes unbroken 24-hour ahead horizon construction without synthetic imputation. Consequently, preprocessed open-field series with continuous multi-day runs (up to 2,702 steps $= 18.8\text{ days}$) were evaluated.
+Un-preprocessed raw files (\texttt{dataset\_zone\_1.csv}) exhibit intermittent sensor dropouts (maximum contiguous segment of only 65 steps $= 10.8\text{ h}$), which precludes unbroken 24-hour ahead horizon construction without synthetic imputation. Consequently, preprocessed open-field series with continuous multi-day runs (up to 2,702 steps $= 18.8\text{ days}$) were evaluated.
 
-To eliminate temporal leakage, chronological splits (70\% train, 15\% validation, 15\% test) enforce a strict 144-step ($24.0\text{ h}$) embargo purge between partitions. This guarantees that no training sample's forecast horizon overlaps with validation labels, and no validation sample overlaps with test labels. All forward-looking target engineering tokens (`to_24h`, `delta`, `future`, `target`) were stripped from the feature matrix.
+To eliminate temporal leakage, chronological splits (70\% train, 15\% validation, 15\% test) enforce a strict 144-step ($24.0\text{ h}$) embargo purge between partitions. This guarantees that no training sample's forecast horizon overlaps with validation labels, and no validation sample overlaps with test labels. All forward-looking target engineering tokens (\texttt{to\_24h}, \texttt{delta}, \texttt{future}, \texttt{target}) were stripped from the feature matrix.
 
 On the strictly held-out, non-overlapping test partitions:
 \begin{itemize}\setlength{\itemsep}{1pt}\setlength{\parskip}{0pt}
   \item \textbf{Zone 1:} Naive persistence achieves an RMSE of 1.196\%~VWC (MAE 0.449\%~VWC). Ridge regression attains 1.095\%~VWC (MAE 0.428\%), Random Forest attains 0.985\%~VWC (MAE 0.419\%), and Gradient Boosted Decision Trees (GBDT) achieve the best accuracy with an RMSE of \textbf{0.914\%~VWC} (MAE 0.377\%~VWC, $R^2 = 0.816$).
   \item \textbf{Zone 2:} Naive persistence yields an RMSE of 0.689\%~VWC (MAE 0.354\%~VWC). GBDT achieves 0.865\%~VWC (MAE 0.395\%), Random Forest achieves 0.706\%~VWC (MAE 0.356\%), and Ridge regression attains the best performance with an RMSE of \textbf{0.593\%~VWC} (MAE 0.347\%~VWC, $R^2 = 0.918$).
 \end{itemize}
-These empirical tests establish that supervised ML baselines can forecast root-zone moisture 24 hours ahead with sub-1.0\%~VWC root-mean-square error when evaluated without temporal contamination. The variable `water_vol_past_4h` in the dataset was verified to represent a rolling 4-hour window sum rather than an incremental pulse volume; row-wise summation was therefore flagged as non-cumulative.
+These empirical tests establish that supervised ML baselines can forecast root-zone moisture 24 hours ahead with sub-1.0\%~VWC root-mean-square error when evaluated without temporal contamination. The variable \texttt{water\_vol\_past\_4h} in the dataset was verified to represent a rolling 4-hour window sum rather than an incremental pulse volume; row-wise summation was therefore flagged as non-cumulative.
 
 \subsection{Nocturnal Leaf Wetness Duration and Humid-Pole Selection}
-Source documentation and archive metadata confirm that timestamps in the Seven-Site Leaf Wetness dataset are recorded in \textbf{UTC} (verified via `README.md` and ISO8601 ``Z'' markers). The capacitive wetness benchmark threshold was set at 20.0\% in accordance with the authors' visual calibration benchmark \cite{mendeley_lws}. In strict compliance with Protocol v2.0, humid-pole selection evaluates nocturnal hours (18:00 to 06:00 UTC, 12.0~h nominal per night) rather than diurnal sums.
+Source documentation and archive metadata confirm that timestamps in the Seven-Site Leaf Wetness dataset are recorded in \textbf{UTC} (verified via \texttt{README.md} and ISO8601 ``Z'' markers). The capacitive wetness benchmark threshold was set at 20.0\% in accordance with the authors' visual calibration benchmark \cite{mendeley_lws}. In strict compliance with Protocol v2.0, humid-pole selection evaluates nocturnal hours (18:00 to 06:00 UTC, 12.0~h nominal per night) rather than diurnal sums.
 
 Across 55,550 hourly records, nocturnal wetness distribution exhibits pronounced spatial heterogeneity:
 \begin{itemize}\setlength{\itemsep}{1pt}\setlength{\parskip}{0pt}
@@ -343,7 +343,7 @@ Over a trailing 48-hour rolling window ($W = 278$ steps at 10.3-minute nominal c
 This empirical finding confirms that real agricultural parcels with topographical variation frequently undergo spatial decoupling where one micro-zone dries or re-wets at a different rate from another. The dynamic sufficiency trigger successfully detects this condition, preventing unmonitored localized water stress and signaling the operational requirement to deploy intermediate Node~C.
 
 \subsection{Evidence Boundaries and Reproducibility}
-All validation runs were executed with explicit column mappings and recorded with per-input SHA-256 checksums in `results/real_data_validation/DATASETS_MANIFEST.json`. The corresponding publication figures were generated via `src/plot_real_data_validation.py`.
+All validation runs were executed with explicit column mappings and recorded with per-input SHA-256 checksums in \texttt{results/real\_data\_validation/DATASETS\_MANIFEST.json}. The corresponding publication figures were generated via \texttt{src/plot\_real\_data\_validation.py}.
 
 These external dataset results validate the computational algorithms, data pipelines, and control triggers on real sensor streams. They do not constitute a physical field trial of the Sentinel Plant Network in its target agro-ecological environment (Jharkhand, India). Soil hydraulic properties, in-situ dielectric probe calibration, LoRa packet error rates under monsoon canopy attenuation, and agronomic yield impacts remain subject to future physical field experimentation.
 
