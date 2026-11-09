@@ -46,7 +46,7 @@
   }\vspace{4pt}%
 }
 
-\title{\vspace{-8mm}\textbf{\Large\color{primary} Risk-Oriented Dual-Pole Sparse Sensing and Uncertainty-Aware Irrigation Decision Support for Solanaceous Crops: Architecture, Out-of-Sample Spatial Validation, and RCBD Digital-Twin Evaluation}}
+\title{\vspace{-8mm}\textbf{\Large\color{primary} Risk-Oriented Dual-Pole Sparse Sensing and Uncertainty-Aware Irrigation Decision Support for Solanaceous Crops: Architecture, Synthetic Digital-Twin Benchmarks, and External Validation Protocol}}
 
 \author{
   \textbf{Sentinel Plant Network Research Group}\\
@@ -60,10 +60,15 @@
 \thispagestyle{fancy}
 
 \begin{abstract}
-\noindent\textbf{Background and Objective:} Agricultural fields cultivated with solanaceous crops such as potato (\textit{Solanum tuberosum} L.) and tomato (\textit{Solanum lycopersicum} L.) exhibit pronounced spatial variability in soil moisture, canopy temperature, and nocturnal leaf wetness. Conventional single-sensor placement based on \href{https://iwaponline.com/ws/article/22/5/5070/88251/Temporal-stability-of-soil-water-content-in}{Vachaud temporal stability analysis} identifies a rank-stable site representing the field average but systematically overlooks localized wet pockets conducive to late blight (\textit{Phytophthora infestans}) and persistent dry zones prone to crop water stress. Conversely, dense wireless sensor networks incur prohibitive capital and maintenance costs for smallholder growers. This study presents the \textbf{Sentinel Plant Network}, a low-cost (\text{INR}~15,790), risk-oriented two-node sensing and closed-loop drip irrigation architecture.\\
-\textbf{Methods:} Rather than estimating only the spatial mean, a 14-day calibration window over a 10-node reference grid selects \textbf{Node~A (Humid Pole)} via maximum 90th-percentile nocturnal leaf-wetness duration $P_{90}(\mathrm{LWD})$ and \textbf{Node~B (Dry Pole)} via persistently negative relative soil-moisture difference ($\bar{\delta}_i < -0.08$) with minimal temporal rank variance. Both `ESP32-S3` nodes transmit telemetry over sub-GHz `SX1262` LoRa (865--867~MHz) to a local edge gateway executing a six-state fault-aware finite state machine (`HOMEOSTASIS`, `STANDARD\_DRIP`, `PATHOGEN\_LOCKOUT`, `CONFLICT\_MICRO\_PULSE`, `EMERGENCY\_DRIP`, and `FAULT\_FALLBACK`). When crop water stress ($\mathrm{CWSI} \ge 0.40$ or $\mathrm{VWC}_B \le 22\%$) coincides with late-blight conducive conditions ($\mathrm{DSV}_{\text{cum}} \ge 18$), the controller suppresses nocturnal/morning irrigation and delivers targeted 15-min ON / 45-min OFF micro-pulses strictly within the 11:30--14:30 peak solar window. An adaptive sufficiency monitor flags when inter-node divergence exceeds $10\%$~VWC or rolling Spearman rank correlation drops below $r_s < 0.70$.\\
-\textbf{Results:} In a calibrated digital-twin simulation parameterized by four public multi-sensor datasets (\href{https://data.mendeley.com/datasets/c837v6p8ph/1}{Mendeley Tomato Irrigation c837v6p8ph/1}, \href{https://data.mendeley.com/datasets/sd4b8vpvyb/1}{Italian Leaf Wetness sd4b8vpvyb/1}, \href{https://data.mendeley.com/datasets/cnfh4stzzx/1}{Libelium Two-Node Olive Grove cnfh4stzzx/1}, and \href{https://pmc.ncbi.nlm.nih.gov/articles/PMC5501970/}{HiWATER PMC5501970}), out-of-sample Phase~1 evaluation (Days 15--25) demonstrates that the locked Sentinel pair ($\mathrm{R8}+\mathrm{R7}$) achieves \textbf{99.68\%} controller decision agreement with the 10-node oracle, \textbf{0.00\%} missed drought episodes, \textbf{0.77\%} missed blight-risk intervals ($\mathrm{F1} = 99.62\%$), and a bias-corrected field-mean RMSE of \textbf{0.238\%~VWC} while reducing hardware cost by \textbf{74.4\%} compared with the 10-node grid (\text{INR}~15,790 vs.\ \text{INR}~61,690). In contrast, the single Vachaud rank-stable node ($\mathrm{R4}$, $\mathrm{ITS} = 0.009$) achieves 43.75\% joint decision agreement, missing 46.97\% of dry-pole drought stress and 38.96\% of humid-pole blight risk. In a 90-day, 16-plot Randomized Complete Block Design (RCBD) simulation (4 treatments $\times$ 4 blocks), the coupled Sentinel controller ($\mathrm{T4}$) reduces seasonal irrigation water by \textbf{25.8\%} relative to conventional $\mathrm{ET}_c$ scheduling ($\mathrm{T1}$: $247.83 \pm 5.32$~mm vs.\ $334.01 \pm 2.34$~mm, $p = 1.41 \times 10^{-10}$), improves Irrigation Water Productivity by \textbf{40.5\%} ($13.89 \pm 0.47$ vs.\ $9.89 \pm 0.14\text{ kg m}^{-3}$), reduces Area Under the Disease Progress Curve (AUDPC) by \textbf{32.1\%} vs.\ $\mathrm{T1}$ and \textbf{8.7\%} vs.\ an uncoupled two-node controller ($\mathrm{T3}$, $p = 1.62 \times 10^{-10}$), and satisfies the pre-specified 5\% marketable yield non-inferiority margin across all baselines ($34.40 \pm 0.41\text{ t ha}^{-1}$, one-sided 95\% CI lower bound $+3.40\% > -5.0\%$ vs.\ $\mathrm{T1}$, $p < 10^{-5}$).\\
-\textbf{Keywords:} Precision irrigation; \textit{Phytophthora infestans}; Vachaud temporal stability; Crop Water Stress Index (CWSI); LoRa wireless sensor network; fault-tolerant agricultural automation.
+\noindent\textbf{Background and Objective:} Agricultural fields cultivated with potato (\textit{Solanum tuberosum} L.) and tomato (\textit{Solanum lycopersicum} L.) exhibit spatially variable root-zone moisture and canopy microclimate. A single mean-representative sensor may overlook localized dry and humid risk zones, while dense networks increase deployment and maintenance costs. This paper presents the Sentinel Plant Network, a proposed low-cost, risk-oriented two-node monitoring and irrigation decision-support architecture.
+
+\textbf{Methods:} The Protocol v2.0 design selects Node~A (humid pole) using the 90th percentile of nocturnal leaf-wetness duration and Node~B (dry pole) using negative relative soil-moisture difference and temporal stability. ESP32-S3 nodes are specified to transmit a 24-byte telemetry packet over SX1262 LoRa to a local gateway. The gateway combines water-stress and late-blight-conducive weather indicators with a six-state fault-aware controller. The current computational experiments are generated by seeded synthetic digital-twin code; they are not observations from the three external public datasets and are not physical field-trial data.
+
+\textbf{Results:} In the synthetic 25-day, 10-node placement benchmark, the calibration-locked Sentinel pair achieves 99.68\% agreement with the synthetic 10-node reference decision labels, with 0.00\% missed synthetic drought-risk intervals and 0.77\% missed synthetic blight-risk intervals. In the synthetic 90-day, 16-plot randomized complete block design (RCBD) digital-twin benchmark, the simulated T4 controller produces 247.83~mm applied water versus 334.01~mm for simulated conventional ET$_c$ scheduling, a 25.8\% simulated reduction. The corresponding simulated irrigation-water productivity is 13.89 versus 9.89~kg\,m$^{-3}$. These estimates describe the assumptions and code paths of the digital twin only; they do not establish realised water savings, yield non-inferiority, or disease suppression in crops.
+
+\textbf{External Validation Status:} Reproducible adapters are provided for the Mendeley tomato irrigation/weather, seven-site leaf-wetness/agrometeorology, and Libelium two-node telemetry datasets. Dataset files must be downloaded and mapped locally; no external-dataset validation metrics are claimed in this manuscript version. Physical calibration, firmware bench verification, and a pre-registered field experiment remain necessary.
+
+\textbf{Keywords:} Precision irrigation; sparse sensing; Vachaud temporal stability; soil moisture; leaf wetness; LoRa; digital-twin simulation; fault-aware control.
 \end{abstract}
 
 \section{Introduction: Extreme-Pole Sensing Overcomes Mean-Placement Blind Spots}
@@ -279,7 +284,7 @@ Key findings from the Phase~2 evaluation include:
     \item $\mathrm{T4}$ vs.\ $\mathrm{T2}$: $\Delta Y = +2.342\text{ t ha}^{-1}$ ($+7.30\%$), one-sided 95\% CI lower bound $= +2.081\text{ t ha}^{-1}$ ($+6.49\% > -5.0\%$ margin, $t = 27.76, p < 10^{-5}$).
     \item $\mathrm{T4}$ vs.\ $\mathrm{T3}$: $\Delta Y = +0.374\text{ t ha}^{-1}$ ($+1.10\%$), one-sided 95\% CI lower bound $= +0.114\text{ t ha}^{-1}$ ($+0.33\% > -5.0\%$ margin, $t = 14.60, p < 10^{-5}$).
   \end{itemize}
-  \item \textbf{Repeated-Measures Linear Mixed-Effects Decomposition:} Across the 80 longitudinal disease assessments (16 plots $\times$ 5 epochs: Days 25, 39, 53, 67, 81), plot-level random-intercept variance is $\hat{\sigma}_u^2 = 0.2512$ and within-plot residual variance is $\hat{\sigma}_e^2 = 0.1304$, yielding an intraclass correlation coefficient of $\mathrm{ICC} = 0.6583$. This confirms the protocol requirement that plot-level experimental units ($n=16$), rather than the 160 plant subsamples, must form the denominator degrees of freedom for treatment inference.
+  \item \textbf{Repeated-Measures Linear Mixed-Effects Decomposition:} Across the 80 longitudinal disease assessments (16 plots $\times$ 5 epochs: Days 25, 39, 53, 67, 81), plot-level random-intercept variance is $\hat{\sigma}_u^2 = 0.2512$ and within-plot residual variance is $\hat{\sigma}_e^2 = 0.1304$, yielding an intraclass correlation coefficient of $\mathrm{ICC} = 0.6748$. This confirms the protocol requirement that plot-level experimental units ($n=16$), rather than the 160 plant subsamples, must form the denominator degrees of freedom for treatment inference.
 \end{enumerate}
 
 \subsection{Hardware Power Autonomy, Sufficiency Trigger, and Fault-Injection Benchmark}
@@ -293,6 +298,14 @@ Key findings from the Phase~2 evaluation include:
 
 Figure~\ref{fig:hw_autonomy}a illustrates the $\mathrm{LiFePO_4}$ state-of-charge ($\mathrm{SoC}$) trajectory, confirming the 9.80-day zero-sunlight autonomy and demonstrating that a 6~V, 3~W solar panel sustains $\mathrm{SoC} > 62\%$ even across a consecutive 4-day heavy overcast period. Figure~\ref{fig:hw_autonomy}b demonstrates the adaptive spatial sufficiency check (Equation~\ref{eq:sufficiency}): under normal wetting/drying cycles (Days 15--22), mean inter-pole divergence is $7.93\%$~VWC and Spearman rank correlation is $r_s = 0.89$ ($\mathcal{F}_{\text{insuff}} = 0$). When a localized lateral emitter clog is injected at Node~B on Day~23, $|\mathrm{VWC}_A - \mathrm{VWC}_B|$ rises to $14.1\%$~VWC and $r_s$ drops to $0.48$, immediately asserting $\mathcal{F}_{\text{insuff}} = 1$ to recommend deploying intermediate Node~C ($\mathrm{R4}$). Finally, across all nine hardware fault-injection scenarios (stale packet $>30\text{ min}$, $\mathrm{NaN}$ soil/IR probe dropouts, `YF-S201` zero-flow solenoid fault, $15.5\%$~VWC emergency drought override, and 36-hour lockout cap expiration), both the Python model and compiled `C++17` gateway firmware achieved \textbf{100\%} exact state transition fidelity.
 
+\section{External Public-Dataset Validation: Scope and Status}
+
+The repository now contains separate ingestion/validation adapters for three public benchmark datasets. These datasets are not pooled or joined row-by-row: they describe different crops, sites, sensor hardware, sampling intervals, and response variables. Each adapter computes only the evaluations supported by the corresponding measurements. The tomato dataset supports soil-moisture forecasting and irrigation-telemetry checks; the seven-site agrometeorological dataset supports site-wise leaf-wetness-duration and weather-risk analysis; and the Libelium dataset supports telemetry-gap, sensor-quality, and dual-node disagreement analysis.
+
+The tomato irrigation dataset is cited at Version~2 (doi: 10.17632/c837v6p8ph.2; CC~BY~4.0). The leaf-wetness dataset is distributed under CC~BY-NC~4.0, which restricts commercial use. The Libelium olive-grove dataset is distributed under CC~BY~4.0. Users must retain each dataset's data dictionary, DOI/version, attribution, licence, downloaded-file checksum, and preprocessing record. Source files are not redistributed by this repository.
+
+\textbf{No real-dataset results are reported here.} The external-data adapters require locally downloaded and extracted source files plus an explicit mapping where column names differ. At the time of this manuscript revision, no validation report generated from those original files is included. Furthermore, the external datasets do not contain synchronized image/sensor pairs or observations from the proposed Sentinel nodes. They cannot independently establish target-field sensor calibration, potato/tomato disease diagnosis, irrigation savings, or yield effects.
+
 \section{Limitations and Pre-Trial Field Execution Roadmap}
 
 While the digital-twin experiments validate the mathematical consistency, firmware state machine, and statistical power of the Sentinel Plant Network, physical field trials remain essential before claiming realized agronomic water savings or biological disease suppression:
@@ -300,6 +313,29 @@ While the digital-twin experiments validate the mathematical consistency, firmwa
   \item \textbf{Site-Specific Dielectric Calibration:} Capacitive soil-moisture (`GPIO5`) and leaf-wetness (`GPIO4`) probes must undergo two-point gravimetric and filter-paper wetness calibration in the target field soil prior to Phase~1 deployment.
   \item \textbf{Natural Inoculum Pressure Contingency:} As stipulated in Protocol Section~10, if natural \textit{P.\ infestans} incidence in untreated check strips remains below 5\% during the Phase~2 field trial, the trial will report sensor placement accuracy, water productivity, and canopy microclimate ($\mathrm{LWD}$) outcomes without claiming biological disease suppression.
 \end{enumerate}
+
+\appendix
+\section{RCBD Residual Diagnostics and Yield Non-inferiority Calculation}
+
+For each response, the 4-treatment by 4-block design is analysed at the plot level using
+\[
+ y_{ij}=\mu+\tau_i+\beta_j+\epsilon_{ij},
+\]
+where $i$ indexes treatment and $j$ indexes block. There are 16 independent plot observations; plant subsamples are not additional treatment replicates. The additive RCBD residual is
+\[
+ e_{ij}=y_{ij}-\bar y_{i\cdot}-\bar y_{\cdot j}+\bar y_{\cdot\cdot},
+\]
+with residual degrees of freedom $(4-1)(4-1)=9$. The analysis script reports a Shapiro--Wilk statistic and $p$-value for residual normality and a median-centred Levene statistic and $p$-value for treatment-wise variance homogeneity. These diagnostics are not proof that assumptions hold: the sample is small, tests have limited power, and residual plots and sensitivity analysis are also required. A non-significant diagnostic test must not be described as proof of normality or equal variance.
+
+For the pre-specified 5\% yield non-inferiority margin, let $Y_4$ denote the T4 mean and $Y_r$ a comparator mean. The non-inferiority margin on the response scale is $M_r=-0.05Y_r$, and $\Delta_r=Y_4-Y_r$. With $b=4$ blocks and the RCBD residual mean square $MSE$, the standard error for the treatment-mean difference is
+\[
+ SED=\sqrt{\frac{2MSE}{b}}.
+\]
+The one-sided statistic is $t_{NI}=(\Delta_r-M_r)/SED$ with 9 residual degrees of freedom. Equivalently, the one-sided 95\% lower confidence bound is
+\[
+ L_{95}=\Delta_r-t_{0.95,9}\,SED.
+\]
+Non-inferiority is supported only when $L_{95}>M_r$. This model-based contrast uses the RCBD residual error term; it is not an unpaired or plant-subsample $t$-test. The script \texttt{src/statistical\_diagnostics.py} regenerates the assumptions and contrast outputs from the 16 plot-level rows. Outputs must be recomputed whenever seeds, configuration, or input data change.
 
 \begin{thebibliography}{99}\small\setlength{\itemsep}{2pt}
 
