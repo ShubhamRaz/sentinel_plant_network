@@ -78,10 +78,12 @@ def test_leaf_wetness_adapter_computes_daily_duration_and_site_ranking():
     )
     assert result["humid_pole_candidate_by_p90_nocturnal_lwd"] == "site_c"
     assert result["quality"]["duplicate_timestamps"] == 0
+    assert len(result["daily_table"]) == 9
     assert len(result["nightly_table"]) == 9
-    assert result["lwd_scope"] == "nocturnal_only"
+    assert result["lwd_scope"] == "nocturnal_only_for_humid_pole_selection; daily_for_DSV"
     assert result["timezone"] == "Europe/Rome"
     assert result["nightly_table"]["nocturnal_leaf_wetness_hours"].between(0, 12).all()
+    assert result["daily_table"]["leaf_wetness_hours"].between(0, 24).all()
 
 
 def test_forecasting_supervised_rows_do_not_bridge_missing_timestamps():
@@ -180,7 +182,7 @@ def test_leafwetness_ignores_daytime_wetness_when_selecting_humid_pole():
                 "relative_humidity": 95.0 if wet else 60.0,
                 "air_temperature": 15.0,
             })
-    result = validate_leafwetness(pd.DataFrame(rows), {"site": "station"})
+    result = validate_leafwetness(pd.DataFrame(rows), {"site": "station"}, timezone="Europe/Rome")
     assert result["humid_pole_candidate_by_p90_nocturnal_lwd"] == "nighttime_wet"
     p90 = result["site_p90_nocturnal_lwd_hours"]
     assert p90["daytime_wet"] == pytest.approx(0.0)
