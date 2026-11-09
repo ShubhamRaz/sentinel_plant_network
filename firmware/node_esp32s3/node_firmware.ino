@@ -1,171 +1,164 @@
 /**
- * @file node_firmware.ino
- * @brief Sentinel Plant Network - ESP32-S3 Field Node Firmware (Node A Humid Pole / Node B Dry Pole)
- * @version 2.0 (Pre-Trial Protocol Specification)
+ * Sentinel Plant Network - ESP32-S3 field node, Protocol v2.0.
  *
- * Hardware Architecture (Protocol Section 5 & 5.1):
- *  - MCU: ESP32-S3-WROOM-1
- *  - LoRa Radio: Semtech SX1262 (865-867 MHz India ISM band)
- *      SPI2: CS=GPIO10, MOSI=GPIO11, SCK=GPIO12, MISO=GPIO13, DIO1=GPIO14
- *  - I2C Bus: SDA=GPIO8, SCL=GPIO9 (Bosch BME280 + Melexis MLX90614ESF-BCF 10 deg FOV)
- *  - Analog Inputs (ADC1):
- *      GPIO4: Capacitive Leaf-Wetness Sensor (power-gated)
- *      GPIO5: Capacitive Soil-Moisture Probe (15 cm / 30 cm root-zone composite)
- *      GPIO6: LiFePO4 Battery Voltage Divider (3.2V 6000mAh nominal)
- *  - Power Gate: GPIO7 (High-side P-MOSFET gate control, ACTIVE LOW)
+ * Dependencies: RadioLib, Adafruit BME280, Adafruit MLX90614, Adafruit Unified Sensor.
+ * Build the same source twice: SENTINEL_NODE_ID=1 (humid pole A) and =2 (dry pole B).
+ * The exact SX1262 module may require dedicated RESET/BUSY pins. The protocol pin
+ * table does not allocate them; set SENTINEL_LORA_RST_PIN / SENTINEL_LORA_BUSY_PIN
+ * to the correct board pins before hardware deployment. RADIOLIB_NC is only a
+ * compile-time fallback and may not initialise every module.
  */
-
 #include <Arduino.h>
 #include <Wire.h>
 #include <SPI.h>
+#include <RadioLib.h>
+#include <Adafruit_BME280.h>
+#include <Adafruit_MLX90614.h>
+#include "../common/sentinel_protocol.h"
 
-// ============================================================================
-// 1. PROTOCOL PIN DEFINITIONS (Section 5.1)
-// ============================================================================
-static constexpr uint8_t PIN_I2C_SDA        = 8;
-static constexpr uint8_t PIN_I2C_SCL        = 9;
-static constexpr uint8_t PIN_ADC_LWS        = 4;   // ADC1: Capacitive leaf-wetness sensor
-static constexpr uint8_t PIN_ADC_SOIL       = 5;   // ADC1: Capacitive soil moisture probe
-static constexpr uint8_t PIN_ADC_VBAT       = 6;   // ADC1: Battery voltage divider
-static constexpr uint8_t PIN_PWR_GATE       = 7;   // Active-LOW P-MOSFET high-side switch
+#ifndef SENTINEL_NODE_ID
+#define SENTINEL_NODE_ID 1
+#endif
+#ifndef SENTINEL_LORA_RST_PIN
+#define SENTINEL_LORA_RST_PIN RADIOLIB_NC
+#endif
+#ifndef SENTINEL_LORA_BUSY_PIN
+#define SENTINEL_LORA_BUSY_PIN RADIOLIB_NC
+#endif
 
-static constexpr uint8_t PIN_LORA_CS        = 10;  // SPI2 CS
-static constexpr uint8_t PIN_LORA_MOSI      = 11;  // SPI2 MOSI
-static constexpr uint8_t PIN_LORA_SCK       = 12;  // SPI2 SCK
-static constexpr uint8_t PIN_LORA_MISO      = 13;  // SPI2 MISO
-static constexpr uint8_t PIN_LORA_DIO1      = 14;  // SX1262 IRQ DIO1
+static constexpr uint8_t PIN_I2C_SDA = 8;
+static constexpr uint8_t PIN_I2C_SCL = 9;
+static constexpr uint8_t PIN_ADC_LWS = 4;
+static constexpr uint8_t PIN_ADC_SOIL = 5;
+static constexpr uint8_t PIN_ADC_VBAT = 6;
+static constexpr uint8_t PIN_PWR_GATE = 7;
+static constexpr uint8_t PIN_LORA_CS = 10;
+static constexpr uint8_t PIN_LORA_MOSI = 11;
+static constexpr uint8_t PIN_LORA_SCK = 12;
+static constexpr uint8_t PIN_LORA_MISO = 13;
+static constexpr uint8_t PIN_LORA_DIO1 = 14;
 
-// ============================================================================
-// 2. RADIO & SAMPLING CONSTANTS
-// ============================================================================
-static constexpr uint32_t LORA_FREQ_HZ      = 866000000UL; // 865-867 MHz India ISM center
-static constexpr uint32_t TELEMETRY_INTERVAL_S = 600;      // 10-minute reporting interval
-static constexpr uint16_t SENSOR_WARMUP_MS  = 150;         // Power-gate stabilization time
+static constexpr uint32_t TELEMETRY_INTERVAL_S = 600;
+static constexpr uint16_t SENSOR_WARMUP_MS = 150;
+static constexpr float SOIL_ADC_DRY = 3150.0f;  // Replace with site calibration
+static constexpr float SOIL_ADC_SAT = 1280.0f;  // Replace with site calibration
+static constexpr float SOIL_VWC_MAX = 45.0f;
+static constexpr float LWS_DIELECTRIC_THRESH = 1850.0f;  // Calibrate per probe
+static constexpr uint16_t LOW_BATTERY_MV = 3000;
 
-// Calibration constants (site-specific two-point dielectric calibration)
-static constexpr float SOIL_ADC_DRY         = 3150.0f;
-static constexpr float SOIL_ADC_SAT         = 1280.0f;
-static constexpr float SOIL_VWC_MAX         = 45.0f;       // % VWC at saturation
-static constexpr float LWS_DIELECTRIC_THRESH = 1850.0f;    // Raw ADC wetness threshold
+Adafruit_BME280 bme;
+Adafruit_MLX90614 mlx;
+SX1262 radio = new Module(PIN_LORA_CS, PIN_LORA_DIO1, SENTINEL_LORA_RST_PIN, SENTINEL_LORA_BUSY_PIN);
+RTC_DATA_ATTR uint16_t sequenceNumber = 0;
 
-// ============================================================================
-// 3. TELEMETRY PACKET STRUCTURE (24 Bytes, Little-Endian, CRC-16-CCITT)
-// ============================================================================
-#pragma pack(push, 1)
-struct SentinelPacket {
-    uint8_t  magic;           // 0xA5 protocol header
-    uint8_t  node_id;         // 1 = Node A (Humid Pole), 2 = Node B (Dry Pole), 3 = Node C
-    uint16_t seq_num;         // Monotonic sequence counter in RTC RAM
-    uint32_t uptime_sec;      // Node monotonic timestamp
-    int16_t  t_air_centi;     // BME280 Air Temperature (deg C * 100)
-    uint16_t rh_centi;        // BME280 Relative Humidity (% * 100)
-    int16_t  t_canopy_centi;  // MLX90614 Canopy IR Temperature (deg C * 100)
-    uint16_t vwc_centi;       // Calibrated Volumetric Water Content (% * 100)
-    uint16_t lws_centi;       // Normalized Leaf Wetness Index [0..10000] (% * 100)
-    uint16_t vbat_mv;         // LiFePO4 cell voltage in mV
-    uint8_t  status_flags;    // Bit0: BME_OK, Bit1: MLX_OK, Bit2: LWS_WET, Bit3: LOW_BAT
-    uint8_t  reserved;
-    uint16_t crc16;           // CRC-16-CCITT (0x1021)
-};
-#pragma pack(pop)
-
-RTC_DATA_ATTR uint16_t g_seq_num = 0;
-
-// ============================================================================
-// 4. CRC-16-CCITT IMPLEMENTATION
-// ============================================================================
-uint16_t computeCRC16(const uint8_t* data, size_t len) {
-    uint16_t crc = 0xFFFF;
-    for (size_t i = 0; i < len; ++i) {
-        crc ^= (static_cast<uint16_t>(data[i]) << 8);
-        for (uint8_t b = 0; b < 8; ++b) {
-            if (crc & 0x8000) {
-                crc = (crc << 1) ^ 0x1021;
-            } else {
-                crc <<= 1;
-            }
-        }
-    }
-    return crc;
+void setSensorPowerGate(bool enabled) {
+    digitalWrite(PIN_PWR_GATE, enabled ? LOW : HIGH);
+    if (enabled) delay(SENSOR_WARMUP_MS);
 }
 
-// ============================================================================
-// 5. SENSOR ACQUISITION & CALIBRATION
-// ============================================================================
-void setSensorPowerGate(bool enable) {
-    // Active-LOW P-MOSFET high-side switch on GPIO7
-    digitalWrite(PIN_PWR_GATE, enable ? LOW : HIGH);
-    if (enable) {
-        delay(SENSOR_WARMUP_MS);
-    }
-}
-
-float readCalibratedSoilVWC() {
-    uint32_t acc = 0;
-    for (int i = 0; i < 16; ++i) {
-        acc += analogRead(PIN_ADC_SOIL);
+float readAveragedAdc(uint8_t pin) {
+    uint32_t total = 0;
+    for (uint8_t i = 0; i < 16; ++i) {
+        total += analogRead(pin);
         delayMicroseconds(500);
     }
-    float raw = static_cast<float>(acc) / 16.0f;
-    float norm = (SOIL_ADC_DRY - raw) / (SOIL_ADC_DRY - SOIL_ADC_SAT);
-    if (norm < 0.0f) norm = 0.0f;
-    if (norm > 1.0f) norm = 1.0f;
-    return norm * SOIL_VWC_MAX;
+    return static_cast<float>(total) / 16.0f;
 }
 
-float readCalibratedLeafWetness(bool& is_wet) {
-    uint32_t acc = 0;
-    for (int i = 0; i < 16; ++i) {
-        acc += analogRead(PIN_ADC_LWS);
-        delayMicroseconds(500);
-    }
-    float raw = static_cast<float>(acc) / 16.0f;
-    is_wet = (raw >= LWS_DIELECTRIC_THRESH);
-    float wetness_pct = (raw / 4095.0f) * 100.0f;
-    return constrain(wetness_pct, 0.0f, 100.0f);
+float readSoilVwc() {
+    const float raw = readAveragedAdc(PIN_ADC_SOIL);
+    const float denominator = SOIL_ADC_DRY - SOIL_ADC_SAT;
+    if (fabsf(denominator) < 1.0f) return NAN;
+    float normalized = (SOIL_ADC_DRY - raw) / denominator;
+    normalized = constrain(normalized, 0.0f, 1.0f);
+    return normalized * SOIL_VWC_MAX;
+}
+
+float readLeafWetness(bool& wet) {
+    const float raw = readAveragedAdc(PIN_ADC_LWS);
+    wet = raw >= LWS_DIELECTRIC_THRESH;
+    // Normalised ADC percentage; it is not a calibrated physical water film.
+    return constrain((raw / 4095.0f) * 100.0f, 0.0f, 100.0f);
 }
 
 uint16_t readBatteryMillivolts() {
-    // 2:1 precision resistor divider on GPIO6
-    uint32_t mv = analogReadMilliVolts(PIN_ADC_VBAT) * 2;
-    return static_cast<uint16_t>(mv);
+    // GPIO6 measures the midpoint of an externally protected 2:1 divider.
+    return static_cast<uint16_t>(analogReadMilliVolts(PIN_ADC_VBAT) * 2U);
+}
+
+void enterNextSleep() {
+    esp_sleep_enable_timer_wakeup(static_cast<uint64_t>(TELEMETRY_INTERVAL_S) * 1000000ULL);
+    esp_deep_sleep_start();
 }
 
 void setup() {
     Serial.begin(115200);
     pinMode(PIN_PWR_GATE, OUTPUT);
     setSensorPowerGate(true);
-
     analogReadResolution(12);
+    analogSetPinAttenuation(PIN_ADC_LWS, ADC_11db);
+    analogSetPinAttenuation(PIN_ADC_SOIL, ADC_11db);
+    analogSetPinAttenuation(PIN_ADC_VBAT, ADC_11db);
     Wire.begin(PIN_I2C_SDA, PIN_I2C_SCL, 100000);
+    Wire.setTimeOut(50);
     SPI.begin(PIN_LORA_SCK, PIN_LORA_MISO, PIN_LORA_MOSI, PIN_LORA_CS);
 
-    SentinelPacket pkt{};
-    pkt.magic = 0xA5;
-    pkt.node_id = 1; // Configurable: 1 = Node A, 2 = Node B
-    pkt.seq_num = ++g_seq_num;
-    pkt.uptime_sec = millis() / 1000UL;
+    const bool bmeFound = bme.begin(0x76, &Wire) || bme.begin(0x77, &Wire);
+    const bool mlxFound = mlx.begin(0x5A, &Wire);
+    const float tAir = bmeFound ? bme.readTemperature() : NAN;
+    const float rh = bmeFound ? bme.readHumidity() : NAN;
+    const float pressureHpa = bmeFound ? bme.readPressure() / 100.0f : NAN;
+    const float tCanopy = mlxFound ? mlx.readObjectTempC() : NAN;
+    const float mlxAmbient = mlxFound ? mlx.readAmbientTempC() : NAN;
+    const float vwc = readSoilVwc();
+    bool leafWet = false;
+    const float lws = readLeafWetness(leafWet);
+    const uint16_t batteryMv = readBatteryMillivolts();
 
-    bool is_wet = false;
-    float vwc = readCalibratedSoilVWC();
-    float lws = readCalibratedLeafWetness(is_wet);
-    uint16_t vbat = readBatteryMillivolts();
+    sentinel::SentinelPacket packet{};
+    packet.magic = 0xA5;
+    packet.node_id = SENTINEL_NODE_ID;
+    packet.seq_num = ++sequenceNumber;
+    packet.uptime_sec = millis() / 1000U;
+    packet.t_air_centi = isfinite(tAir) ? static_cast<int16_t>(lroundf(tAir * 100.0f)) : 0;
+    packet.rh_centi = isfinite(rh) ? static_cast<uint16_t>(constrain(lroundf(rh * 100.0f), 0L, 10000L)) : 0;
+    packet.t_canopy_centi = isfinite(tCanopy) ? static_cast<int16_t>(lroundf(tCanopy * 100.0f)) : 0;
+    packet.vwc_centi = isfinite(vwc) ? static_cast<uint16_t>(constrain(lroundf(vwc * 100.0f), 0L, 65535L)) : 0;
+    packet.lws_centi = isfinite(lws) ? static_cast<uint16_t>(constrain(lroundf(lws * 100.0f), 0L, 10000L)) : 0;
+    packet.vbat_mv = batteryMv;
+    packet.status_flags = (bmeFound && isfinite(tAir) && isfinite(rh) ? 0x01 : 0x00)
+                        | (mlxFound && isfinite(tCanopy) ? 0x02 : 0x00)
+                        | (leafWet ? 0x04 : 0x00)
+                        | (batteryMv < LOW_BATTERY_MV ? 0x08 : 0x00)
+                        | (isfinite(vwc) ? 0x10 : 0x00)
+                        | (isfinite(lws) ? 0x20 : 0x00);
+    packet.reserved = 0;
+    packet.crc16 = sentinel::crc16Ccitt(
+        reinterpret_cast<const uint8_t*>(&packet), sizeof(packet) - sizeof(packet.crc16)
+    );
 
-    // Populate telemetry fields
-    pkt.vwc_centi = static_cast<uint16_t>(vwc * 100.0f);
-    pkt.lws_centi = static_cast<uint16_t>(lws * 100.0f);
-    pkt.vbat_mv   = vbat;
-    pkt.status_flags = 0x03 | (is_wet ? 0x04 : 0x00) | ((vbat < 3000) ? 0x08 : 0x00);
-    pkt.crc16 = computeCRC16(reinterpret_cast<const uint8_t*>(&pkt), sizeof(SentinelPacket) - 2);
+    Serial.printf("Node %u seq=%u VWC=%.2f LWS=%.1f Ta=%.2f RH=%.1f Tc=%.2f P=%.1f hPa MLX-Ta=%.2f battery=%u mV\n",
+                  packet.node_id, packet.seq_num, vwc, lws, tAir, rh, tCanopy, pressureHpa, mlxAmbient, batteryMv);
 
-    // Shut down peripheral power rail prior to deep sleep
+    radio.setDio2AsRfSwitch(true);
+    const int16_t radioState = radio.begin(866.0, 125.0, 9, 5, 0x12, 22, 8, 1.6, false);
+    bool txOk = false;
+    if (radioState == RADIOLIB_ERR_NONE) {
+        for (uint8_t attempt = 0; attempt < 2 && !txOk; ++attempt) {
+            const int16_t txState = radio.transmit(reinterpret_cast<uint8_t*>(&packet), sizeof(packet));
+            txOk = txState == RADIOLIB_ERR_NONE;
+            if (!txOk) delay(100);
+        }
+        radio.sleep();
+    } else {
+        Serial.printf("SX1262 init failed: %d\n", radioState);
+    }
+    Serial.printf("LoRa TX: %s\n", txOk ? "OK" : "FAILED");
+    // Pressure is logged locally; the fixed 24-byte Protocol v2.0 packet has no pressure field.
     setSensorPowerGate(false);
-
-    // Enter ESP32-S3 Deep Sleep for 10-minute interval (~235h zero-sunlight autonomy)
-    esp_sleep_enable_timer_wakeup( static_cast<uint64_t>(TELEMETRY_INTERVAL_S) * 1000000ULL );
-    esp_deep_sleep_start();
+    enterNextSleep();
 }
 
 void loop() {
-    // Unreachable in deep-sleep duty cycle
+    // One sensing/transmit cycle per deep-sleep wake.
 }

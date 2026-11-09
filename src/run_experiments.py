@@ -20,15 +20,20 @@ Executes:
 4. Publication-Grade Figure Generation (5 vector PDF + 300-DPI PNG figures for the journal paper).
 """
 
+import argparse
 import json
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 import numpy as np
 import pandas as pd
 from scipy import stats
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import warnings
+from statsmodels.formula.api import mixedlm
+
+from statistical_diagnostics import run_all_diagnostics
 
 from models import (
     ControllerState,
@@ -45,19 +50,19 @@ from models import (
 )
 
 
-PROJECT_ROOT = Path("/working_dir/c_84e07009101c028c/sentinel_plant_network")
-DATA_DIR = PROJECT_ROOT / "data"
-RESULTS_DIR = PROJECT_ROOT / "results"
-FIGURES_DIR = PROJECT_ROOT / "figures"
-INTERMEDIATE_DIR = Path("/working_dir/c_84e07009101c028c/artifacts/file_generation/ttl=63d/intermediate")
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+OUTPUT_ROOT = PROJECT_ROOT
+DATA_DIR = OUTPUT_ROOT / "data" / "simulated_digital_twin"
+RESULTS_DIR = OUTPUT_ROOT / "results" / "simulated_digital_twin"
+FIGURES_DIR = OUTPUT_ROOT / "figures" / "simulated_digital_twin"
 
 
 # ============================================================================
 # 1. PHASE 1: 10-NODE REFERENCE GRID SIMULATION & OUT-OF-SAMPLE VALIDATION
 # ============================================================================
-def run_phase1_spatial_validation(seed: int = 20261106) -> Dict[str, object]:
+def run_phase1_spatial_validation(seed: int = 20261106, cfg: Optional[ProtocolConfig] = None) -> Dict[str, object]:
     rng = np.random.default_rng(seed)
-    cfg = ProtocolConfig()
+    cfg = cfg or ProtocolConfig()
 
     n_days = 25
     steps_per_day = 144  # 10-minute intervals
@@ -302,7 +307,7 @@ def run_phase1_spatial_validation(seed: int = 20261106) -> Dict[str, object]:
 # ============================================================================
 # 2. PHASE 2: 16-PLOT RCBD DIGITAL-TWIN EVALUATION & STATISTICAL ANALYSIS
 # ============================================================================
-def run_phase2_rcbd_evaluation(seed: int = 20261109) -> Dict[str, object]:
+def run_phase2_rcbd_evaluation(seed: int = 20261109, cfg: Optional[ProtocolConfig] = None) -> Dict[str, object]:
     """
     Simulates Phase 2 Randomized Complete Block Design (RCBD):
     - 4 Treatments (T1, T2, T3, T4) x 4 Blocks (B1..B4) = 16 independent 20 m^2 plots
@@ -310,7 +315,7 @@ def run_phase2_rcbd_evaluation(seed: int = 20261109) -> Dict[str, object]:
     - 90-day potato/tomato growing season
     """
     rng = np.random.default_rng(seed)
-    cfg = ProtocolConfig()
+    cfg = cfg or ProtocolConfig()
 
     n_days = 90
     day_arr = np.arange(n_days)
@@ -616,7 +621,7 @@ def compute_rcbd_statistics(df_plots: pd.DataFrame, df_repeated: pd.DataFrame) -
         ms_err = ss_err / df_err
 
         f_trt = ms_trt / ms_err
-        p_trt = float(1.0 - stats.f.cdf(f_trt, df_trt, df_err))
+        p_trt = float(stats.f.sf(f_trt, df_trt, df_err))
 
         sed = float(np.sqrt(2.0 * ms_err / n_blocks))
         t_crit_95 = float(stats.t.ppf(0.975, df_err))
@@ -635,19 +640,27 @@ def compute_rcbd_statistics(df_plots: pd.DataFrame, df_repeated: pd.DataFrame) -
             "lsd_95": round(lsd_95, 3),
         }
 
-    yield_ms_err = anova_results["marketable_yield_t_ha"]["ms_error"]
-    yield_sed = float(np.sqrt(2.0 * yield_ms_err / 4.0))
+    # Use the unrounded RCBD error mean square for the pre-specified one-sided
+    # yield non-inferiority contrasts. The 16 plots, not plant subsamples, are
+    # the independent units (4 blocks x 4 treatments; error df = 9).
+    yield_ss = float(np.sum((df_plots["marketable_yield_t_ha"] - df_plots["marketable_yield_t_ha"].mean()) ** 2))
+    yield_trt_means = df_plots.groupby("treatment")["marketable_yield_t_ha"].mean()
+    yield_blk_means = df_plots.groupby("block")["marketable_yield_t_ha"].mean()
+    yield_ss_trt = 4 * float(np.sum((yield_trt_means - df_plots["marketable_yield_t_ha"].mean()) ** 2))
+    yield_ss_blk = 4 * float(np.sum((yield_blk_means - df_plots["marketable_yield_t_ha"].mean()) ** 2))
+    yield_mse = max(1e-12, (yield_ss - yield_ss_trt - yield_ss_blk) / 9.0)
+    yield_sed = float(np.sqrt(2.0 * yield_mse / 4.0))
     t_one_sided_95 = float(stats.t.ppf(0.95, 9))
 
     non_inferiority = {}
-    y_t4 = float(df_plots[df_plots["treatment"] == "T4"]["marketable_yield_t_ha"].mean())
+    y_t4 = float(yield_trt_means["T4"])
     for ref_trt in ["T1", "T2", "T3"]:
-        y_ref = float(df_plots[df_plots["treatment"] == ref_trt]["marketable_yield_t_ha"].mean())
+        y_ref = float(yield_trt_means[ref_trt])
         margin_abs = -0.05 * y_ref
         diff = y_t4 - y_ref
         ci_lower_95 = diff - t_one_sided_95 * yield_sed
         t_ni = (diff - margin_abs) / yield_sed
-        p_ni = float(1.0 - stats.t.cdf(t_ni, 9))
+        p_ni = float(stats.t.sf(t_ni, 9))
         non_inferiority[f"T4_vs_{ref_trt}"] = {
             "mean_diff_t_ha": round(diff, 3),
             "mean_diff_pct": round((diff / y_ref) * 100.0, 2),
@@ -655,21 +668,35 @@ def compute_rcbd_statistics(df_plots: pd.DataFrame, df_repeated: pd.DataFrame) -
             "one_sided_95_ci_lower_t_ha": round(ci_lower_95, 3),
             "one_sided_95_ci_lower_pct": round((ci_lower_95 / y_ref) * 100.0, 2),
             "t_stat_non_inferiority": round(t_ni, 3),
-            "p_value_non_inferiority": round(p_ni, 6),
+            "p_value_non_inferiority": float(p_ni),
             "non_inferiority_proven": bool(ci_lower_95 > margin_abs),
         }
 
-    y_rep = df_repeated["disease_severity_pct"].values
-    plot_means_rep = df_repeated.groupby("plot_id")["disease_severity_pct"].transform("mean").values
-    trt_time_means = df_repeated.groupby(["treatment", "day"])["disease_severity_pct"].transform("mean").values
-    resid_within = y_rep - trt_time_means - (
-        plot_means_rep - df_repeated.groupby("treatment")["disease_severity_pct"].transform("mean").values
-    )
-    sigma2_plot = float(
-        np.var(plot_means_rep - df_repeated.groupby("treatment")["disease_severity_pct"].transform("mean").values, ddof=1)
-    )
-    sigma2_resid = float(np.var(resid_within, ddof=1))
-    icc_plot = sigma2_plot / max(1e-9, sigma2_plot + sigma2_resid)
+    # Genuine random-intercept linear mixed-effects model for repeated disease
+    # assessments: categorical treatment x day fixed effects, plot random
+    # intercept, REML estimation. Report estimates and convergence explicitly.
+    lmm_status = "not_fitted"
+    sigma2_plot = sigma2_resid = icc_plot = None
+    lmm_converged = False
+    lmm_warnings = []
+    try:
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            lmm = mixedlm(
+                "disease_severity_pct ~ C(treatment) * C(day)",
+                data=df_repeated,
+                groups=df_repeated["plot_id"],
+                re_formula="1",
+            )
+            lmm_fit = lmm.fit(reml=True, method="lbfgs", maxiter=500, disp=False)
+            lmm_converged = bool(lmm_fit.converged)
+            sigma2_plot = float(max(0.0, lmm_fit.cov_re.iloc[0, 0]))
+            sigma2_resid = float(lmm_fit.scale)
+            icc_plot = float(sigma2_plot / max(1e-12, sigma2_plot + sigma2_resid))
+            lmm_status = "converged" if lmm_converged else "fit_returned_without_convergence"
+            lmm_warnings = [str(w.message) for w in caught]
+    except Exception as exc:
+        lmm_status = f"fit_failed: {type(exc).__name__}: {exc}"
 
     return {
         "rcbd_anova": anova_results,
@@ -678,9 +705,13 @@ def compute_rcbd_statistics(df_plots: pd.DataFrame, df_repeated: pd.DataFrame) -
             "n_observations": int(len(df_repeated)),
             "n_plots_clusters": 16,
             "n_timepoints": 5,
-            "between_plot_variance_sigma2_u": round(sigma2_plot, 4),
-            "within_plot_residual_variance_sigma2_e": round(sigma2_resid, 4),
-            "intraclass_correlation_icc": round(icc_plot, 4),
+            "model": "Random-intercept MixedLM; fixed C(treatment) * C(day); REML",
+            "converged": lmm_converged,
+            "status": lmm_status,
+            "between_plot_variance_sigma2_u": None if sigma2_plot is None else round(sigma2_plot, 6),
+            "within_plot_residual_variance_sigma2_e": None if sigma2_resid is None else round(sigma2_resid, 6),
+            "intraclass_correlation_icc": None if icc_plot is None else round(icc_plot, 6),
+            "warnings": lmm_warnings,
         },
     }
 
@@ -736,7 +767,7 @@ def generate_publication_figures(phase1_res: Dict, phase2_res: Dict, hw_res: Dic
     saved_files = []
 
     def save_both(fig, stem: str):
-        for target_dir in [FIGURES_DIR, INTERMEDIATE_DIR]:
+        for target_dir in [FIGURES_DIR]:
             fig.savefig(target_dir / f"{stem}.pdf", bbox_inches="tight")
             fig.savefig(target_dir / f"{stem}.png", dpi=300, bbox_inches="tight")
         saved_files.append(f"{stem}.pdf")
@@ -1009,27 +1040,66 @@ def generate_publication_figures(phase1_res: Dict, phase2_res: Dict, hw_res: Dic
     return saved_files
 
 
-def main():
-    print("Running Phase 1 (25-Day 10-Node Spatial Placement Validation)...")
-    p1 = run_phase1_spatial_validation()
+def main(argv=None):
+    """Run deterministic digital-twin simulations with portable output paths."""
+    parser = argparse.ArgumentParser(description="Sentinel Plant Network digital-twin experiment runner")
+    parser.add_argument("--seed", type=int, default=20261106,
+                        help="Base random seed (Phase 2 uses seed + 3 to preserve the published baseline seed)")
+    parser.add_argument("--output-dir", type=Path, default=PROJECT_ROOT,
+                        help="Output root; data/, results/ and figures/ are created beneath it")
+    parser.add_argument("--config", type=Path, default=PROJECT_ROOT / "config.json",
+                        help="JSON file containing ProtocolConfig threshold overrides")
+    args = parser.parse_args(argv)
+
+    global OUTPUT_ROOT, DATA_DIR, RESULTS_DIR, FIGURES_DIR
+    OUTPUT_ROOT = args.output_dir.expanduser().resolve()
+    DATA_DIR = OUTPUT_ROOT / "data" / "simulated_digital_twin"
+    RESULTS_DIR = OUTPUT_ROOT / "results" / "simulated_digital_twin"
+    FIGURES_DIR = OUTPUT_ROOT / "figures" / "simulated_digital_twin"
+    for directory in (DATA_DIR, RESULTS_DIR, FIGURES_DIR):
+        directory.mkdir(parents=True, exist_ok=True)
+
+    config_values = {}
+    if args.config.exists():
+        config_values = json.loads(args.config.read_text(encoding="utf-8"))
+    allowed = set(ProtocolConfig.__dataclass_fields__)
+    unknown = sorted(set(config_values) - allowed)
+    if unknown:
+        parser.error(f"Unknown config.json ProtocolConfig keys: {unknown}")
+    cfg = ProtocolConfig(**config_values)
+
+    print("Running Phase 1 (25-day synthetic 10-node spatial simulation)...")
+    p1 = run_phase1_spatial_validation(seed=args.seed, cfg=cfg)
     print("Selected Nodes:", json.dumps(p1["selected_nodes"], indent=2))
-    print("\nPhase 1 Topology Benchmark:")
+    print("\nPhase 1 topology benchmark:")
     print(p1["strategies_table"].to_string(index=False))
 
-    print("\nRunning Phase 2 (90-Day 16-Plot RCBD Evaluation & Statistical Analysis)...")
-    p2 = run_phase2_rcbd_evaluation()
-    print("\nPhase 2 RCBD Treatment Summary:")
+    print("\nRunning Phase 2 (90-day synthetic 16-plot RCBD digital-twin simulation)...")
+    p2 = run_phase2_rcbd_evaluation(seed=args.seed + 3, cfg=cfg)
+    diagnostics = run_all_diagnostics(RESULTS_DIR / "phase2_rcbd_16plots_summary.csv")
+    p2["stats_summary"]["rcbd_diagnostics"] = diagnostics
+    (RESULTS_DIR / "statistical_analysis_summary.json").write_text(
+        json.dumps(p2["stats_summary"], indent=2), encoding="utf-8"
+    )
+    diagnostics_path = RESULTS_DIR / "statistical_diagnostics.json"
+    diagnostics_path.write_text(json.dumps(diagnostics, indent=2), encoding="utf-8")
+    print("\nRCBD assumption and non-inferiority diagnostics:")
+    print(json.dumps(diagnostics, indent=2))
+    print("\nPhase 2 RCBD treatment summary:")
     print(json.dumps(p2["stats_summary"]["rcbd_anova"], indent=2))
-    print("\nPhase 2 5% Non-Inferiority Test:")
+    print("\nPhase 2 5% non-inferiority calculation:")
     print(json.dumps(p2["stats_summary"]["yield_non_inferiority_5pct"], indent=2))
+    print("\nRepeated-measures random-intercept MixedLM (REML):")
+    print(json.dumps(p2["stats_summary"]["repeated_measures_lmm"], indent=2))
 
-    print("\nRunning Hardware Fault-Injection & Autonomy Verification...")
+    print("\nRunning software fault-injection and autonomy calculations...")
     hw = run_fault_and_autonomy_verification()
     print(hw["fault_table"].to_string(index=False))
 
-    print("\nGenerating Publication-Grade Figures...")
+    print("\nGenerating digital-twin figures...")
     figs = generate_publication_figures(p1, p2, hw)
     print("Generated figures:", figs)
+    print(f"Outputs written under: {OUTPUT_ROOT}")
 
 
 if __name__ == "__main__":

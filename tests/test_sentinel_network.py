@@ -12,6 +12,9 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
+from ml_baselines import chronological_indices
+from statistical_diagnostics import rcbd_diagnostics
+
 from models import (
     ControllerState,
     ProtocolConfig,
@@ -113,6 +116,54 @@ class TestSentinelPlantNetwork(unittest.TestCase):
         auto = compute_lifepo4_autonomy()
         self.assertAlmostEqual(auto["protocol_zero_sunlight_hours"], 235.3, delta=1.0)
         self.assertAlmostEqual(auto["protocol_zero_sunlight_days"], 9.8, delta=0.1)
+
+
+    def test_rolling_sufficiency_returns_metrics_and_trigger_timestamps(self):
+        idx = pd.date_range("2026-01-01", periods=40, freq="10min", tz="UTC")
+        a = pd.Series(np.linspace(24.0, 28.0, 40), index=idx)
+        b = a - 2.0
+        result = check_spatial_sufficiency(a, b, window_steps=12, cfg=self.cfg)
+        self.assertEqual(result["window_steps_used"], 12)
+        self.assertEqual(len(result["rolling_metrics"]), 29)
+        self.assertFalse(result["insufficient_coverage_flag"])
+        self.assertEqual(result["trigger_timestamps"], [])
+
+        b.iloc[-12:] = a.iloc[-12:] - 14.0
+        flagged = check_spatial_sufficiency(a, b, window_steps=12, cfg=self.cfg)
+        self.assertTrue(flagged["insufficient_coverage_flag"])
+        self.assertGreater(len(flagged["trigger_timestamps"]), 0)
+
+    def test_rolling_sufficiency_legacy_positional_config(self):
+        a = pd.Series(np.linspace(20.0, 30.0, 20))
+        result = check_spatial_sufficiency(a, a - 1.0, self.cfg)
+        self.assertFalse(result["insufficient_coverage_flag"])
+
+    def test_chronological_split_is_ordered_and_non_overlapping(self):
+        train, validation, test = chronological_indices(1000)
+        self.assertEqual(train.start, 0)
+        self.assertEqual(train.stop, validation.start)
+        self.assertEqual(validation.stop, test.start)
+        self.assertEqual(test.stop, 1000)
+
+    def test_rcbd_diagnostics_uses_plot_as_experimental_unit(self):
+        rows = []
+        means = {"T1": 30.0, "T2": 30.2, "T3": 30.4, "T4": 30.5}
+        block_effects = {"B1": 0.3, "B2": 0.1, "B3": -0.1, "B4": -0.3}
+        for block_idx, (block, effect) in enumerate(block_effects.items()):
+            for treatment_idx, (treatment, mean) in enumerate(means.items()):
+                interaction = 0.025 * (((block_idx + 1) * (treatment_idx + 2)) % 3 - 1)
+                rows.append({"block": block, "treatment": treatment,
+                             "marketable_yield_t_ha": mean + effect + interaction})
+        out = rcbd_diagnostics(
+            pd.DataFrame(rows), "marketable_yield_t_ha",
+            include_yield_noninferiority=True,
+        )
+        self.assertEqual(out["independent_units"], 16)
+        self.assertEqual(out["blocks"], 4)
+        self.assertEqual(out["rcbd_anova"]["df_error"], 9)
+        self.assertIn("shapiro_wilk_residuals", out["assumption_checks"])
+        self.assertIn("levene_median_by_treatment_residuals", out["assumption_checks"])
+        self.assertIn("T4_vs_T1", out["yield_noninferiority"])
 
 
 if __name__ == "__main__":

@@ -1,0 +1,10 @@
+{
+  "timestamp": "timestamp",
+  "vwc": "soil_moisture_vwc",
+  "leaf_wetness": "leaf_wetness",
+  "rh": "relative_humidity",
+  "air_temperature": "air_temperature",
+  "site": "site_id",
+  "node": "node_id",
+  "irrigation_volume": "irrigation_volume_l"
+}

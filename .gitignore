@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+.env
+
+# Local public datasets: download and retain source licences separately.
+data/raw_public/**
+!data/raw_public/README.md
+
+# Locally generated benchmark outputs
+results/real_data_validation/
+artifacts/
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.toc
+*.synctex.gz
+
+# Locally generated digital-twin outputs (retain provenance notes)
+data/simulated_digital_twin/**
+!data/simulated_digital_twin/README.md
+results/simulated_digital_twin/**
+figures/simulated_digital_twin/**
