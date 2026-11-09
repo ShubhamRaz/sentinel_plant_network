@@ -129,7 +129,9 @@ void setup() {
     packet.status_flags = (bmeFound && isfinite(tAir) && isfinite(rh) ? 0x01 : 0x00)
                         | (mlxFound && isfinite(tCanopy) ? 0x02 : 0x00)
                         | (leafWet ? 0x04 : 0x00)
-                        | (batteryMv < LOW_BATTERY_MV ? 0x08 : 0x00);
+                        | (batteryMv < LOW_BATTERY_MV ? 0x08 : 0x00)
+                        | (isfinite(vwc) ? 0x10 : 0x00)
+                        | (isfinite(lws) ? 0x20 : 0x00);
     packet.reserved = 0;
     packet.crc16 = sentinel::crc16Ccitt(
         reinterpret_cast<const uint8_t*>(&packet), sizeof(packet) - sizeof(packet.crc16)
