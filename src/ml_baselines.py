@@ -53,8 +53,18 @@ def _prepare_time_series(
     future_time = df[timestamp_col].shift(-horizon_steps)
     future_target = df[target_col].shift(-horizon_steps)
     # Do not let row shifts jump across missing periods and masquerade as a
-    # fixed-duration forecast horizon.
-    exact_horizon = (future_time - df[timestamp_col]).dt.total_seconds().div(60).sub(horizon_minutes).abs() <= max(0.01, step * 0.02)
+    # fixed-duration forecast horizon or a fixed-duration lag.
+    tolerance = max(0.01, step * 0.02)
+    exact_horizon = (
+        (future_time - df[timestamp_col]).dt.total_seconds().div(60)
+        .sub(horizon_minutes).abs() <= tolerance
+    )
+    contiguous_lags = pd.Series(True, index=df.index)
+    for lag in (1, 2, 3, 6, 12, 24):
+        elapsed = (
+            df[timestamp_col] - df[timestamp_col].shift(lag)
+        ).dt.total_seconds().div(60)
+        contiguous_lags &= elapsed.sub(lag * step).abs() <= tolerance
 
     if feature_cols is None:
         excluded = {timestamp_col, target_col}
@@ -77,7 +87,7 @@ def _prepare_time_series(
         X[f"origin_{col}"] = pd.to_numeric(df[col], errors="coerce")
 
     y = future_target.rename("future_target")
-    valid = exact_horizon & y.notna() & X.notna().any(axis=1)
+    valid = exact_horizon & contiguous_lags & y.notna() & X.notna().any(axis=1)
     dataset = X.loc[valid].copy()
     dataset["__target"] = y.loc[valid].astype(float)
     dataset["__timestamp"] = df.loc[valid, timestamp_col].to_numpy()
@@ -177,23 +187,43 @@ def benchmark_blight_classifier(
     risk_target_col: str,
     horizon_steps: int,
     feature_cols: Sequence[str],
+    expected_step_minutes: Optional[float] = None,
 ):
-    """Predict a future DSV>=18/risk label using only origin-time and lagged features."""
+    """Predict a future binary DSV/risk state without crossing timestamp gaps."""
     if timestamp_col not in frame or risk_target_col not in frame:
         raise KeyError("timestamp_col and risk_target_col must exist")
+    if horizon_steps < 1:
+        raise ValueError("horizon_steps must be >= 1")
     df = frame.copy()
     df[timestamp_col] = pd.to_datetime(df[timestamp_col], errors="coerce", utc=True)
     df = df.dropna(subset=[timestamp_col]).sort_values(timestamp_col).drop_duplicates(timestamp_col).reset_index(drop=True)
     for col in feature_cols:
         if col not in df:
             raise KeyError(f"Unknown feature column: {col}")
+
+    deltas = df[timestamp_col].diff().dt.total_seconds().div(60).dropna()
+    step = float(expected_step_minutes or deltas.median())
+    if not np.isfinite(step) or step <= 0:
+        raise ValueError("Could not infer a valid sampling interval")
+    tolerance = max(0.01, step * 0.02)
+    future_time = df[timestamp_col].shift(-horizon_steps)
+    elapsed_future = (future_time - df[timestamp_col]).dt.total_seconds().div(60)
+    exact_horizon = elapsed_future.sub(horizon_steps * step).abs() <= tolerance
     target = pd.to_numeric(df[risk_target_col], errors="coerce").shift(-horizon_steps)
+
     X = df[list(feature_cols)].apply(pd.to_numeric, errors="coerce")
     for lag in (1, 2, 3, 6, 12):
         for col in feature_cols:
             X[f"{col}_lag_{lag}"] = pd.to_numeric(df[col], errors="coerce").shift(lag)
-    valid = target.notna() & X.notna().any(axis=1)
+
+    contiguous_lags = pd.Series(True, index=df.index)
+    for lag in (1, 2, 3, 6, 12):
+        elapsed = (df[timestamp_col] - df[timestamp_col].shift(lag)).dt.total_seconds().div(60)
+        contiguous_lags &= elapsed.sub(lag * step).abs() <= tolerance
+    valid = exact_horizon & contiguous_lags & target.notna() & X.notna().any(axis=1)
     X, y = X.loc[valid], target.loc[valid].astype(int)
+    if len(X) < 60:
+        raise ValueError("Too few timestamp-contiguous records for a chronological risk classifier")
     if not set(y.unique()).issubset({0, 1}):
         raise ValueError("risk_target_col must be binary (0/1), e.g. DSV_LWS >= 18")
     train, validation, test = chronological_indices(len(X))
@@ -225,4 +255,10 @@ def benchmark_blight_classifier(
             "validation_f1": float(val_f1),
             "test_positive_count": int(yt.sum()),
         })
-    return {"metrics": pd.DataFrame(rows), "rows": int(len(X)), "horizon_steps": int(horizon_steps)}
+    return {
+        "metrics": pd.DataFrame(rows),
+        "rows": int(len(X)),
+        "horizon_steps": int(horizon_steps),
+        "sampling_minutes_median": step,
+        "horizon_minutes": float(horizon_steps * step),
+    }
