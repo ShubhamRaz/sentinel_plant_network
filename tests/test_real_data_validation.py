@@ -79,7 +79,7 @@ def test_leaf_wetness_adapter_computes_daily_duration_and_site_ranking():
     )
     assert result["humid_pole_candidate_by_p90_nocturnal_lwd"] == "site_c"
     assert result["quality"]["duplicate_timestamps"] == 0
-    assert len(result["daily_table"]) == 9
+    assert len(result["daily_table"]) == 12  # four calendar dates across 72 hours, per three sites
     assert len(result["nightly_table"]) == 9
     assert result["lwd_scope"] == "nocturnal_only_for_humid_pole_selection; daily_for_DSV"
     assert result["timezone"] == "Europe/Rome"
