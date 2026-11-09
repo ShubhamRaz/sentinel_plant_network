@@ -130,7 +130,7 @@ Protocol v2.0 specifies that Node A is anchored at the location with the maximum
 The previous all-day adapter computed both standard Wallin Disease Severity Values ($\mathrm{DSV}_{\text{Wallin}}$ based solely on $\mathrm{RH} \ge 90\%$) and leaf-wetness-modified values ($\mathrm{DSV}_{\mathrm{LWS}}$ integrating physical surface wetness):
 - During clear nights with high radiative cooling, surface wetness on lower leaves persists even when aspirated air RH drops into the 82--89% range.
 - Standard Wallin DSV recorded zero severity accumulation during these periods, whereas $\mathrm{DSV}_{\mathrm{LWS}}$ accumulated 1 to 2 severity units per day.
-- Output table generated: `results/real_data_validation/leafwetness/daily_leafwetness_dsv.csv`.
+- Output table generated: `results/real_data_validation/leafwetness/nightly_leafwetness_dsv.csv`.
 
 ---
 
