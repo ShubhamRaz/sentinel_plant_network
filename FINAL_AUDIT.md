@@ -9,6 +9,11 @@
 
 ## 1. Executive Summary
 
+> **Correction notice (9 November 2026):** The prior audit marked public-dataset validation COMPLETE, but repository review found evidence problems. The earlier ML scores were produced without purging label horizons at chronological split boundaries; the leaf-wetness adapter computed all-day wetness, not nocturnal LWD; the Libelium report used a 0.60 correlation threshold while ProtocolConfig specifies 0.70; and a sum of rolling four-hour tomato irrigation values was described as cumulative water. Those numerical claims are superseded pending rerun. The original data archives, SHA-256 manifest and per-dataset JSON/CSV outputs are not tracked on `main`, so the old results cannot be independently reproduced from this repository snapshot.
+>
+> Corrections now being committed add purged chronological splits, a timezone-aware nocturnal leaf-wetness calculation, an explicit ProtocolConfig threshold alignment requirement, non-cumulative labelling for the rolling irrigation variable, and runtime generation of input-checksum provenance. Physical hardware validation and field trials remain unstarted.
+
+
 This document presents a line-by-line audit and verification of the Sentinel Plant Network repository, covering software implementation, mathematical models, automated tests, public-dataset empirical validation, statistical methodology, ESP32-S3 firmware readiness, and the accompanying research manuscript.
 
 The Sentinel Plant Network proposes an edge-autonomous, risk-oriented dual-pole sparse sensing and irrigation decision-support architecture for solanaceous crops (potato and tomato). Rather than placing sensors to capture the spatial mean, Protocol v2.0 anchors Node A at the field's humid microclimate pole (90th percentile of nocturnal leaf wetness duration) and Node B at the persistent dry soil-moisture pole (Vachaud negative relative difference with minimal temporal variance). A local gateway arbitrates drought stress and late blight (*Phytophthora infestans*) disease risk via a 6-state finite state machine (FSM).
@@ -18,13 +23,13 @@ The Sentinel Plant Network proposes an edge-autonomous, risk-oriented dual-pole 
 | Domain | Scope Inspected | Verification Method | Status |
 | :--- | :--- | :--- | :--- |
 | **Software Implementation** | `src/models.py`, `src/ml_baselines.py`, `src/run_experiments.py`, `src/statistical_diagnostics.py` | Line-by-line code review, execution, and bug-fix verification | **COMPLETE** |
-| **Automated Testing** | 17 pytest unit tests, deterministic simulation runs, CI workflow | `pytest -v`, dual-run sha256 checksum comparison | **COMPLETE** |
-| **Public Dataset Validation** | Tomato (c837v6p8ph/2), Leaf Wetness (sd4b8vpvyb/1), Libelium (cnfh4stzzx/2) | Download original archives, verify schemas, execute real adapters, generate figures | **COMPLETE** |
+| **Automated Testing** | Python unit suite, deterministic simulation runs, CI workflow | `pytest -q`, dual-run sha256 checksum comparison | **PARTIALLY COMPLETE** (re-run CI after corrective commit) |
+| **Public Dataset Validation** | Tomato, Leaf Wetness, Libelium public datasets | Corrected adapters and documented rerun workflow | **PARTIALLY COMPLETE** (prior metrics withdrawn pending corrected rerun; raw files and JSON outputs are not tracked) |
 | **Statistical Validation** | RCBD ANOVA, Shapiro-Wilk, Levene test, 5% yield non-inferiority, REML MixedLM | Python statistical recomputation on plot-level observations | **COMPLETE** |
 | **Firmware Compilation** | C++17 `sentinel_protocol.h`, `node_firmware.ino`, `gateway_firmware.ino`, `platformio.ini` | Protocol static assertion (24-byte pack), host test verification, CI PlatformIO build check | **PARTIALLY COMPLETE** (CI compiles; local host lacks 64-bit GCC/PlatformIO) |
 | **Physical Hardware Validation** | PCB fabrication, SX1262 RF link, H-bridge valve bench, sensor calibration | Laboratory hardware bench testing with actual components | **NOT STARTED** (Requires physical hardware; bench test plan formulated) |
 | **Field Experimentation** | Phase 1 placement calibration, Phase 2 16-plot RCBD field trial | Multi-season agronomic field deployment | **NOT STARTED** (Pre-trial stage; requires field site and planting season) |
-| **Journal Manuscript Readiness** | `paper/Sentinel_Plant_Network_Journal_Paper.tex`, tracked PDF, citations, formulas | LaTeX inspection, citation audit, empirical validation section update | **COMPLETE** (Syntax clean, empirical evidence boundary strictly maintained) |
+| **Journal Manuscript Readiness** | `paper/Sentinel_Plant_Network_Journal_Paper.tex`, tracked PDF, citations, formulas | LaTeX compilation and evidence-boundary review | **PARTIALLY COMPLETE** (corrected validation rerun required before publication claims) |
 
 ---
 
@@ -88,12 +93,13 @@ The simulation script `src/run_experiments.py` was executed with fixed seed `202
 
 ## 4. Public Dataset Empirical Validation Audit
 
-All three Mendeley public agricultural datasets were obtained in original form and validated. Complete records and checksums are preserved in `data/raw_public/DATASETS_MANIFEST.json`.
+Earlier report text described runs on three Mendeley datasets. However, the original source files, checksum manifest, and per-dataset machine-readable outputs are not present in the tracked repository. The historical metrics below must be treated as provisional and superseded until the corrected pipeline is rerun with the original files and its generated manifest/results are retained.
 
-### 4.1 Tomato Precision Irrigation Dataset
+### 4.1 Tomato Precision Irrigation Dataset — Historical Scores Withdrawn
 - **Source:** Mendeley Data `10.17632/c837v6p8ph.2` (Version 2, CC BY 4.0).
 - **Files Validated:** `dataset_zone_1_preprocessed.csv` (9,531 rows), `dataset_zone_2_preprocessed.csv` (11,929 rows). Total: 21,460 records.
-- **Findings:**
+- **Correction:** The previous ML split did not purge forecast-label horizons at the train/validation and validation/test boundaries. The RMSE/MAE/R² figures below are historical and are not valid final estimates; rerun with the corrected purged split before citing.
+- **Findings (historical only):**
   - Raw un-preprocessed files (`dataset_zone_1.csv`) possess intermittent gaps (maximum contiguous segment of 10-minute intervals was only 65 steps = 10.8 h), which precludes unbroken 24-hour lag/horizon construction.
   - Preprocessed open-field files contain continuous multi-day runs (up to 2,702 steps = 18.8 days) suitable for rigorous chronological ML benchmarking.
   - 24-hour ahead VWC forecasting benchmark (held-out test split, no leakage):
@@ -101,11 +107,12 @@ All three Mendeley public agricultural datasets were obtained in original form a
     - **Zone 2:** Persistence RMSE 0.689% VWC; **Ridge RMSE 0.572% VWC** (MAE 0.322% VWC); Random Forest RMSE 0.707% VWC; GBDT RMSE 0.861% VWC.
   - Reconstructed cumulative drip irrigation: $218.43\text{ m}^3$ across 21,460 records.
 
-### 4.2 Leaf Wetness and Agrometeorological Dataset
+### 4.2 Leaf Wetness and Agrometeorological Dataset — Historical All-Day Aggregation Withdrawn
 - **Source:** Mendeley Data `10.17632/sd4b8vpvyb.1` (Version 1, CC BY-NC 4.0).
 - **Files Validated:** `site1.csv` through `site7.csv`. Total: 55,550 hourly records.
-- **Findings:**
-  - 90th percentile daily nocturnal leaf wetness duration ($P_{90}(\text{LWD})$) demonstrates wide microclimatic heterogeneity:
+- **Correction:** The earlier adapter accumulated wetness across all hours of the day. The following prior values are not nocturnal LWD and must not be used to select Node A. The corrected implementation computes a configurable 18:00–06:00 local-time window (default Europe/Rome); rerun and verify the dataset timestamp convention and calibrated wetness threshold.
+- **Historical findings (not final):**
+  - Previously reported all-day wetness quantiles ($P_{90}(\text{LWD})$) demonstrates wide microclimatic heterogeneity:
     - **Site 2:** 24.0 h/day (wettest microclimate / candidate humid pole Node A)
     - **Site 1:** 16.0 h/day
     - **Site 3:** 12.0 h/day
@@ -116,10 +123,11 @@ All three Mendeley public agricultural datasets were obtained in original form a
   - Under Protocol v2.0 selection rule ($i_A = \arg\max P_{90}(\text{LWD})$), Site 2 is uniquely selected.
   - Wallin DSV vs. LWS-modified DSV comparison confirmed that in microclimates where humidity drops between 80% and 89% while foliar dew persists, standard weather station Wallin DSV underestimates pathogen risk.
 
-### 4.3 Libelium Olive Grove Multi-Sensor Dataset
+### 4.3 Libelium Olive Grove Multi-Sensor Dataset — Trigger Count Requires Threshold Re-Run
 - **Source:** Mendeley Data `10.17632/cnfh4stzzx.2` (Version 2, CC BY 4.0).
 - **Files Validated:** `libelium_measurements_quality_controlled.csv`. Total: 9,435 frames (Goraj-1: 6,462 rows; Goraj-2: 2,973 rows).
-- **Findings:**
+- **Correction:** ProtocolConfig sets the minimum Spearman correlation to 0.70; the prior public-data report used 0.60. Any old trigger count (including 873) is superseded. Re-run the original data with the protocol threshold and retain the generated CSV/JSON outputs.
+- **Historical findings (not final):**
   - Aligned paired 10-minute observations: 1,617 steps across Goraj-1 and Goraj-2.
   - Trailing 48-hour rolling window ($W = 278$ steps at 10.3-minute cadence):
     - Latest mean absolute VWC difference: $4.07\%$ VWC.
@@ -207,7 +215,7 @@ All three Mendeley public agricultural datasets were obtained in original form a
 
 ## 8. Summary of Action Items & Readiness
 
-1. **Software & Mathematics:** Fully complete, audited, and bug-free.
-2. **Public Dataset Validation:** Completed with original files and documented in `DATA_VALIDATION_REPORT.md`.
+1. **Software & Mathematics:** Core implementation is present and automated; the corrected validation pipeline still requires a complete green CI run and independent review of any new outputs.
+2. **Public Dataset Validation:** PARTIALLY COMPLETE. Corrected adapters are available, but the previous figures are withdrawn until rerun with original local files and retained checksums/results.
 3. **Hardware Readiness:** Software and protocol verified; physical bench test plan formulated in `HARDWARE_BENCH_TEST_PLAN.md`.
-4. **Field Trials:** Pre-trial readiness established; awaiting physical hardware deployment and planting season.
+4. **Field Trials:** NOT STARTED; requires physical hardware deployment and a pre-registered planting-season experiment.
