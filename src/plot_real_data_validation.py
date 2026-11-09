@@ -75,7 +75,7 @@ def plot_leafwetness():
     with rep_path.open(encoding="utf-8") as f:
         rep = json.load(f)
 
-    p90_dict = rep["site_p90_daily_lwd_hours"]
+    p90_dict = rep["site_p90_nocturnal_lwd_hours"]
     sites = sorted(p90_dict.keys(), key=lambda s: p90_dict[s], reverse=True)
     p90_vals = [p90_dict[s] for s in sites]
     site_labels = [s.replace(".csv", "").upper() for s in sites]
@@ -85,9 +85,9 @@ def plot_leafwetness():
     # Bar chart of P90 LWD
     colors = ["#1b9e77" if v == max(p90_vals) else "#4575b4" for v in p90_vals]
     bars = ax1.bar(site_labels, p90_vals, color=colors, edgecolor="black", lw=0.6)
-    ax1.set_ylabel("90th Percentile Daily LWD (hours/day)")
+    ax1.set_ylabel("90th Percentile Nocturnal LWD (hours/night)")
     ax1.set_xlabel("Monitoring Station / Microclimate Site")
-    ax1.set_title("A: Microclimatic LWD Distribution ($P_{90}$)")
+    ax1.set_title("A: Nocturnal Microclimatic LWD ($P_{90}$)")
     for bar in bars:
         yval = bar.get_height()
         ax1.text(bar.get_x() + bar.get_width()/2.0, yval + 0.4, f"{yval:.1f}h", ha="center", va="bottom", fontsize=8.5)
