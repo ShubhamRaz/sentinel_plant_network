@@ -2,6 +2,9 @@ name: reproducible-research-checks
 on:
   push:
   pull_request:
+permissions:
+  contents: write
+
 jobs:
   python-tests:
     runs-on: ubuntu-latest
@@ -63,3 +66,27 @@ jobs:
           latexmk -pdf -interaction=nonstopmode -halt-on-error -file-line-error \
             -outdir="$RUNNER_TEMP/manuscript" Sentinel_Plant_Network_Journal_Paper.tex
           test -s "$RUNNER_TEMP/manuscript/Sentinel_Plant_Network_Journal_Paper.pdf"
+      - name: Publish compiled manuscript PDF to this branch
+        if: github.event_name == 'push'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cp "$RUNNER_TEMP/manuscript/Sentinel_Plant_Network_Journal_Paper.pdf" paper/Sentinel_Plant_Network_Journal_Paper.pdf
+          if ! git diff --quiet -- paper/Sentinel_Plant_Network_Journal_Paper.pdf; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add paper/Sentinel_Plant_Network_Journal_Paper.pdf
+            git commit -m "Update compiled Sentinel Plant Network manuscript"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
+      - name: Upload reproducible digital-twin outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: sentinel-digital-twin-${{ github.sha }}
+          path: |
+            data/simulated_digital_twin/
+            results/simulated_digital_twin/
+            figures/simulated_digital_twin/
+            ${{ runner.temp }}/manuscript/Sentinel_Plant_Network_Journal_Paper.pdf
+          if-no-files-found: warn
+          retention-days: 30
