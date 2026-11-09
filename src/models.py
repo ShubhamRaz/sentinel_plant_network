@@ -193,7 +193,9 @@ def check_spatial_sufficiency(
         | (metrics["spearman_r"] < cfg.sufficiency_min_spearman_r)
     )
     latest = metrics.iloc[-1]
-    flagged = bool(metrics["insufficient_coverage_flag"].any())
+    # The live state reflects the latest completed window. Historical trigger
+    # timestamps remain available separately for audit and event counting.
+    flagged = bool(latest["insufficient_coverage_flag"])
     return {
         "window_steps_requested": int(window_steps),
         "window_steps_used": effective_window,
