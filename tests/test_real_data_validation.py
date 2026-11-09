@@ -16,7 +16,7 @@ from real_data_validation import (
 
 
 def test_tomato_adapter_reports_quality_and_forecast():
-    n = 450
+    n = 1800
     ts = pd.date_range("2026-01-01", periods=n, freq="10min", tz="UTC")
     vwc = 28.0 - np.linspace(0, 7, n) + 0.8 * np.sin(np.arange(n) / 15)
     frame = pd.DataFrame({
@@ -36,7 +36,7 @@ def test_tomato_adapter_reports_quality_and_forecast():
 
 
 def test_tomato_adapter_keeps_parallel_sector_timeseries_separate():
-    n = 260
+    n = 1800
     timestamps = pd.date_range("2026-04-01", periods=n, freq="10min", tz="UTC")
     frames = []
     for sector, offset in (("open_field_a", 0.0), ("open_field_b", 1.5)):
@@ -81,7 +81,7 @@ def test_leaf_wetness_adapter_computes_daily_duration_and_site_ranking():
     assert len(result["nightly_table"]) == 9
     assert result["lwd_scope"] == "nocturnal_only"
     assert result["timezone"] == "Europe/Rome"
-    assert result["daily_table"]["nocturnal_leaf_wetness_hours"].between(0, 12).all()
+    assert result["nightly_table"]["nocturnal_leaf_wetness_hours"].between(0, 12).all()
 
 
 def test_forecasting_supervised_rows_do_not_bridge_missing_timestamps():
