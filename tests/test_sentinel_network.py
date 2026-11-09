@@ -149,11 +149,15 @@ class TestSentinelPlantNetwork(unittest.TestCase):
         rows = []
         means = {"T1": 30.0, "T2": 30.2, "T3": 30.4, "T4": 30.5}
         block_effects = {"B1": 0.3, "B2": 0.1, "B3": -0.1, "B4": -0.3}
-        for block, effect in block_effects.items():
-            for treatment, mean in means.items():
+        for block_idx, (block, effect) in enumerate(block_effects.items()):
+            for treatment_idx, (treatment, mean) in enumerate(means.items()):
+                interaction = 0.025 * (((block_idx + 1) * (treatment_idx + 2)) % 3 - 1)
                 rows.append({"block": block, "treatment": treatment,
-                             "yield": mean + effect + (0.01 if treatment == "T1" else -0.01)})
-        out = rcbd_diagnostics(pd.DataFrame(rows), "yield")
+                             "marketable_yield_t_ha": mean + effect + interaction})
+        out = rcbd_diagnostics(
+            pd.DataFrame(rows), "marketable_yield_t_ha",
+            include_yield_noninferiority=True,
+        )
         self.assertEqual(out["independent_units"], 16)
         self.assertEqual(out["blocks"], 4)
         self.assertEqual(out["rcbd_anova"]["df_error"], 9)
