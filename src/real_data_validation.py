@@ -35,7 +35,7 @@ DATASETS = {
         "purpose": "site-level leaf-wetness duration and weather-risk evaluation",
     },
     "libelium": {
-        "url": "https://data.mendeley.com/datasets/cnfh4stzzx/1",
+        "url": "https://data.mendeley.com/datasets/cnfh4stzzx/2",
         "doi": "10.17632/cnfh4stzzx.1",
         "licence": "CC BY 4.0",
         "purpose": "real two-node telemetry quality, gaps and spatial disagreement",
