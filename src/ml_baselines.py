@@ -69,6 +69,11 @@ def _prepare_time_series(
         feature_cols = [c for c in numeric if c not in excluded and not any(
             token in c.lower() for token in leakage_tokens
         )]
+    feature_cols = list(feature_cols)
+    leakage_tokens = ("future", "target", "ahead", "label", "to_24h", "delta")
+    forbidden = [c for c in feature_cols if any(token in c.lower() for token in leakage_tokens)]
+    if forbidden:
+        raise ValueError(f"Explicit feature_cols contain future-derived or target-like fields: {forbidden}")
     missing = [c for c in feature_cols if c not in df.columns]
     if missing:
         raise KeyError(f"Unknown feature columns: {missing}")
@@ -261,6 +266,10 @@ def benchmark_blight_classifier(
     for col in feature_cols:
         if col not in df:
             raise KeyError(f"Unknown feature column: {col}")
+    leakage_tokens = ("future", "target", "ahead", "label", "to_24h", "delta")
+    forbidden = [c for c in feature_cols if any(token in c.lower() for token in leakage_tokens)]
+    if forbidden:
+        raise ValueError(f"feature_cols contain future-derived or target-like fields: {forbidden}")
 
     deltas = df[timestamp_col].diff().dt.total_seconds().div(60).dropna()
     step = float(expected_step_minutes or deltas.median())
