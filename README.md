@@ -48,7 +48,7 @@ Recommended sources:
 |---|---|---|
 | [Tomato irrigation and weather, V2](https://data.mendeley.com/datasets/c837v6p8ph/2) | Soil-moisture forecast and irrigation/actuator benchmark | CC BY 4.0 |
 | [Seven-site leaf wetness](https://data.mendeley.com/datasets/sd4b8vpvyb/1) | Humid-pole / leaf-wetness-duration and weather-risk evaluation | CC BY-NC 4.0 |
-| [Libelium two-node olive grove](https://data.mendeley.com/datasets/cnfh4stzzx/1) | Telemetry gaps, sensor quality and two-node sufficiency tests | CC BY 4.0 |
+| [Libelium two-node olive grove](https://data.mendeley.com/datasets/cnfh4stzzx/2) | Telemetry gaps, sensor quality and two-node sufficiency tests | CC BY 4.0 |
 
 The leaf-wetness dataset is non-commercial. Do not use or redistribute it commercially unless its licence and permissions allow it. The tomato dataset's Version 2 supersedes Version 1 for new analyses; record the version you actually download. These datasets come from different crops, sites, hardware and sampling schemes: external validation does not equal validation on the target potato/tomato field.
 
