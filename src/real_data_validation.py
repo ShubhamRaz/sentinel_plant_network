@@ -353,7 +353,7 @@ def validate_leafwetness(
         },
         "humid_pole_candidate_by_p90_nocturnal_lwd": str(p90.index[0]),
         "site_p90_nocturnal_lwd_hours": {str(key): float(value) for key, value in p90.items()},
-        "daily_table": nightly,
+        "nightly_table": nightly,
     }
 
 def validate_libelium(frame: pd.DataFrame, mapping: Dict[str, str], gap_minutes: float = 20.0):
@@ -439,10 +439,10 @@ def main(argv=None):
 
     output = args.output_dir / args.dataset
     output.mkdir(parents=True, exist_ok=True)
-    daily = result.pop("daily_table", None)
+    nightly = result.pop("nightly_table", None)
     rolling = result.pop("rolling_metrics", None)
-    if daily is not None:
-        daily.to_csv(output / "daily_leafwetness_dsv.csv", index=False)
+    if nightly is not None:
+        nightly.to_csv(output / "nightly_leafwetness_dsv.csv", index=False)
     if rolling is not None:
         rolling.to_csv(output / "rolling_spatial_sufficiency.csv", index=False)
     result["source"] = DATASETS[args.dataset]
