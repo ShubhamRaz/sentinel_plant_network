@@ -37,8 +37,15 @@ jobs:
           if mismatches:
               raise SystemExit("Non-deterministic outputs: " + ", ".join(mismatches))
           print(f"Verified {len(rel)} deterministic CSV/JSON outputs across two independent runs")
+          import json
+          summary = json.loads((a / "results/simulated_digital_twin/statistical_analysis_summary.json").read_text())
+          print("REPEATED_MEASURES_MIXEDLM=" + json.dumps(summary["repeated_measures_lmm"], sort_keys=True))
           PY
       - name: Compile and run portable firmware protocol tests
         run: |
           g++ -std=c++17 -Wall -Wextra -Werror tests/test_firmware_host.cpp -o /tmp/test_firmware_host
           /tmp/test_firmware_host
+      - name: Compile ESP32-S3 firmware with PlatformIO
+        run: |
+          python -m pip install platformio==6.1.19
+          pio run -c firmware/platformio.ini
