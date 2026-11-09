@@ -40,6 +40,9 @@ jobs:
           import json
           summary = json.loads((a / "results/simulated_digital_twin/statistical_analysis_summary.json").read_text())
           print("REPEATED_MEASURES_MIXEDLM=" + json.dumps(summary["repeated_measures_lmm"], sort_keys=True))
+          print("YIELD_NONINFERIORITY=" + json.dumps(summary["yield_non_inferiority_5pct"], sort_keys=True))
+          diagnostics = json.loads((a / "results/simulated_digital_twin/statistical_diagnostics.json").read_text())
+          print("YIELD_RCBD_DIAGNOSTICS=" + json.dumps(diagnostics["marketable_yield_t_ha"], sort_keys=True))
           PY
       - name: Compile and run portable firmware protocol tests
         run: |
