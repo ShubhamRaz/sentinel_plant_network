@@ -61,6 +61,7 @@ def test_libelium_adapter_detects_gap_and_computes_two_node_sufficiency():
         stamps = list(base)
         if node == "Goraj-2":
             stamps.pop(80)
+            stamps.pop(80)
         for i, stamp in enumerate(stamps):
             rows.append({
                 "timestamp": stamp, "device": node,
