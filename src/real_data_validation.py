@@ -11,6 +11,7 @@ import argparse
 import hashlib
 import json
 import re
+from datetime import datetime, time, timedelta
 from pathlib import Path
 from typing import Dict, Optional, Sequence
 
@@ -181,8 +182,10 @@ def validate_tomato(frame: pd.DataFrame, mapping: Dict[str, str], expected_step_
             valid = values.dropna()
             sector_result["irrigation_telemetry"] = {
                 "column": irrigation, "valid_records": int(valid.size),
-                "total_reported_volume": float(valid.sum()),
+                "sum_of_reported_values": float(valid.sum()),
                 "unit": "source dataset unit; verify data dictionary",
+                "cumulative_volume_verified": False,
+                "warning": "Do not interpret this sum as cumulative irrigation unless the source data dictionary confirms each row is an incremental event rather than a rolling-window aggregate.",
             }
             total_volume += float(valid.sum())
             total_volume_valid += int(valid.size)
@@ -207,61 +210,151 @@ def validate_tomato(frame: pd.DataFrame, mapping: Dict[str, str], expected_step_
         if irrigation:
             report["irrigation_telemetry"] = {
                 "column": irrigation, "valid_records": total_volume_valid,
-                "total_reported_volume": total_volume,
+                "sum_of_reported_values": total_volume,
                 "unit": "source dataset unit; verify data dictionary",
+                "cumulative_volume_verified": False,
+                "warning": "Do not interpret this sum as cumulative irrigation unless the source data dictionary confirms each row is an incremental event rather than a rolling-window aggregate.",
             }
     return report
 
+def _to_dataset_timezone(value, timezone: str):
+    """Interpret naive source timestamps in the declared dataset timezone.
+
+    Offset-aware source timestamps are converted into that timezone. Naive
+    timestamps are localized there rather than silently assumed to be UTC.
+    """
+    try:
+        stamp = pd.Timestamp(value)
+        if pd.isna(stamp):
+            return pd.NaT
+        if stamp.tzinfo is None:
+            return stamp.tz_localize(timezone, ambiguous="NaT", nonexistent="NaT")
+        return stamp.tz_convert(timezone)
+    except (TypeError, ValueError, OverflowError):
+        return pd.NaT
+
+
 def validate_leafwetness(
-    frame: pd.DataFrame, mapping: Dict[str, str], wet_threshold: float = 50.0
+    frame: pd.DataFrame,
+    mapping: Dict[str, str],
+    wet_threshold: float = 50.0,
+    timezone: str = "Europe/Rome",
+    night_start_hour: int = 18,
+    night_end_hour: int = 6,
 ):
+    """Compute nocturnal-only leaf-wetness duration and Wallin/LWS DSV.
+
+    Each observation is treated as representing the interval until the next
+    observation, capped at the smaller of 2x the site's median cadence and one
+    hour. Only the overlap with [night_start_hour, next-day night_end_hour) is
+    accumulated. The local timezone and night window are explicit parameters.
+    """
+    if not (0 <= night_start_hour <= 23 and 0 <= night_end_hour <= 23):
+        raise ValueError("Night-window hours must be between 0 and 23")
+    if night_start_hour <= night_end_hour:
+        raise ValueError("Night window must cross midnight (start hour > end hour)")
+    try:
+        pd.Timestamp("2026-01-01", tz=timezone)
+    except Exception as exc:
+        raise ValueError(f"Invalid IANA timezone: {timezone}") from exc
+
     ts = resolve_column(frame, mapping, "timestamp")
     site = resolve_column(frame, mapping, "site")
     lws = resolve_column(frame, mapping, "leaf_wetness")
     rh = resolve_column(frame, mapping, "rh")
     temp = resolve_column(frame, mapping, "air_temperature")
     f = frame[[ts, site, lws, rh, temp]].copy()
-    f[ts] = pd.to_datetime(f[ts], errors="coerce", utc=True)
+    f[ts] = f[ts].map(lambda value: _to_dataset_timezone(value, timezone))
     for col in (lws, rh, temp):
         f[col] = pd.to_numeric(f[col], errors="coerce")
     f = f.dropna(subset=[ts, site]).sort_values([site, ts])
-    f["date"] = f[ts].dt.floor("D")
-    f["wet"] = f[lws] >= wet_threshold
-    f["rh90"] = f[rh] >= 90.0
+
     interval_parts = []
+    start_minute = night_start_hour * 60
+    end_minute = night_end_hour * 60
     for site_id, group in f.groupby(site, sort=False):
-        g = group.copy()
+        g = group.copy().sort_values(ts)
         delta = g[ts].shift(-1).sub(g[ts]).dt.total_seconds().div(3600)
-        med = delta[(delta > 0) & delta.notna()].median()
-        cap = min(float(med) * 2.0, 1.0) if pd.notna(med) else 1.0
-        g["interval_h"] = delta.clip(lower=0, upper=cap).fillna(0)
+        median_gap = delta[(delta > 0) & delta.notna()].median()
+        cap_hours = min(float(median_gap) * 2.0, 1.0) if pd.notna(median_gap) else 1.0
+        g["_interval_hours"] = delta.clip(lower=0, upper=cap_hours).fillna(0.0)
+
+        minutes = g[ts].dt.hour * 60 + g[ts].dt.minute
+        local_dates = g[ts].dt.date
+        night_dates = pd.Series(None, index=g.index, dtype=object)
+        after_start = minutes >= start_minute
+        before_end = minutes < end_minute
+        night_dates.loc[after_start] = local_dates.loc[after_start]
+        night_dates.loc[before_end] = local_dates.loc[before_end].map(
+            lambda day: day - timedelta(days=1)
+        )
+        g["_night_date"] = night_dates
+        g = g.dropna(subset=["_night_date"])
+        if g.empty:
+            continue
+
+        night_start = g["_night_date"].map(
+            lambda day: pd.Timestamp(datetime.combine(day, time(night_start_hour))).tz_localize(
+                timezone, ambiguous="NaT", nonexistent="shift_forward"
+            )
+        )
+        night_end = g["_night_date"].map(
+            lambda day: pd.Timestamp(datetime.combine(day + timedelta(days=1), time(night_end_hour))).tz_localize(
+                timezone, ambiguous="NaT", nonexistent="shift_forward"
+            )
+        )
+        interval_end = g[ts] + pd.to_timedelta(g["_interval_hours"], unit="h")
+        overlap_start = g[ts].where(g[ts] >= night_start, night_start)
+        overlap_end = interval_end.where(interval_end <= night_end, night_end)
+        g["_night_interval_hours"] = (
+            overlap_end.sub(overlap_start).dt.total_seconds().div(3600).clip(lower=0).fillna(0.0)
+        )
         interval_parts.append(g)
-    f = pd.concat(interval_parts, ignore_index=True)
+
+    if not interval_parts:
+        raise ValueError("No observations fall inside the configured nocturnal window")
+    nocturnal = pd.concat(interval_parts, ignore_index=True)
+    nocturnal["wet"] = nocturnal[lws] >= wet_threshold
+    nocturnal["rh90"] = nocturnal[rh] >= 90.0
+
     rows = []
-    for (site_id, day), g in f.groupby([site, "date"]):
-        wet_h = float((g["wet"] * g["interval_h"]).sum())
-        rh_h = float((g["rh90"] * g["interval_h"]).sum())
-        wet_temp = g.loc[g["rh90"] & g[temp].notna(), temp]
-        mean_wet_temp = float(wet_temp.mean()) if not wet_temp.empty else float(g[temp].mean())
-        dsv = compute_daily_wallin_dsv(mean_wet_temp, rh_h)
-        dsv_lws = compute_daily_lws_modified_dsv(mean_wet_temp, rh_h, wet_h)
-        rows.append({"site": str(site_id), "date": str(day), "leaf_wetness_hours": wet_h,
-                     "rh90_hours": rh_h, "mean_temp_during_rh90_c": mean_wet_temp,
-                     "wallin_dsv": dsv, "dsv_lws_modified": dsv_lws})
-    daily = pd.DataFrame(rows)
-    if daily.empty:
-        raise ValueError("No daily leaf-wetness aggregates could be calculated")
-    p90 = daily.groupby("site")["leaf_wetness_hours"].quantile(0.90).sort_values(ascending=False)
+    for (site_id, night_date), group in nocturnal.groupby([site, "_night_date"], sort=False):
+        wet_hours = float((group["wet"] * group["_night_interval_hours"]).sum())
+        rh90_hours = float((group["rh90"] * group["_night_interval_hours"]).sum())
+        wet_temp = group.loc[
+            group["rh90"] & (group["_night_interval_hours"] > 0) & group[temp].notna(), temp
+        ]
+        mean_wet_temp = float(wet_temp.mean()) if not wet_temp.empty else float(group[temp].mean())
+        rows.append({
+            "site": str(site_id),
+            "night_date": str(night_date),
+            "nocturnal_leaf_wetness_hours": wet_hours,
+            "nocturnal_rh90_hours": rh90_hours,
+            "mean_temp_during_rh90_c": mean_wet_temp,
+            "wallin_dsv": compute_daily_wallin_dsv(mean_wet_temp, rh90_hours),
+            "dsv_lws_modified": compute_daily_lws_modified_dsv(mean_wet_temp, rh90_hours, wet_hours),
+        })
+    nightly = pd.DataFrame(rows)
+    if nightly.empty:
+        raise ValueError("No nocturnal leaf-wetness aggregates could be calculated")
+    p90 = nightly.groupby("site")["nocturnal_leaf_wetness_hours"].quantile(0.90).sort_values(ascending=False)
     return {
         "dataset": "leafwetness",
         "quality": _quality_summary(frame, ts, site),
         "wet_threshold": float(wet_threshold),
         "threshold_warning": "wet_threshold is a user-supplied sensor threshold; calibrate it using the source data dictionary and field reference measurements",
-        "humid_pole_candidate_by_p90_daily_lwd": str(p90.index[0]),
-        "site_p90_daily_lwd_hours": {str(k): float(v) for k, v in p90.items()},
-        "daily_table": daily,
+        "timezone": timezone,
+        "naive_timestamp_interpretation": f"naive timestamps localized as {timezone}; offset-aware timestamps converted to {timezone}",
+        "lwd_scope": "nocturnal_only",
+        "night_window_local": {
+            "start_hour_inclusive": int(night_start_hour),
+            "end_hour_exclusive": int(night_end_hour),
+            "nominal_duration_hours": int((24 - night_start_hour) + night_end_hour),
+        },
+        "humid_pole_candidate_by_p90_nocturnal_lwd": str(p90.index[0]),
+        "site_p90_nocturnal_lwd_hours": {str(key): float(value) for key, value in p90.items()},
+        "daily_table": nightly,
     }
-
 
 def validate_libelium(frame: pd.DataFrame, mapping: Dict[str, str], gap_minutes: float = 20.0):
     ts = resolve_column(frame, mapping, "timestamp")
@@ -327,6 +420,10 @@ def main(argv=None):
     parser.add_argument("--mapping", type=Path, help="JSON mapping from canonical keys to actual column names")
     parser.add_argument("--output-dir", type=Path, default=Path("results/real_data_validation"))
     parser.add_argument("--wet-threshold", type=float, default=50.0)
+    parser.add_argument("--timezone", default="Europe/Rome", help="IANA timezone for leaf-wetness day/night calculations")
+    parser.add_argument("--night-start-hour", type=int, default=18, help="Local hour when nocturnal window starts (inclusive)")
+    parser.add_argument("--night-end-hour", type=int, default=6, help="Local hour when nocturnal window ends (exclusive)")
+    parser.add_argument("--download-date", help="Optional ISO download date to retain in the provenance manifest")
     parser.add_argument("--gap-minutes", type=float, default=20.0)
     parser.add_argument("--step-minutes", type=float, help="Override known sampling interval for tomato forecasting")
     args = parser.parse_args(argv)
@@ -335,7 +432,8 @@ def main(argv=None):
     if args.dataset == "tomato":
         result = validate_tomato(frame, mapping, args.step_minutes)
     elif args.dataset == "leafwetness":
-        result = validate_leafwetness(frame, mapping, args.wet_threshold)
+        result = validate_leafwetness(frame, mapping, args.wet_threshold, args.timezone,
+                                      args.night_start_hour, args.night_end_hour)
     else:
         result = validate_libelium(frame, mapping, args.gap_minutes)
 
@@ -348,12 +446,43 @@ def main(argv=None):
     if rolling is not None:
         rolling.to_csv(output / "rolling_spatial_sufficiency.csv", index=False)
     result["source"] = DATASETS[args.dataset]
-    result["input_files"] = [
-        {"path": str(p), "sha256": file_sha256(p)} for p in args.input
+    input_files = [
+        {"path": str(p), "sha256": file_sha256(p), "size_bytes": p.stat().st_size}
+        for p in args.input
     ]
+    result["input_files"] = input_files
     result["mapping"] = mapping
+    result["download_date"] = args.download_date
     (output / "validation_report.json").write_text(json.dumps(result, indent=2, default=str), encoding="utf-8")
+
+    manifest_path = args.output_dir / "DATASETS_MANIFEST.json"
+    if manifest_path.exists():
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    else:
+        manifest = {"schema_version": 1, "datasets": {}}
+    parameters = {"wet_threshold": args.wet_threshold}
+    if args.dataset == "leafwetness":
+        parameters.update({
+            "timezone": args.timezone,
+            "night_start_hour": args.night_start_hour,
+            "night_end_hour": args.night_end_hour,
+        })
+    if args.dataset == "tomato":
+        parameters["step_minutes"] = args.step_minutes
+    if args.dataset == "libelium":
+        parameters["gap_minutes"] = args.gap_minutes
+    manifest.setdefault("datasets", {})[args.dataset] = {
+        "source": DATASETS[args.dataset],
+        "download_date": args.download_date,
+        "input_files": input_files,
+        "mapping": mapping,
+        "validation_parameters": parameters,
+        "report": str(output / "validation_report.json"),
+    }
+    manifest_path.parent.mkdir(parents=True, exist_ok=True)
+    manifest_path.write_text(json.dumps(manifest, indent=2, default=str), encoding="utf-8")
     print(json.dumps(result, indent=2, default=str))
+    print(f"Updated provenance manifest: {manifest_path}")
 
 
 if __name__ == "__main__":
