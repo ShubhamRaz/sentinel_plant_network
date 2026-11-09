@@ -89,7 +89,7 @@ python src/real_data_validation.py \
 python src/plot_real_data_validation.py
 ```
 
-Generated metrics and tables are written to `results/real_data_validation/<dataset>/`; each run records input SHA-256 values in its JSON report and updates `results/real_data_validation/DATASETS_MANIFEST.json`. High-resolution figures are saved to `figures/real_data_validation/`. These output directories are intentionally git-ignored: preserve them with your research records. Do not treat pre-correction metrics in [`DATA_VALIDATION_REPORT.md`](DATA_VALIDATION_REPORT.md) as final; rerun all datasets with the current code and review the source data dictionary before citing results.
+Before running leaf-wetness validation, verify whether source timestamps are UTC or local time from the original dataset documentation. The `--timezone` argument is required; `Europe/Rome` below is only an example, not a verified dataset property. No timezone is assumed by the adapter. Nocturnal LWD is used only for humid-pole selection, while Wallin and LWS-modified DSV remain daily indices. Generated metrics and tables are written to `results/real_data_validation/<dataset>/`; each run records input SHA-256 values in its JSON report and updates `results/real_data_validation/DATASETS_MANIFEST.json`. High-resolution figures are saved to `figures/real_data_validation/`. These output directories are intentionally git-ignored: preserve them with your research records. Do not treat pre-correction metrics in [`DATA_VALIDATION_REPORT.md`](DATA_VALIDATION_REPORT.md) as final; rerun all datasets with the current code and review the source data dictionary before citing results.
 
 ## Firmware Build & Hardware Bench Testing
 
