@@ -63,7 +63,7 @@ def rcbd_diagnostics(
             "statistic": float(shapiro.statistic), "p_value": float(shapiro.pvalue),
             "n_residuals": int(len(residuals)),
         },
-        "levene_median_by_treatment": {
+        "levene_median_by_treatment_residuals": {
             "statistic": float(levene.statistic), "p_value": float(levene.pvalue),
             "groups": int(n_treatments),
         },
