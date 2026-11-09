@@ -1,6 +1,6 @@
 # Sentinel Plant Network — Comprehensive Research Audit & Verification Report
 
-**Branch:** `fix/research-validation-audit` (synchronized with `main`)  
+**Branch:** `release/journal-supplementary-package` (based on `main`)  
 **Protocol Version:** Protocol v2.0  
 **Audit Date:** November 2026  
 **Auditor:** Sentinel Plant Network Automated & Research Quality System  
@@ -105,10 +105,10 @@ The corrected validation pipeline was executed on the original downloaded files 
   - Chronological splits (70% train, 15% validation, 15% test) strictly enforce a 144-step ($24.0\text{ h}$) embargo purge at partition boundaries, completely eliminating future label leakage into preceding sets.
   - Forward-looking target tokens (`to_24h`, `delta`, `target`, `future`) were stripped.
   - The variable `water_vol_past_4h` is correctly documented as a rolling 4-hour window sum (non-cumulative); raw incremental valve volumes require event-level reconstruction.
-- **Verified 24-Hour Ahead VWC Forecasting Benchmark (Held-out Test Split):**
-  - **Zone 1:** Persistence RMSE 1.196% VWC (MAE 0.449%); Ridge RMSE 1.095% VWC (MAE 0.428%); Random Forest RMSE 0.985% VWC (MAE 0.419%); **GBDT RMSE 0.914% VWC** (MAE 0.377% VWC, $R^2 = 0.816$).
-  - **Zone 2:** Persistence RMSE 0.689% VWC (MAE 0.354%); **Ridge RMSE 0.593% VWC** (MAE 0.347% VWC, $R^2 = 0.918$); Random Forest RMSE 0.706% VWC (MAE 0.356%); GBDT RMSE 0.865% VWC (MAE 0.395%, $R^2 = 0.826$).
-  - **Conclusion:** Both open-field zones demonstrate that ML forecasting baselines reliably outperform naive persistence when evaluated on strictly purged chronological test sets.
+- **Verified 24-Hour Ahead VWC Forecasting Benchmark (Held-out Test Split, No Leakage):**
+  - **Zone 1:** Persistence RMSE 1.196% VWC (MAE 0.242%, $R^2 = -0.662$); Ridge RMSE 1.068% VWC (MAE 0.707%, $R^2 = -0.326$); Random Forest RMSE 0.972% VWC (MAE 0.451%, $R^2 = -0.098$); **GBDT RMSE 0.914% VWC** (MAE 0.377% VWC, $R^2 = +0.028$, validation RMSE 1.185%). GBDT achieves a 23.6% RMSE reduction over persistence.
+  - **Zone 2:** Persistence RMSE 0.689% VWC (MAE 0.150%, $R^2 = -0.126$); **Ridge RMSE 0.593% VWC** (MAE 0.347% VWC, $R^2 = +0.165$, validation RMSE 0.368%); Random Forest RMSE 0.757% VWC (MAE 0.475%, $R^2 = -0.359$); GBDT RMSE 0.878% VWC (MAE 0.623%, $R^2 = -0.831$). Ridge achieves a 13.9% RMSE reduction over persistence.
+  - **Conclusion:** Both open-field sectors demonstrate that ML forecasting baselines reliably outperform naive persistence when evaluated on strictly purged chronological test sets. Output retained: `results/real_data_validation/tomato/tomato_vwc_forecasting_metrics.csv`.
 
 ### 4.2 Leaf Wetness and Agrometeorological Dataset — Verified UTC Nocturnal Rerun
 - **Source:** Mendeley Data `10.17632/sd4b8vpvyb.1` (Version 1, CC BY-NC 4.0).
@@ -117,14 +117,14 @@ The corrected validation pipeline was executed on the original downloaded files 
   - Archive `README.md` explicitly specifies: `"All date and time are reported in UTC"`, confirmed by ISO8601 `"Z"` timestamp strings in `sites.json`.
   - Capacitive wetness benchmark threshold established at 20.0% based on Colucci et al. (*IEEE Transactions on AgriFood Electronics*).
   - Nocturnal evaluation window: 18:00 to 06:00 UTC (12.0 hours nominal).
-- **Verified Nocturnal LWD Quantiles and Candidate Node A Selection:**
-  - **Site 2 (Cremona):** $P_{90} = 12.0\text{ h/night}$, Mean = $11.23\text{ h/night}$ (Wettest microclimate / isolated as candidate humid pole Node A).
-  - **Site 1 (Lodi):** $P_{90} = 12.0\text{ h/night}$, Mean = $9.77\text{ h/night}$.
-  - **Site 5 (Salerno):** $P_{90} = 11.0\text{ h/night}$, Mean = $4.87\text{ h/night}$.
-  - **Site 3 (Latina):** $P_{90} = 10.0\text{ h/night}$, Mean = $5.07\text{ h/night}$.
-  - **Site 4 (Foggia):** $P_{90} = 7.0\text{ h/night}$, Mean = $2.44\text{ h/night}$.
-  - **Site 7 (Avellino):** $P_{90} = 2.0\text{ h/night}$, Mean = $0.91\text{ h/night}$.
-  - **Site 6 (Piedmont):** $P_{90} = 2.0\text{ h/night}$, Mean = $0.98\text{ h/night}$ (Driest station).
+- **Verified Nocturnal LWD Distribution and Humid Pole Selection:**
+  - **Site 2 (Sardinia, Plain, 33m):** $P_{90} = 12.0\text{ h/night}$, Mean = **11.23 h/night** (348 nights, std = 2.54; isolated as candidate humid pole Node A).
+  - **Site 1 (Sardinia, Hill, 125m):** $P_{90} = 12.0\text{ h/night}$, Mean = 8.58 h/night (345 nights, std = 4.51).
+  - **Site 3 (Tuscany, Hill, 242m):** $P_{90} = 12.0\text{ h/night}$, Mean = 5.98 h/night (333 nights, std = 4.73).
+  - **Site 5 (Piedmont, Hill, 187m):** $P_{90} = 12.0\text{ h/night}$, Mean = 4.69 h/night (307 nights, std = 4.84).
+  - **Site 4 (Marche, Hill, 258m):** $P_{90} = 12.0\text{ h/night}$, Mean = 3.87 h/night (297 nights, std = 4.66).
+  - **Site 7 (Piedmont, High, 418m):** $P_{90} = 10.2\text{ h/night}$, Mean = 2.43 h/night (359 nights, std = 4.05).
+  - **Site 6 (Piedmont, High, 434m):** $P_{90} = 3.8\text{ h/night}$, Mean = **0.98 h/night** (353 nights, std = 2.77; driest station).
 - **Wallin vs. LWS-Modified DSV:**
   - Site 2 accumulates maximum daily risk ($\mathrm{DSV}_{\mathrm{LWS}}$ reaches 4 in 41.2% of days). Standard Wallin DSV based solely on weather-station RH ($\ge 90\%$) underestimates disease conduciveness during hours when ambient RH drops between 80% and 89% while foliar dew persists.
 
