@@ -1,6 +1,6 @@
 # Sentinel Plant Network — Comprehensive Research Audit & Verification Report
 
-**Branch:** `dev/complete-validation`  
+**Branch:** `main` (corrective work proposed in `fix/research-validation-audit`)  
 **Protocol Version:** Protocol v2.0  
 **Audit Date:** November 2026  
 **Auditor:** Sentinel Plant Network Automated & Research Quality System  
