@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "purpose": "Source catalogue only. This file does not claim that source archives are present locally or that validation has been rerun.",
+  "datasets": [
+    {
+      "id": "tomato",
+      "name": "Tomato Multi-Sector Precision Irrigation Dataset",
+      "doi": "10.17632/c837v6p8ph.2",
+      "version": 2,
+      "licence": "CC BY 4.0",
+      "source_url": "https://data.mendeley.com/datasets/c837v6p8ph/2",
+      "intended_scope": "Soil-moisture forecasting and irrigation telemetry benchmarking"
+    },
+    {
+      "id": "leafwetness",
+      "name": "Leaf Wetness and Agrometeorological Dataset",
+      "doi": "10.17632/sd4b8vpvyb.1",
+      "version": 1,
+      "licence": "CC BY-NC 4.0",
+      "source_url": "https://data.mendeley.com/datasets/sd4b8vpvyb/1",
+      "intended_scope": "Site-level nocturnal leaf-wetness duration and weather-risk evaluation",
+      "timestamp_handling": "Confirm source timestamp timezone; corrected adapter defaults to Europe/Rome and makes the night window configurable"
+    },
+    {
+      "id": "libelium",
+      "name": "Libelium Olive Grove Multi-Sensor Dataset",
+      "doi": "10.17632/cnfh4stzzx.2",
+      "version": 2,
+      "licence": "CC BY 4.0",
+      "source_url": "https://data.mendeley.com/datasets/cnfh4stzzx/2",
+      "intended_scope": "Two-node telemetry quality, gaps and spatial disagreement"
+    }
+  ],
+  "runtime_provenance": "After running all three dataset validators, preserve results/real_data_validation/DATASETS_MANIFEST.json. That generated manifest contains exact input file paths, sizes, SHA-256 checksums, mappings and run parameters."
+}

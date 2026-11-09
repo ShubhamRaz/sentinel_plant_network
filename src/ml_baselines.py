@@ -50,6 +50,7 @@ def _prepare_time_series(
     if not np.isfinite(step) or step <= 0:
         raise ValueError("Could not infer a valid sampling interval")
     future_target = df[target_col].shift(-horizon_steps)
+    future_timestamp = df[timestamp_col].shift(-horizon_steps)
     # Validate every adjacent interval, rather than only comparing net elapsed
     # time. A short interval following a long gap must not cancel that gap.
     tolerance = max(0.01, step * 0.02)
@@ -68,6 +69,11 @@ def _prepare_time_series(
         feature_cols = [c for c in numeric if c not in excluded and not any(
             token in c.lower() for token in leakage_tokens
         )]
+    feature_cols = list(feature_cols)
+    leakage_tokens = ("future", "target", "ahead", "label", "to_24h", "delta")
+    forbidden = [c for c in feature_cols if any(token in c.lower() for token in leakage_tokens)]
+    if forbidden:
+        raise ValueError(f"Explicit feature_cols contain future-derived or target-like fields: {forbidden}")
     missing = [c for c in feature_cols if c not in df.columns]
     if missing:
         raise KeyError(f"Unknown feature columns: {missing}")
@@ -87,7 +93,11 @@ def _prepare_time_series(
     dataset = X.loc[valid].copy()
     dataset["__target"] = y.loc[valid].astype(float)
     dataset["__timestamp"] = df.loc[valid, timestamp_col].to_numpy()
-    dataset = dataset.dropna(subset=[c for c in dataset.columns if c.startswith(f"{target_col}_lag_") or c.endswith("_mean_3")])
+    dataset["__target_timestamp"] = future_timestamp.loc[valid].to_numpy()
+    dataset = dataset.dropna(subset=[
+        "__target_timestamp",
+        *[c for c in dataset.columns if c.startswith(f"{target_col}_lag_") or c.endswith("_mean_3")],
+    ])
     if len(dataset) < 60:
         raise ValueError("Too few regularly spaced, complete supervised rows after lag construction")
     return dataset, step
@@ -101,6 +111,63 @@ def chronological_indices(n_rows: int, train_fraction: float = 0.70, validation_
     if train_end < 20 or val_end <= train_end or n_rows - val_end < 10:
         raise ValueError("Insufficient rows for chronological train/validation/test partitions")
     return slice(0, train_end), slice(train_end, val_end), slice(val_end, n_rows)
+
+
+
+def purged_chronological_indices(
+    origin_timestamps,
+    target_timestamps,
+    train_fraction: float = 0.70,
+    validation_fraction: float = 0.15,
+):
+    """Create chronological splits with an embargo for overlapping forecast labels.
+
+    A row may enter a split only when its future target timestamp is strictly
+    earlier than the first forecast-origin timestamp in the next split. Feature
+    history may cross a boundary (it is available at prediction time); labels may
+    not. Returns three slices and split/purge counts.
+    """
+    origins = pd.DatetimeIndex(pd.to_datetime(origin_timestamps, errors="coerce", utc=True))
+    targets = pd.DatetimeIndex(pd.to_datetime(target_timestamps, errors="coerce", utc=True))
+    n_rows = len(origins)
+    if len(targets) != n_rows or n_rows < 100:
+        raise ValueError("Purged chronological splitting requires matching timestamp arrays with >=100 rows")
+    if origins.isna().any() or targets.isna().any():
+        raise ValueError("Origin and target timestamps must all be valid")
+    if not origins.is_monotonic_increasing or not targets.is_monotonic_increasing:
+        raise ValueError("Origin and target timestamps must be monotonically increasing")
+    if (targets <= origins).any():
+        raise ValueError("Every forecast target timestamp must follow its origin timestamp")
+    if not 0.5 <= train_fraction < 0.9 or not 0.05 <= validation_fraction < 0.3:
+        raise ValueError("Use train_fraction in [0.5, 0.9) and validation_fraction in [0.05, 0.3)")
+
+    train_boundary = int(n_rows * train_fraction)
+    validation_boundary = int(n_rows * (train_fraction + validation_fraction))
+    if train_boundary < 20 or validation_boundary <= train_boundary or n_rows - validation_boundary < 10:
+        raise ValueError("Insufficient rows for chronological train/validation/test partitions")
+
+    origin_ns = origins.asi8
+    target_ns = targets.asi8
+    train_stop = int(np.searchsorted(target_ns[:train_boundary], origin_ns[train_boundary], side="left"))
+    validation_stop = train_boundary + int(np.searchsorted(
+        target_ns[train_boundary:validation_boundary],
+        origin_ns[validation_boundary],
+        side="left",
+    ))
+    if train_stop < 20 or validation_stop - train_boundary < 10:
+        raise ValueError("Too few rows remain after purging overlapping forecast horizons")
+
+    info = {
+        "nominal_train_rows": train_boundary,
+        "nominal_validation_rows": validation_boundary - train_boundary,
+        "nominal_test_rows": n_rows - validation_boundary,
+        "train_rows": train_stop,
+        "validation_rows": validation_stop - train_boundary,
+        "test_rows": n_rows - validation_boundary,
+        "purged_train_rows": train_boundary - train_stop,
+        "purged_validation_rows": validation_boundary - validation_stop,
+    }
+    return slice(0, train_stop), slice(train_boundary, validation_stop), slice(validation_boundary, n_rows), info
 
 
 def _regression_metrics(y_true, y_pred, drought_threshold=22.0):
@@ -130,7 +197,9 @@ def benchmark_vwc_forecasting(
     supervised, step_minutes = _prepare_time_series(
         frame, timestamp_col, target_col, horizon_steps, feature_cols, expected_step_minutes
     )
-    train, validation, test = chronological_indices(len(supervised))
+    train, validation, test, split_info = purged_chronological_indices(
+        supervised["__timestamp"], supervised["__target_timestamp"]
+    )
     feature_names = [c for c in supervised.columns if not c.startswith("__") and c != "__target"]
     X = supervised[feature_names]
     y = supervised["__target"]
@@ -157,8 +226,8 @@ def benchmark_vwc_forecasting(
             y.iloc[validation], train_pipe.predict(X.iloc[validation]), drought_threshold
         )
         final_pipe = Pipeline([("imputer", SimpleImputer(strategy="median")), ("model", factory())])
-        fit_rows = slice(0, validation.stop)
-        final_pipe.fit(X.iloc[fit_rows], y.iloc[fit_rows])
+        fit_indices = np.r_[np.arange(train.start, train.stop), np.arange(validation.start, validation.stop)]
+        final_pipe.fit(X.iloc[fit_indices], y.iloc[fit_indices])
         rows.append({
             "model": name, "split": "test",
             **_regression_metrics(y_test, final_pipe.predict(x_test), drought_threshold),
@@ -170,7 +239,8 @@ def benchmark_vwc_forecasting(
         "sampling_minutes_median": step_minutes,
         "horizon_minutes": float(horizon_steps * step_minutes),
         "rows_after_lags": int(len(supervised)),
-        "split_rows": {"train": train.stop, "validation": validation.stop - validation.start, "test": len(supervised) - validation.stop},
+        "split_rows": {"train": split_info["train_rows"], "validation": split_info["validation_rows"], "test": split_info["test_rows"]},
+        "purged_rows": {"train": split_info["purged_train_rows"], "validation": split_info["purged_validation_rows"]},
         "metrics": pd.DataFrame(rows),
         "feature_columns": feature_names,
         "test_timestamps": supervised.loc[supervised.index[test], "__timestamp"].astype(str).tolist(),
@@ -196,6 +266,10 @@ def benchmark_blight_classifier(
     for col in feature_cols:
         if col not in df:
             raise KeyError(f"Unknown feature column: {col}")
+    leakage_tokens = ("future", "target", "ahead", "label", "to_24h", "delta")
+    forbidden = [c for c in feature_cols if any(token in c.lower() for token in leakage_tokens)]
+    if forbidden:
+        raise ValueError(f"feature_cols contain future-derived or target-like fields: {forbidden}")
 
     deltas = df[timestamp_col].diff().dt.total_seconds().div(60).dropna()
     step = float(expected_step_minutes or deltas.median())
@@ -208,7 +282,8 @@ def benchmark_blight_classifier(
     bad_prefix = bad_transition.astype("int64").cumsum()
     future_bad_count = bad_prefix.shift(-horizon_steps) - bad_prefix
     target = pd.to_numeric(df[risk_target_col], errors="coerce").shift(-horizon_steps)
-    exact_horizon = future_bad_count.eq(0) & target.notna()
+    target_timestamp = df[timestamp_col].shift(-horizon_steps)
+    exact_horizon = future_bad_count.eq(0) & target.notna() & target_timestamp.notna()
 
     X = df[list(feature_cols)].apply(pd.to_numeric, errors="coerce")
     for lag in (1, 2, 3, 6, 12):
@@ -217,12 +292,16 @@ def benchmark_blight_classifier(
 
     contiguous_lags = bad_transition.rolling(12, min_periods=12).sum().eq(0)
     valid = exact_horizon & contiguous_lags & target.notna() & X.notna().any(axis=1)
-    X, y = X.loc[valid], target.loc[valid].astype(int)
-    if len(X) < 60:
+    origin_timestamps = df.loc[valid, timestamp_col].reset_index(drop=True)
+    target_timestamps = target_timestamp.loc[valid].reset_index(drop=True)
+    X, y = X.loc[valid].reset_index(drop=True), target.loc[valid].astype(int).reset_index(drop=True)
+    if len(X) < 100:
         raise ValueError("Too few timestamp-contiguous records for a chronological risk classifier")
     if not set(y.unique()).issubset({0, 1}):
         raise ValueError("risk_target_col must be binary (0/1), e.g. DSV_LWS >= 18")
-    train, validation, test = chronological_indices(len(X))
+    train, validation, test, split_info = purged_chronological_indices(
+        origin_timestamps, target_timestamps
+    )
     factories = {
         "logistic_regression": lambda: LogisticRegression(max_iter=1000, class_weight="balanced"),
         "random_forest": lambda: RandomForestClassifier(
@@ -238,7 +317,8 @@ def benchmark_blight_classifier(
         pipe_train.fit(X.iloc[train], y.iloc[train])
         val_f1 = f1_score(y.iloc[validation], pipe_train.predict(X.iloc[validation]), zero_division=0)
         pipe = Pipeline([("imputer", SimpleImputer(strategy="median")), ("model", factory())])
-        pipe.fit(X.iloc[:validation.stop], y.iloc[:validation.stop])
+        fit_indices = np.r_[np.arange(train.start, train.stop), np.arange(validation.start, validation.stop)]
+        pipe.fit(X.iloc[fit_indices], y.iloc[fit_indices])
         xt, yt = X.iloc[test], y.iloc[test]
         pred = pipe.predict(xt)
         proba = pipe.predict_proba(xt)[:, 1]
@@ -257,4 +337,6 @@ def benchmark_blight_classifier(
         "horizon_steps": int(horizon_steps),
         "sampling_minutes_median": step,
         "horizon_minutes": float(horizon_steps * step),
+        "split_rows": {"train": split_info["train_rows"], "validation": split_info["validation_rows"], "test": split_info["test_rows"]},
+        "purged_rows": {"train": split_info["purged_train_rows"], "validation": split_info["purged_validation_rows"]},
     }
