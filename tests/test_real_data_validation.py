@@ -65,7 +65,8 @@ def test_leaf_wetness_adapter_computes_daily_duration_and_site_ranking():
     for site_idx, site in enumerate(("site_a", "site_b", "site_c")):
         ts = pd.date_range("2026-02-01 18:00", periods=72, freq="h", tz="Europe/Rome")
         for i, stamp in enumerate(ts):
-            wet = 80.0 if (i % 24) < 8 + site_idx * 3 else 15.0
+            hour = stamp.hour
+            wet = 80.0 if (hour < 3 + site_idx * 2 or (site_idx == 2 and hour >= 20)) else 15.0
             rh = 94.0 if wet > 50 else 65.0
             records.append({
                 "timestamp": stamp, "station": site, "leaf_wetness": wet,
