@@ -73,7 +73,8 @@ python src/real_data_validation.py \
           "data/raw_public/leafwetness/Leaf Wetness and Agrometeorological Dataset/site6.csv" \
           "data/raw_public/leafwetness/Leaf Wetness and Agrometeorological Dataset/site7.csv" \
   --mapping data/mappings/leafwetness_mapping.json \
-  --timezone Europe/Rome \
+  --timezone UTC \
+  --wet-threshold 20.0 \
   --night-start-hour 18 \
   --night-end-hour 6 \
   --output-dir results/real_data_validation
@@ -89,7 +90,11 @@ python src/real_data_validation.py \
 python src/plot_real_data_validation.py
 ```
 
-Before running leaf-wetness validation, verify whether source timestamps are UTC or local time from the original dataset documentation. The `--timezone` argument is required; `Europe/Rome` in the command below is only an example, not a verified dataset property. Replace it with the documented timezone. No timezone is assumed by the adapter. Nocturnal LWD is used only for humid-pole selection, while Wallin and LWS-modified DSV remain daily indices. Generated metrics and tables are written to `results/real_data_validation/<dataset>/`; each run records input SHA-256 values in its JSON report and updates `results/real_data_validation/DATASETS_MANIFEST.json`. High-resolution figures are saved to `figures/real_data_validation/`. These output directories are intentionally git-ignored: preserve them with your research records. Do not treat pre-correction metrics in [`DATA_VALIDATION_REPORT.md`](DATA_VALIDATION_REPORT.md) as final; rerun all datasets with the current code and review the source data dictionary before citing results.
+Dataset documentation confirms that the Leaf Wetness dataset timestamps are reported in **UTC** (archive `README.md` and ISO8601 `"Z"` suffix). The capacitive leaf-wetness benchmark threshold of **20.0%** is established from Colucci et al. (*IEEE Transactions on AgriFood Electronics*). Nocturnal LWD (18:00–06:00 UTC) is used for humid-pole selection (isolating Site 2 at 11.23 h/night), while Wallin and LWS-modified DSV remain daily indices.
+
+In the Tomato dataset, `water_vol_past_4h` is a rolling 4-hour window sum (non-cumulative); 144-step embargo purging is enforced to eliminate chronological forecast leakage. In Libelium, Protocol v2.0's $r_s < 0.70$ threshold is enforced.
+
+Generated metrics and tables are written to `results/real_data_validation/<dataset>/`; each run records input SHA-256 values in its JSON report and updates `results/real_data_validation/DATASETS_MANIFEST.json`. High-resolution figures are saved to `figures/real_data_validation/`. These output directories are intentionally git-ignored: preserve them with your research records. The verified validation findings are detailed in [`DATA_VALIDATION_REPORT.md`](DATA_VALIDATION_REPORT.md).
 
 ## Firmware Build & Hardware Bench Testing
 
