@@ -31,6 +31,8 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
+from statistical_diagnostics import run_all_diagnostics
+
 from models import (
     ControllerState,
     ProtocolConfig,
@@ -1046,6 +1048,15 @@ def main(argv=None):
 
     print("\nRunning Phase 2 (90-day synthetic 16-plot RCBD digital-twin simulation)...")
     p2 = run_phase2_rcbd_evaluation(seed=args.seed + 1, cfg=cfg)
+    diagnostics = run_all_diagnostics(RESULTS_DIR / "phase2_rcbd_16plots_summary.csv")
+    p2["stats_summary"]["rcbd_diagnostics"] = diagnostics
+    (RESULTS_DIR / "statistical_analysis_summary.json").write_text(
+        json.dumps(p2["stats_summary"], indent=2), encoding="utf-8"
+    )
+    diagnostics_path = RESULTS_DIR / "statistical_diagnostics.json"
+    diagnostics_path.write_text(json.dumps(diagnostics, indent=2), encoding="utf-8")
+    print("\nRCBD assumption and non-inferiority diagnostics:")
+    print(json.dumps(diagnostics, indent=2))
     print("\nPhase 2 RCBD treatment summary:")
     print(json.dumps(p2["stats_summary"]["rcbd_anova"], indent=2))
     print("\nPhase 2 5% non-inferiority calculation:")
