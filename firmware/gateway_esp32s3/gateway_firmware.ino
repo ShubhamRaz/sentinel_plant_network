@@ -152,7 +152,6 @@ void receiveLoRaPacket() {
     uint8_t buffer[64]{};
     const size_t packetLength = radio.getPacketLength();
     const int16_t readState = radio.readData(buffer, sizeof(buffer));
-    radio.clearIrqStatus();
     radio.startReceive();
     if (readState != RADIOLIB_ERR_NONE || packetLength != sizeof(sentinel::SentinelPacket)) {
         Serial.printf("Rejected LoRa payload: state=%d length=%u\n", readState, static_cast<unsigned>(packetLength));
