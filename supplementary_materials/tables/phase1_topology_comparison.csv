@@ -1,0 +1,7 @@
+strategy,nodes_used,node_count,hardware_cost_inr,rmse_dry_tail_vwc,rmse_field_mean_vwc,decision_agreement_pct,fn_drought_rate_pct,fn_blight_rate_pct,blight_f1_pct
+1. Single Central Node (R5),R5,1,11200,2.968,0.621,58.21,26.2,45.86,70.25
+2. Single Humid-Location Node (R1),R1,1,11200,7.062,0.398,0.0,100.0,4.91,97.48
+3. Single Vachaud Rank-Stable Node (R4),R4,1,11200,3.523,0.221,43.75,46.97,38.96,75.81
+4. Random Two-Node Pairs (Mean of 45 Pairs),"45 C(10,2) pairs",2,15790,2.222,0.294,62.6,29.02,22.89,85.04
+5. Proposed Risk-Oriented Sentinel Pair (R8 + R7),"R7,R8",2,15790,0.446,0.238,99.68,0.0,0.77,99.62
+6. Full 10-Node Reference Network (Oracle),R1..R10 (All 10),10,61690,0.0,0.0,100.0,0.0,0.0,100.0

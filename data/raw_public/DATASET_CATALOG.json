@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "purpose": "Source catalogue only. This file does not claim that source archives are present locally or that validation has been rerun.",
+  "purpose": "Authoritative source catalog recording DOIs, versions, licenses, and verified metadata for external validation benchmarks.",
   "datasets": [
     {
       "id": "tomato",
@@ -19,7 +19,7 @@
       "licence": "CC BY-NC 4.0",
       "source_url": "https://data.mendeley.com/datasets/sd4b8vpvyb/1",
       "intended_scope": "Site-level nocturnal leaf-wetness duration and weather-risk evaluation",
-      "timestamp_handling": "Confirm source timestamp timezone; corrected adapter defaults to Europe/Rome and makes the night window configurable"
+      "timestamp_handling": "Verified UTC from archive README.md ('All date and time are reported in UTC') and ISO 8601 'Z' suffix. Nocturnal 18:00–06:00 UTC window enforced. Wetness threshold verified as 20.0% from Colucci et al."
     },
     {
       "id": "libelium",

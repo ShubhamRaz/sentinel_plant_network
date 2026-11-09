@@ -315,8 +315,8 @@ To eliminate temporal leakage, chronological splits (70\% train, 15\% validation
 
 On the strictly held-out, non-overlapping test partitions:
 \begin{itemize}\setlength{\itemsep}{1pt}\setlength{\parskip}{0pt}
-  \item \textbf{Zone 1:} Naive persistence achieves an RMSE of 1.196\%~VWC (MAE 0.449\%~VWC). Ridge regression attains 1.095\%~VWC (MAE 0.428\%), Random Forest attains 0.985\%~VWC (MAE 0.419\%), and Gradient Boosted Decision Trees (GBDT) achieve the best accuracy with an RMSE of \textbf{0.914\%~VWC} (MAE 0.377\%~VWC, $R^2 = 0.816$).
-  \item \textbf{Zone 2:} Naive persistence yields an RMSE of 0.689\%~VWC (MAE 0.354\%~VWC). GBDT achieves 0.865\%~VWC (MAE 0.395\%), Random Forest achieves 0.706\%~VWC (MAE 0.356\%), and Ridge regression attains the best performance with an RMSE of \textbf{0.593\%~VWC} (MAE 0.347\%~VWC, $R^2 = 0.918$).
+  \item \textbf{Zone 1:} Naive persistence achieves an RMSE of 1.196\%~VWC (MAE 0.242\%~VWC, $R^2 = -0.662$). Ridge regression attains 1.068\%~VWC (MAE 0.707\%~VWC, $R^2 = -0.326$), Random Forest attains 0.972\%~VWC (MAE 0.451\%~VWC, $R^2 = -0.098$), and Gradient Boosted Decision Trees (GBDT) achieve the best accuracy with an RMSE of \textbf{0.914\%~VWC} (MAE 0.377\%~VWC, $R^2 = +0.028$, validation RMSE 1.185\%~VWC), a 23.6\% error reduction over persistence.
+  \item \textbf{Zone 2:} Naive persistence yields an RMSE of 0.689\%~VWC (MAE 0.150\%~VWC, $R^2 = -0.126$). GBDT achieves 0.878\%~VWC (MAE 0.623\%~VWC, $R^2 = -0.831$), Random Forest achieves 0.757\%~VWC (MAE 0.475\%~VWC, $R^2 = -0.359$), and Ridge regression attains the best performance with an RMSE of \textbf{0.593\%~VWC} (MAE 0.347\%~VWC, $R^2 = +0.165$, validation RMSE 0.368\%~VWC), a 13.9\% error reduction over persistence.
 \end{itemize}
 These empirical tests establish that supervised ML baselines can forecast root-zone moisture 24 hours ahead with sub-1.0\%~VWC root-mean-square error when evaluated without temporal contamination. The variable \texttt{water\_vol\_past\_4h} in the dataset was verified to represent a rolling 4-hour window sum rather than an incremental pulse volume; row-wise summation was therefore flagged as non-cumulative.
 
@@ -325,10 +325,9 @@ Source documentation and archive metadata confirm that timestamps in the Seven-S
 
 Across 55,550 hourly records, nocturnal wetness distribution exhibits pronounced spatial heterogeneity:
 \begin{itemize}\setlength{\itemsep}{1pt}\setlength{\parskip}{0pt}
-  \item \textbf{Site 2 (Cremona):} $P_{90}(\mathrm{LWD}_{\text{nocturnal}}) = 12.0\text{ h/night}$, with the highest mean nocturnal duration of \textbf{11.23~h/night}. Under the Protocol v2.0 rule ($i_A = \arg\max P_{90}$), Site~2 is isolated as the field's humid microclimate pole (candidate Node~A).
-  \item \textbf{Site 1 (Lodi):} $P_{90} = 12.0\text{ h/night}$, mean $= 9.77\text{ h/night}$.
-  \item \textbf{Sites 3--5 (Central/Southern Italy):} $P_{90} \in [7.0, 11.0]\text{ h/night}$, means between 2.44 and 5.07~h/night.
-  \item \textbf{Sites 6--7 (Piedmont / Avellino):} Driest microclimates, with $P_{90} = 2.0\text{ h/night}$ and mean nocturnal wetness below 1.0~h/night (Site~6 mean $= 0.98\text{ h/night}$).
+  \item \textbf{Site 2 (Sardinia, Plain, 33m):} $P_{90}(\mathrm{LWD}_{\text{nocturnal}}) = 12.0\text{ h/night}$, with the highest mean nocturnal duration of \textbf{11.23~h/night} (348 nights, std = 2.54~h). Under the Protocol v2.0 rule ($i_A = \arg\max P_{90}$), Site~2 is isolated as the field's humid microclimate pole (candidate Node~A).
+  \item \textbf{Sites 1, 3--5:} Exhibit persistent saturation ($P_{90} = 12.0\text{ h/night}$) with intermediate seasonal mean nocturnal wetness: Site~1 (8.58~h/night), Site~3 (5.98~h/night), Site~5 (4.69~h/night), and Site~4 (3.87~h/night).
+  \item \textbf{Sites 6--7 (High-Elevation Piedmont):} Driest microclimates, with Site~7 ($P_{90} = 10.2\text{ h/night}$, mean 2.43~h/night) and Site~6 ($P_{90} = 3.8\text{ h/night}$, mean \textbf{0.98~h/night}), confirming severe regional microclimatic tail-risk diversity.
 \end{itemize}
 Comparing standard Wallin Disease Severity Values ($\mathrm{DSV}_{\text{Wallin}}$, based solely on ambient $\mathrm{RH} \ge 90\%$) against leaf-wetness-sensor modified values ($\mathrm{DSV}_{\mathrm{LWS}}$) demonstrated that standard weather stations miss extended foliar wetness periods during nights when ambient RH drops between 80\% and 89\% while dew remains on the canopy. At Site~2, daily $\mathrm{DSV}_{\mathrm{LWS}}$ reached the maximum rating of 4 on 41.2\% of days, confirming that locating Node~A at the humid microclimate pole captures epidemiological risk that field-mean weather stations fail to detect.
 

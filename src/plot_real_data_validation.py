@@ -42,7 +42,7 @@ def plot_libelium():
 
     # Panel 2: Spearman correlation
     ax2.plot(df["timestamp"], df["spearman_r"], color="#7570b3", lw=1.2, label=r"Trailing 48h Spearman $r_s$")
-    ax2.axhline(0.60, color="#d95f02", linestyle="--", lw=1.2, label=r"Protocol Minimum $r_s$ Threshold ($0.60$)")
+    ax2.axhline(0.70, color="#d95f02", linestyle="--", lw=1.2, label=r"Protocol Minimum $r_s$ Threshold ($0.70$)")
     ax2.axhline(0.0, color="gray", linestyle=":", lw=0.8)
     ax2.set_ylabel(r"Spearman Rank $r_s$")
     ax2.set_xlabel("Observation Timestamp (UTC)")
@@ -91,7 +91,7 @@ def plot_leafwetness():
     for bar in bars:
         yval = bar.get_height()
         ax1.text(bar.get_x() + bar.get_width()/2.0, yval + 0.4, f"{yval:.1f}h", ha="center", va="bottom", fontsize=8.5)
-    ax1.set_ylim(0, 27)
+    ax1.set_ylim(0, 14)
 
     # Boxplot of DSV comparison
     dsv_data = []

@@ -2,7 +2,12 @@
 
 **Protocol Version:** Protocol v2.0  
 **Target Hardware:** ESP32-S3-WROOM-1, SX1262 LoRa, BME280, MLX90614, Capacitive Probes, 12V Latching Valve, YF-S201 Flow Meter  
-**Document Purpose:** Define exhaustive, bench-level physical verification procedures, signal pinouts, calibration requirements, failure simulations, and acceptance criteria prior to agricultural field deployment.
+**Document Purpose:** Define exhaustive, bench-level physical verification procedures, signal pinouts, calibration requirements, failure simulations, and acceptance criteria prior to future agricultural field deployment.  
+**Research Scope:** Future Physical Engineering Work (Out of Scope for Current Dataset/Simulation Manuscript).  
+
+> [!IMPORTANT]
+> **Scope Notice — Future Physical Work (Out of Scope for Current Manuscript):**  
+> The current Sentinel Plant Network journal publication is a computational architecture, digital-twin benchmark, and external public-dataset validation study. Physical hardware fabrication, LoRa radio-frequency bench testing, latching-valve hydraulic loop verification, and in-situ sensor calibration are engineering procedures scheduled for future physical field deployment. No physical hardware deployment or field trials are claimed in the paper. This plan defines the pre-deployment verification criteria for future physical bench testing.
 
 > [!WARNING]
 > **Bench Safety Precaution:** Never perform initial valve testing with pressurized agricultural lines connected. Bench-test the H-bridge and latching solenoid valve using a low-pressure water loop or dry solenoid click verification. Latching valves mechanically retain their last state upon total power failure; ensure manual isolation valves are in place.

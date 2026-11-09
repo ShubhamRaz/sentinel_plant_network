@@ -1,0 +1,65 @@
+{
+  "dataset": "libelium",
+  "quality": {
+    "rows": 9435,
+    "timestamp_parse_failures": 0,
+    "duplicate_timestamps": 0,
+    "duplicate_key": "device_id+timestamp",
+    "missing_cells": 45188,
+    "median_sampling_interval_minutes": 10.36811965,
+    "gaps_over_20_minutes": 105
+  },
+  "gap_threshold_minutes": 20.0,
+  "node_quality": {
+    "Goraj-1": {
+      "rows": 6462,
+      "valid_vwc": 2182,
+      "missing_vwc": 4280,
+      "gaps_over_threshold": 72,
+      "largest_gap_minutes": 14560.65707865,
+      "median_interval_minutes": 10.37930685
+    },
+    "Goraj-2": {
+      "rows": 2973,
+      "valid_vwc": 2973,
+      "missing_vwc": 0,
+      "gaps_over_threshold": 33,
+      "largest_gap_minutes": 14555.014286416666,
+      "median_interval_minutes": 10.34756235
+    }
+  },
+  "vwc_scale_factor": 100.0,
+  "vwc_unit": "% VWC",
+  "two_node_sufficiency": {
+    "nodes_compared": [
+      "Goraj-1",
+      "Goraj-2"
+    ],
+    "paired_rows": 1617,
+    "window_steps": 278,
+    "insufficient_coverage_flag": true,
+    "latest_mean_abs_vwc_diff": 4.067896853247992,
+    "latest_spearman_r": -0.7387904069188295,
+    "trigger_count": 873
+  },
+  "source": {
+    "url": "https://data.mendeley.com/datasets/cnfh4stzzx/2",
+    "doi": "10.17632/cnfh4stzzx.2",
+    "licence": "CC BY 4.0",
+    "purpose": "real two-node telemetry quality, gaps and spatial disagreement"
+  },
+  "input_files": [
+    {
+      "path": "data\\raw_public\\libelium\\A Libelium-Based Multisensor Dataset for Precision\\extracted\\Libelium_Olive_Grove_Dataset_Goraj_Kucova_Albania\\Libelium_Olive_Grove_Dataset_Goraj_Kucova_Albania\\libelium_measurements_quality_controlled.csv",
+      "sha256": "65d899c4e98b5d08c954da332b937ada81a25bca3265f2cc7fab43929acf307d",
+      "size_bytes": 3596067
+    }
+  ],
+  "mapping": {
+    "timestamp": "timestamp",
+    "node": "device_id",
+    "vwc": "teros11_vwc_m3_m3",
+    "scale_vwc": 100.0
+  },
+  "download_date": "2026-11-09"
+}
