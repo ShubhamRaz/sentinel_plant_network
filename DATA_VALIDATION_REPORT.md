@@ -13,7 +13,7 @@
 >
 > Raw public datasets and generated validation outputs are intentionally excluded from Git. At this repository revision, the actual source files, SHA-256 manifest, and machine-readable per-dataset result JSONs are not present on `main`; consequently, the previous numerical claims cannot be independently reproduced from the repository alone. The corrected adapters now write per-input checksums and a `DATASETS_MANIFEST.json` alongside the generated reports under `results/real_data_validation/`. Preserve those outputs with each research release.
 >
-> For the leaf-wetness dataset, the corrected default is `Europe/Rome`, 18:00 inclusive to 06:00 exclusive; verify the dataset's timestamp convention and calibrated wetness threshold before accepting the resulting humid-pole ranking. For tomato forecasting, the corrected pipeline removes training/validation labels that reach into the next partition. For Libelium, use the Protocol v2.0 correlation threshold of 0.70 and regenerate the trigger count.
+> For the leaf-wetness dataset, the corrected adapter requires an explicit timezone confirmed from the archive documentation; the public landing page identifies Italian sites but does not establish whether timestamps are UTC or local. The default night window is 18:00 inclusive to 06:00 exclusive in that verified timezone. Humid-pole selection uses nocturnal LWD, while Wallin and LWS-modified disease severity values remain daily indices. Calibrate the wetness threshold before accepting the humid-pole ranking. For tomato forecasting, the corrected pipeline removes training/validation labels that reach into the next partition. For Libelium, use the Protocol v2.0 correlation threshold of 0.70 and regenerate the trigger count.
 
 ## 1. Overview and Validation Objectives
 
@@ -127,10 +127,10 @@ Protocol v2.0 specifies that Node A is anchored at the location with the maximum
 *Site 2 is uniquely isolated as the field humid pole ($P_{90} = 24.0\text{ h/day}$), directly supporting the core architectural thesis that a single central weather station fails to capture foliar wetness in sheltered microzones.*
 
 ### 4.3 Historical Wallin DSV vs. LWS-Modified DSV — Recalculation Required
-The previous all-day adapter computed both standard Wallin Disease Severity Values ($\mathrm{DSV}_{\text{Wallin}}$ based solely on $\mathrm{RH} \ge 90\%$) and leaf-wetness-modified values ($\mathrm{DSV}_{\mathrm{LWS}}$ integrating physical surface wetness):
+The previous adapter computed both standard daily Wallin Disease Severity Values ($\mathrm{DSV}_{\text{Wallin}}$ based solely on $\mathrm{RH} \ge 90\%$) and leaf-wetness-modified values ($\mathrm{DSV}_{\mathrm{LWS}}$ integrating physical surface wetness):
 - During clear nights with high radiative cooling, surface wetness on lower leaves persists even when aspirated air RH drops into the 82--89% range.
 - Standard Wallin DSV recorded zero severity accumulation during these periods, whereas $\mathrm{DSV}_{\mathrm{LWS}}$ accumulated 1 to 2 severity units per day.
-- Output table generated: `results/real_data_validation/leafwetness/nightly_leafwetness_dsv.csv`.
+- Corrected outputs: `results/real_data_validation/leafwetness/nightly_leafwetness_lwd.csv` for nocturnal placement metrics and `results/real_data_validation/leafwetness/daily_leafwetness_dsv.csv` for daily disease-severity indices.
 
 ---
 
