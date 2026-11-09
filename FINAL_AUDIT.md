@@ -23,9 +23,9 @@ The Sentinel Plant Network proposes an edge-autonomous, risk-oriented dual-pole 
 | Domain | Scope Inspected | Verification Method | Status |
 | :--- | :--- | :--- | :--- |
 | **Software Implementation** | `src/models.py`, `src/ml_baselines.py`, `src/run_experiments.py`, `src/statistical_diagnostics.py` | Line-by-line code review, execution, and bug-fix verification | **COMPLETE** |
-| **Automated Testing** | Python unit suite, deterministic simulation runs, CI workflow | `pytest -q`, dual-run sha256 checksum comparison | **PARTIALLY COMPLETE** (re-run CI after corrective commit) |
+| **Automated Testing** | 20 Python tests, deterministic simulation runs, C++ host tests, PlatformIO targets, LaTeX | Full GitHub Actions workflow | **COMPLETE** on the latest green validation run; rerun on any subsequent change |
 | **Public Dataset Validation** | Tomato, Leaf Wetness, Libelium public datasets | Corrected adapters and documented rerun workflow | **PARTIALLY COMPLETE** (prior metrics withdrawn pending corrected rerun; raw files and JSON outputs are not tracked) |
-| **Statistical Validation** | RCBD ANOVA, Shapiro-Wilk, Levene test, 5% yield non-inferiority, REML MixedLM | Python statistical recomputation on plot-level observations | **COMPLETE** |
+| **Synthetic Statistical Method Checks** | RCBD ANOVA, Shapiro-Wilk, Levene test, yield non-inferiority, REML MixedLM | Python recomputation on synthetic plot-level observations | **COMPLETE** (simulation only; not field inference) |
 | **Firmware Compilation** | C++17 `sentinel_protocol.h`, `node_firmware.ino`, `gateway_firmware.ino`, `platformio.ini` | Protocol static assertion (24-byte pack), host test verification, CI PlatformIO build check | **PARTIALLY COMPLETE** (CI compiles; local host lacks 64-bit GCC/PlatformIO) |
 | **Physical Hardware Validation** | PCB fabrication, SX1262 RF link, H-bridge valve bench, sensor calibration | Laboratory hardware bench testing with actual components | **NOT STARTED** (Requires physical hardware; bench test plan formulated) |
 | **Field Experimentation** | Phase 1 placement calibration, Phase 2 16-plot RCBD field trial | Multi-season agronomic field deployment | **NOT STARTED** (Pre-trial stage; requires field site and planting season) |
