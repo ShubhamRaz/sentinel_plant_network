@@ -336,7 +336,7 @@ The one-sided statistic is $t_{NI}=(\Delta_r-M_r)/SED$ with 9 residual degrees o
 \[
  L_{95}=\Delta_r-t_{0.95,9}\,SED.
 \]
-Non-inferiority is supported only when $L_{95}>M_r$. This model-based contrast uses the RCBD residual error term; it is not an unpaired or plant-subsample $t$-test. The script \texttt{src/statistical\_diagnostics.py} regenerates the assumptions and contrast outputs from the 16 plot-level rows. Outputs must be recomputed whenever seeds, configuration, or input data change.
+Non-inferiority is supported only when $L_{95}>M_r$. This model-based contrast uses the RCBD residual error term; it is not an unpaired or plant-subsample $t$-test. The script \texttt{src/statistical\_diagnostics.py} regenerates the assumptions and contrast outputs from the 16 plot-level rows. Outputs must be recomputed whenever seeds, configuration, or input data change. In the current synthetic baseline run, the marketable-yield residual Shapiro--Wilk statistic is $W=0.9507$ ($p=0.5002$), and the median-centred Levene residual-variance statistic across treatment groups is $W_{\mathrm{Levene}}=1.5489$ ($p=0.2528$). These non-significant tests do not demonstrate that the normality or homoscedasticity assumptions are true; residual plots and sensitivity analyses remain necessary.
 
 \begin{thebibliography}{99}\small\setlength{\itemsep}{2pt}
 
