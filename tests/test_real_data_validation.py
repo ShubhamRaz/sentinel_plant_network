@@ -7,7 +7,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from ml_baselines import _prepare_time_series
+from ml_baselines import _prepare_time_series, purged_chronological_indices
 from real_data_validation import (
     validate_libelium,
     validate_leafwetness,
@@ -63,7 +63,7 @@ def test_tomato_adapter_keeps_parallel_sector_timeseries_separate():
 def test_leaf_wetness_adapter_computes_daily_duration_and_site_ranking():
     records = []
     for site_idx, site in enumerate(("site_a", "site_b", "site_c")):
-        ts = pd.date_range("2026-02-01", periods=72, freq="h", tz="UTC")
+        ts = pd.date_range("2026-02-01 18:00", periods=72, freq="h", tz="Europe/Rome")
         for i, stamp in enumerate(ts):
             wet = 80.0 if (i % 24) < 8 + site_idx * 3 else 15.0
             rh = 94.0 if wet > 50 else 65.0
@@ -75,10 +75,12 @@ def test_leaf_wetness_adapter_computes_daily_duration_and_site_ranking():
         pd.DataFrame(records),
         {"site": "station"},
     )
-    assert result["humid_pole_candidate_by_p90_daily_lwd"] == "site_c"
+    assert result["humid_pole_candidate_by_p90_nocturnal_lwd"] == "site_c"
     assert result["quality"]["duplicate_timestamps"] == 0
     assert len(result["daily_table"]) == 9
-    assert result["daily_table"]["leaf_wetness_hours"].between(0, 24).all()
+    assert result["lwd_scope"] == "nocturnal_only"
+    assert result["timezone"] == "Europe/Rome"
+    assert result["daily_table"]["nocturnal_leaf_wetness_hours"].between(0, 12).all()
 
 
 def test_forecasting_supervised_rows_do_not_bridge_missing_timestamps():
@@ -161,3 +163,43 @@ def test_libelium_scaling_fractional_vwc():
     assert result["two_node_sufficiency"]["latest_mean_abs_vwc_diff"] > 10.0
     assert result["two_node_sufficiency"]["insufficient_coverage_flag"] is True
 
+
+
+
+def test_leafwetness_ignores_daytime_wetness_when_selecting_humid_pole():
+    timestamps = pd.date_range("2026-02-01 18:00", periods=72, freq="h", tz="Europe/Rome")
+    rows = []
+    for site, wet_hours in (("daytime_wet", set(range(8, 18))), ("nighttime_wet", set(range(18, 24)) | set(range(0, 6)))):
+        for stamp in timestamps:
+            wet = stamp.hour in wet_hours
+            rows.append({
+                "timestamp": stamp,
+                "station": site,
+                "leaf_wetness": 90.0 if wet else 10.0,
+                "relative_humidity": 95.0 if wet else 60.0,
+                "air_temperature": 15.0,
+            })
+    result = validate_leafwetness(pd.DataFrame(rows), {"site": "station"})
+    assert result["humid_pole_candidate_by_p90_nocturnal_lwd"] == "nighttime_wet"
+    p90 = result["site_p90_nocturnal_lwd_hours"]
+    assert p90["daytime_wet"] == pytest.approx(0.0)
+    assert p90["nighttime_wet"] == pytest.approx(12.0)
+
+
+def test_purged_chronological_splits_do_not_share_forecast_target_periods():
+    n = 2400
+    timestamps = pd.date_range("2026-01-01", periods=n, freq="10min", tz="UTC")
+    values = 27.0 + np.sin(np.arange(n) / 30)
+    frame = pd.DataFrame({"timestamp": timestamps, "vwc": values})
+    prepared, _ = _prepare_time_series(frame, "timestamp", "vwc", horizon_steps=144)
+    train, validation, test, info = purged_chronological_indices(
+        prepared["__timestamp"], prepared["__target_timestamp"]
+    )
+    train_end_label = prepared.iloc[train]["__target_timestamp"].max()
+    validation_start = prepared.iloc[validation]["__timestamp"].min()
+    validation_end_label = prepared.iloc[validation]["__target_timestamp"].max()
+    test_start = prepared.iloc[test]["__timestamp"].min()
+    assert train_end_label < validation_start
+    assert validation_end_label < test_start
+    assert info["purged_train_rows"] > 0
+    assert info["purged_validation_rows"] > 0
