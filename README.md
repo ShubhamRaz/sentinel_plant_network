@@ -113,12 +113,23 @@ pio run -c firmware/platformio.ini
 
 Before physical hardware deployment, execute the 7-step hardware verification plan documented in [`HARDWARE_BENCH_TEST_PLAN.md`](HARDWARE_BENCH_TEST_PLAN.md).
 
-## Project Audit & Deliverables
+## Research Documentation & Journal Supplementary Materials
 
+- [`supplementary_materials/`](supplementary_materials/): Complete journal research supplementary materials package:
+  - [`supplementary_materials/README.md`](supplementary_materials/README.md): Master catalog and guide to all supplementary files.
+  - [`supplementary_materials/S1_DATASET_PROVENANCE_AND_ATTRIBUTION.md`](supplementary_materials/S1_DATASET_PROVENANCE_AND_ATTRIBUTION.md): Attribution, DOIs, licenses, metadata, and timezone/threshold justifications.
+  - [`supplementary_materials/S2_EXPERIMENTAL_METHODOLOGY_AND_CLEANING.md`](supplementary_materials/S2_EXPERIMENTAL_METHODOLOGY_AND_CLEANING.md): Telemetry ingestion, timestamp alignment, sensor scaling, and QC filters.
+  - [`supplementary_materials/S3_ML_FORECASTING_AND_EMBARGO_PROTOCOL.md`](supplementary_materials/S3_ML_FORECASTING_AND_EMBARGO_PROTOCOL.md): Chronological splits, 144-step embargo purge, and model metrics.
+  - [`supplementary_materials/S4_STATISTICAL_DIAGNOSTICS_REPORT.md`](supplementary_materials/S4_STATISTICAL_DIAGNOSTICS_REPORT.md): RCBD ANOVA, Shapiro-Wilk, Levene test, 5% non-inferiority, and REML MixedLM.
+  - [`supplementary_materials/S5_REPRODUCIBILITY_AND_ENVIRONMENT.md`](supplementary_materials/S5_REPRODUCIBILITY_AND_ENVIRONMENT.md): Environment setup, dependency specifications, and CI workflow.
+  - [`supplementary_materials/CHECKSUMS_SHA256.txt`](supplementary_materials/CHECKSUMS_SHA256.txt): Cryptographic SHA-256 hashes for all 31 supplementary files.
+  - [`supplementary_materials/tables/`](supplementary_materials/tables/): Empirical and simulation CSV & JSON results.
+  - [`supplementary_materials/figures/`](supplementary_materials/figures/): High-resolution vector (PDF) and raster (PNG) publication plots.
 - [`FINAL_AUDIT.md`](FINAL_AUDIT.md): Comprehensive system audit of software, models, tests, statistical validity, firmware readiness, and CI status.
-- [`DATA_VALIDATION_REPORT.md`](DATA_VALIDATION_REPORT.md): Dataset analysis scope, correction notice, and the rerun requirements for forecast leakage, nocturnal LWD, and spatial-threshold consistency.
-- [`HARDWARE_BENCH_TEST_PLAN.md`](HARDWARE_BENCH_TEST_PLAN.md): Physical hardware bench testing procedures, electrical pinout maps, calibration protocols, and acceptance criteria.
-- `paper/Sentinel_Plant_Network_Journal_Paper.tex`: Manuscript with empirical numerical claims withdrawn pending corrected dataset reruns and strict simulation boundaries.
+- [`DATA_VALIDATION_REPORT.md`](DATA_VALIDATION_REPORT.md): Verified public-dataset empirical results, limitations, and scientifically skipped experiments.
+- [`HARDWARE_BENCH_TEST_PLAN.md`](HARDWARE_BENCH_TEST_PLAN.md): Physical hardware bench testing procedures, electrical pinout maps, calibration protocols, and acceptance criteria (marked as future work / out of scope).
+- [`paper/Sentinel_Plant_Network_Journal_Paper.tex`](paper/Sentinel_Plant_Network_Journal_Paper.tex): Complete LaTeX manuscript with verified empirical metrics from original datasets and digital-twin benchmarks.
+- [`paper/Sentinel_Plant_Network_Journal_Paper.pdf`](paper/Sentinel_Plant_Network_Journal_Paper.pdf): Compiled journal manuscript PDF.
 
 ## Paper
 

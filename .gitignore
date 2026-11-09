@@ -9,9 +9,9 @@ venv/
 # Local public datasets: download and retain source licences separately.
 data/raw_public/**
 !data/raw_public/README.md
+!data/raw_public/DATASET_CATALOG.json
 
-# Locally generated benchmark outputs
-results/real_data_validation/
+# Locally generated temporary artifacts and LaTeX logs
 artifacts/
 *.aux
 *.bbl
@@ -21,9 +21,8 @@ artifacts/
 *.toc
 *.synctex.gz
 
-# Locally generated digital-twin outputs (retain provenance notes)
+# Locally generated digital-twin outputs (summaries and figures preserved under supplementary_materials/)
 data/simulated_digital_twin/**
 !data/simulated_digital_twin/README.md
 results/simulated_digital_twin/**
 figures/simulated_digital_twin/
-figures/real_data_validation/**

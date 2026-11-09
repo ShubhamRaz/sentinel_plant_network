@@ -1,0 +1,10 @@
+scenario,resulting_state,valve_open_cmd,advisory
+Stale Packet (>30 min),FAULT_FALLBACK,False,ALERT [FAULT_FALLBACK]: Stale telemetry (35.0 min > 30 min); valve closed safely.
+NaN Sensor Drop (Soil Probe),FAULT_FALLBACK,False,ALERT [FAULT_FALLBACK]: NaN sensor reading; valve closed safely.
+NaN Sensor Drop (MLX90614 Canopy),FAULT_FALLBACK,False,ALERT [FAULT_FALLBACK]: NaN sensor reading; valve closed safely.
+Zero-Flow Solenoid Fault (YF-S201),FAULT_FALLBACK,False,ALERT [FAULT_FALLBACK]: Zero-flow hardware fault; valve closed safely.
+Emergency Drought Override (VWC=15.5%),EMERGENCY_DRIP,True,"ALERT [EMERGENCY_DRIP]: Severe drought override (VWC=15.5%, CWSI=0.68)."
+Conflict Midday Micro-Pulse ON (11:35),CONFLICT_MICRO_PULSE,True,ADVISORY [CONFLICT_MICRO_PULSE]: Midday 15m/45m pulse (valve=OPEN).
+Conflict Midday Micro-Pulse OFF (11:50),CONFLICT_MICRO_PULSE,False,ADVISORY [CONFLICT_MICRO_PULSE]: Midday 15m/45m pulse (valve=CLOSED).
+Conflict Night Lockout (02:00),PATHOGEN_LOCKOUT,False,ADVISORY [PATHOGEN_LOCKOUT]: Water stress deferred outside 11:30-14:30 due to blight risk.
+36-Hour Max Lockout Cap Override,STANDARD_DRIP,True,INFO [STANDARD_DRIP]: Irrigating for crop water stress (36h lockout cap reached).

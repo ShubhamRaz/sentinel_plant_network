@@ -1,0 +1,303 @@
+{
+  "dataset": "tomato",
+  "quality": {
+    "rows": 21460,
+    "timestamp_parse_failures": 0,
+    "duplicate_timestamps": 0,
+    "duplicate_key": "__source_file+ts",
+    "missing_cells": 288,
+    "median_sampling_interval_minutes": 10.0,
+    "gaps_over_20_minutes": 1534
+  },
+  "grouping_column": "__source_file",
+  "sector_or_file_count": 2,
+  "per_sector": {
+    "dataset_zone_1_preprocessed.csv": {
+      "rows": 9531,
+      "vwc_column": "soil_moisture",
+      "source_file": "dataset_zone_1_preprocessed.csv",
+      "vwc_forecast": {
+        "task": "24h_ahead_vwc_forecast",
+        "horizon_minutes": 1440.0,
+        "sampling_minutes_median": 10.0,
+        "split_rows": {
+          "train": 2894,
+          "validation": 507,
+          "test": 652
+        },
+        "purged_rows": {
+          "train": 144,
+          "validation": 144
+        },
+        "metrics": [
+          {
+            "model": "persistence",
+            "split": "test",
+            "rmse": 1.1960761512166367,
+            "mae": 0.2415644171779141,
+            "r2": -0.6622833152022389,
+            "drought_crossing_recall": 1.0,
+            "drought_events": 652,
+            "validation_rmse": NaN
+          },
+          {
+            "model": "ridge",
+            "split": "test",
+            "rmse": 1.068308356782153,
+            "mae": 0.7067891659961693,
+            "r2": -0.32611331324242965,
+            "drought_crossing_recall": 1.0,
+            "drought_events": 652,
+            "validation_rmse": 1.0696690395273971
+          },
+          {
+            "model": "random_forest",
+            "split": "test",
+            "rmse": 0.9718783539128212,
+            "mae": 0.4509619300059438,
+            "r2": -0.09751686529447512,
+            "drought_crossing_recall": 1.0,
+            "drought_events": 652,
+            "validation_rmse": 1.1487242462148224
+          },
+          {
+            "model": "gradient_boosting",
+            "split": "test",
+            "rmse": 0.9144800403562738,
+            "mae": 0.37715961413023263,
+            "r2": 0.028291849320622564,
+            "drought_crossing_recall": 1.0,
+            "drought_events": 652,
+            "validation_rmse": 1.1847368445499284
+          }
+        ]
+      },
+      "irrigation_telemetry": {
+        "column": "water_vol_past_4h",
+        "valid_records": 9531,
+        "sum_of_reported_values": 79516.8,
+        "unit": "source dataset unit; verify data dictionary",
+        "cumulative_volume_verified": false,
+        "warning": "Do not interpret this sum as cumulative irrigation unless the source data dictionary confirms each row is an incremental event rather than a rolling-window aggregate."
+      }
+    },
+    "dataset_zone_2_preprocessed.csv": {
+      "rows": 11929,
+      "vwc_column": "soil_moisture",
+      "source_file": "dataset_zone_2_preprocessed.csv",
+      "vwc_forecast": {
+        "task": "24h_ahead_vwc_forecast",
+        "horizon_minutes": 1440.0,
+        "sampling_minutes_median": 10.0,
+        "split_rows": {
+          "train": 4658,
+          "validation": 885,
+          "test": 1030
+        },
+        "purged_rows": {
+          "train": 144,
+          "validation": 144
+        },
+        "metrics": [
+          {
+            "model": "persistence",
+            "split": "test",
+            "rmse": 0.6890263286358498,
+            "mae": 0.15048543689320387,
+            "r2": -0.12618393868114386,
+            "drought_crossing_recall": 1.0,
+            "drought_events": 1030,
+            "validation_rmse": NaN
+          },
+          {
+            "model": "ridge",
+            "split": "test",
+            "rmse": 0.5932765367552462,
+            "mae": 0.3467696618906692,
+            "r2": 0.16506620363227742,
+            "drought_crossing_recall": 1.0,
+            "drought_events": 1030,
+            "validation_rmse": 0.3675286624059524
+          },
+          {
+            "model": "random_forest",
+            "split": "test",
+            "rmse": 0.756960461584822,
+            "mae": 0.4749516435882592,
+            "r2": -0.35920225351544066,
+            "drought_crossing_recall": 1.0,
+            "drought_events": 1030,
+            "validation_rmse": 0.4706318580164827
+          },
+          {
+            "model": "gradient_boosting",
+            "split": "test",
+            "rmse": 0.8784869626122924,
+            "mae": 0.6233640893884993,
+            "r2": -0.8306627138640215,
+            "drought_crossing_recall": 1.0,
+            "drought_events": 1030,
+            "validation_rmse": 0.3581723123799168
+          }
+        ]
+      },
+      "irrigation_telemetry": {
+        "column": "water_vol_past_4h",
+        "valid_records": 11929,
+        "sum_of_reported_values": 138916.8,
+        "unit": "source dataset unit; verify data dictionary",
+        "cumulative_volume_verified": false,
+        "warning": "Do not interpret this sum as cumulative irrigation unless the source data dictionary confirms each row is an incremental event rather than a rolling-window aggregate."
+      }
+    }
+  },
+  "vwc_forecast": {
+    "per_sector": {
+      "dataset_zone_1_preprocessed.csv": {
+        "task": "24h_ahead_vwc_forecast",
+        "horizon_minutes": 1440.0,
+        "sampling_minutes_median": 10.0,
+        "split_rows": {
+          "train": 2894,
+          "validation": 507,
+          "test": 652
+        },
+        "purged_rows": {
+          "train": 144,
+          "validation": 144
+        },
+        "metrics": [
+          {
+            "model": "persistence",
+            "split": "test",
+            "rmse": 1.1960761512166367,
+            "mae": 0.2415644171779141,
+            "r2": -0.6622833152022389,
+            "drought_crossing_recall": 1.0,
+            "drought_events": 652,
+            "validation_rmse": NaN
+          },
+          {
+            "model": "ridge",
+            "split": "test",
+            "rmse": 1.068308356782153,
+            "mae": 0.7067891659961693,
+            "r2": -0.32611331324242965,
+            "drought_crossing_recall": 1.0,
+            "drought_events": 652,
+            "validation_rmse": 1.0696690395273971
+          },
+          {
+            "model": "random_forest",
+            "split": "test",
+            "rmse": 0.9718783539128212,
+            "mae": 0.4509619300059438,
+            "r2": -0.09751686529447512,
+            "drought_crossing_recall": 1.0,
+            "drought_events": 652,
+            "validation_rmse": 1.1487242462148224
+          },
+          {
+            "model": "gradient_boosting",
+            "split": "test",
+            "rmse": 0.9144800403562738,
+            "mae": 0.37715961413023263,
+            "r2": 0.028291849320622564,
+            "drought_crossing_recall": 1.0,
+            "drought_events": 652,
+            "validation_rmse": 1.1847368445499284
+          }
+        ]
+      },
+      "dataset_zone_2_preprocessed.csv": {
+        "task": "24h_ahead_vwc_forecast",
+        "horizon_minutes": 1440.0,
+        "sampling_minutes_median": 10.0,
+        "split_rows": {
+          "train": 4658,
+          "validation": 885,
+          "test": 1030
+        },
+        "purged_rows": {
+          "train": 144,
+          "validation": 144
+        },
+        "metrics": [
+          {
+            "model": "persistence",
+            "split": "test",
+            "rmse": 0.6890263286358498,
+            "mae": 0.15048543689320387,
+            "r2": -0.12618393868114386,
+            "drought_crossing_recall": 1.0,
+            "drought_events": 1030,
+            "validation_rmse": NaN
+          },
+          {
+            "model": "ridge",
+            "split": "test",
+            "rmse": 0.5932765367552462,
+            "mae": 0.3467696618906692,
+            "r2": 0.16506620363227742,
+            "drought_crossing_recall": 1.0,
+            "drought_events": 1030,
+            "validation_rmse": 0.3675286624059524
+          },
+          {
+            "model": "random_forest",
+            "split": "test",
+            "rmse": 0.756960461584822,
+            "mae": 0.4749516435882592,
+            "r2": -0.35920225351544066,
+            "drought_crossing_recall": 1.0,
+            "drought_events": 1030,
+            "validation_rmse": 0.4706318580164827
+          },
+          {
+            "model": "gradient_boosting",
+            "split": "test",
+            "rmse": 0.8784869626122924,
+            "mae": 0.6233640893884993,
+            "r2": -0.8306627138640215,
+            "drought_crossing_recall": 1.0,
+            "drought_events": 1030,
+            "validation_rmse": 0.3581723123799168
+          }
+        ]
+      }
+    }
+  },
+  "irrigation_telemetry": {
+    "column": "water_vol_past_4h",
+    "valid_records": 21460,
+    "sum_of_reported_values": 218433.59999999998,
+    "unit": "source dataset unit; verify data dictionary",
+    "cumulative_volume_verified": false,
+    "warning": "Do not interpret this sum as cumulative irrigation unless the source data dictionary confirms each row is an incremental event rather than a rolling-window aggregate."
+  },
+  "source": {
+    "url": "https://data.mendeley.com/datasets/c837v6p8ph/2",
+    "doi": "10.17632/c837v6p8ph.2",
+    "licence": "CC BY 4.0",
+    "purpose": "soil-moisture forecasting and irrigation telemetry benchmarking"
+  },
+  "input_files": [
+    {
+      "path": "data\\raw_public\\tomato\\Soil Moisture, Irrigation Actuator and Weather Dat\\02_processed_data\\preprocessed\\dataset_zone_1_preprocessed.csv",
+      "sha256": "e3c8ce709e89d1a7944bfbcfc0120a2f0166b4198cdf390efad659fd3acb9a89",
+      "size_bytes": 1760164
+    },
+    {
+      "path": "data\\raw_public\\tomato\\Soil Moisture, Irrigation Actuator and Weather Dat\\02_processed_data\\preprocessed\\dataset_zone_2_preprocessed.csv",
+      "sha256": "7436f9d1b03da0dd4a76cf2005e9ded38881d88d6b85c7f20cf7a3dc561ee5ac",
+      "size_bytes": 2164170
+    }
+  ],
+  "mapping": {
+    "timestamp": "ts",
+    "site": "__source_file",
+    "vwc": "soil_moisture",
+    "irrigation_volume": "water_vol_past_4h"
+  },
+  "download_date": "2026-11-09"
+}

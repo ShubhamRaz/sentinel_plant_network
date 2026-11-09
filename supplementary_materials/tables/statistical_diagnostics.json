@@ -1,0 +1,159 @@
+{
+  "marketable_yield_t_ha": {
+    "design": "randomized_complete_block",
+    "independent_units": 16,
+    "blocks": 4,
+    "treatments": 4,
+    "response": "marketable_yield_t_ha",
+    "rcbd_anova": {
+      "ss_treatment": 13.344379500000038,
+      "ss_block": 2.0477015000000396,
+      "ss_error": 0.36358499999999916,
+      "df_error": 9,
+      "mse": 0.04039833333333324,
+      "f_treatment": 110.10668344403703,
+      "p_value_treatment": 2.0623522202993343e-07
+    },
+    "assumption_checks": {
+      "shapiro_wilk_residuals": {
+        "statistic": 0.95066216318649,
+        "p_value": 0.5002496385839705,
+        "n_residuals": 16
+      },
+      "levene_median_by_treatment_residuals": {
+        "statistic": 1.548855293264759,
+        "p_value": 0.25281541277595027,
+        "groups": 4
+      },
+      "interpretation": "Diagnostics are descriptive; non-significant tests do not prove assumptions. Inspect residual plots and account for the small number of independent plots."
+    },
+    "yield_noninferiority": {
+      "T4_vs_T1": {
+        "candidate_mean": 34.40075,
+        "reference_mean": 33.01775,
+        "difference": 1.3830000000000027,
+        "margin": -1.6508875,
+        "standard_error": 0.14212377234884604,
+        "df_error": 9,
+        "one_sided_95_ci_lower": 1.1224710748698121,
+        "t_statistic": 21.346798286167473,
+        "p_value_one_sided": 2.5532512737329893e-09,
+        "non_inferior": true
+      },
+      "T4_vs_T2": {
+        "candidate_mean": 34.40075,
+        "reference_mean": 32.059,
+        "difference": 2.3417500000000047,
+        "margin": -1.6029499999999999,
+        "standard_error": 0.14212377234884604,
+        "df_error": 9,
+        "one_sided_95_ci_lower": 2.081221074869814,
+        "t_statistic": 27.755384864944677,
+        "p_value_one_sided": 2.483577852796063e-10,
+        "non_inferior": true
+      },
+      "T4_vs_T3": {
+        "candidate_mean": 34.40075,
+        "reference_mean": 34.0265,
+        "difference": 0.3742500000000035,
+        "margin": -1.701325,
+        "standard_error": 0.14212377234884604,
+        "df_error": 9,
+        "one_sided_95_ci_lower": 0.11372107486981298,
+        "t_statistic": 14.60399597968352,
+        "p_value_one_sided": 7.114431092010307e-08,
+        "non_inferior": true
+      }
+    }
+  },
+  "applied_water_mm": {
+    "design": "randomized_complete_block",
+    "independent_units": 16,
+    "blocks": 4,
+    "treatments": 4,
+    "response": "applied_water_mm",
+    "rcbd_anova": {
+      "ss_treatment": 20750.250824999996,
+      "ss_block": 37.62392499999994,
+      "ss_error": 109.27122499999896,
+      "df_error": 9,
+      "mse": 12.141247222222107,
+      "f_treatment": 569.6902590320606,
+      "p_value_treatment": 1.406868080811129e-10
+    },
+    "assumption_checks": {
+      "shapiro_wilk_residuals": {
+        "statistic": 0.9581224103312198,
+        "p_value": 0.6278813717160272,
+        "n_residuals": 16
+      },
+      "levene_median_by_treatment_residuals": {
+        "statistic": 0.636944418075993,
+        "p_value": 0.6054829634181987,
+        "groups": 4
+      },
+      "interpretation": "Diagnostics are descriptive; non-significant tests do not prove assumptions. Inspect residual plots and account for the small number of independent plots."
+    },
+    "yield_noninferiority": null
+  },
+  "iwp_kg_m3": {
+    "design": "randomized_complete_block",
+    "independent_units": 16,
+    "blocks": 4,
+    "treatments": 4,
+    "response": "iwp_kg_m3",
+    "rcbd_anova": {
+      "ss_treatment": 39.96584768750003,
+      "ss_block": 0.7830831874999971,
+      "ss_error": 0.2740990625000006,
+      "df_error": 9,
+      "mse": 0.030455451388888957,
+      "f_treatment": 437.42412676986015,
+      "p_value_treatment": 4.583440428965976e-10
+    },
+    "assumption_checks": {
+      "shapiro_wilk_residuals": {
+        "statistic": 0.9686553754172242,
+        "p_value": 0.81638411931187,
+        "n_residuals": 16
+      },
+      "levene_median_by_treatment_residuals": {
+        "statistic": 1.2416734975711672,
+        "p_value": 0.33777425456181265,
+        "groups": 4
+      },
+      "interpretation": "Diagnostics are descriptive; non-significant tests do not prove assumptions. Inspect residual plots and account for the small number of independent plots."
+    },
+    "yield_noninferiority": null
+  },
+  "audpc_pct_days": {
+    "design": "randomized_complete_block",
+    "independent_units": 16,
+    "blocks": 4,
+    "treatments": 4,
+    "response": "audpc_pct_days",
+    "rcbd_anova": {
+      "ss_treatment": 72344.7225,
+      "ss_block": 23286.752500000028,
+      "ss_error": 393.0824999999982,
+      "df_error": 9,
+      "mse": 43.67583333333314,
+      "f_treatment": 552.1338841083003,
+      "p_value_treatment": 1.6183523420538216e-10
+    },
+    "assumption_checks": {
+      "shapiro_wilk_residuals": {
+        "statistic": 0.9241996145663143,
+        "p_value": 0.19702919049916423,
+        "n_residuals": 16
+      },
+      "levene_median_by_treatment_residuals": {
+        "statistic": 0.7573277810058714,
+        "p_value": 0.5392209970212173,
+        "groups": 4
+      },
+      "interpretation": "Diagnostics are descriptive; non-significant tests do not prove assumptions. Inspect residual plots and account for the small number of independent plots."
+    },
+    "yield_noninferiority": null
+  }
+}

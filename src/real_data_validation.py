@@ -490,6 +490,13 @@ def main(argv=None):
         nightly.to_csv(output / "nightly_leafwetness_lwd.csv", index=False)
     if rolling is not None:
         rolling.to_csv(output / "rolling_spatial_sufficiency.csv", index=False)
+    if args.dataset == "tomato":
+        rows = []
+        for sector_name, sector_data in result.get("per_sector", {}).items():
+            for m in sector_data.get("vwc_forecast", {}).get("metrics", []):
+                rows.append({"sector": sector_name, **m})
+        if rows:
+            pd.DataFrame(rows).to_csv(output / "tomato_vwc_forecasting_metrics.csv", index=False)
     result["source"] = DATASETS[args.dataset]
     input_files = [
         {"path": str(p), "sha256": file_sha256(p), "size_bytes": p.stat().st_size}

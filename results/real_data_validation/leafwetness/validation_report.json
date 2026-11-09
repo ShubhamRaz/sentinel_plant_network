@@ -1,0 +1,83 @@
+{
+  "dataset": "leafwetness",
+  "quality": {
+    "rows": 55550,
+    "timestamp_parse_failures": 0,
+    "duplicate_timestamps": 0,
+    "duplicate_key": "__source_file+time",
+    "missing_cells": 0,
+    "median_sampling_interval_minutes": 60.0,
+    "gaps_over_20_minutes": 55543
+  },
+  "wet_threshold": 20.0,
+  "threshold_warning": "wet_threshold is a user-supplied sensor threshold; calibrate it using the source data dictionary and field reference measurements",
+  "timezone": "UTC",
+  "naive_timestamp_interpretation": "naive timestamps localized as UTC; offset-aware timestamps converted to UTC",
+  "lwd_scope": "nocturnal_only_for_humid_pole_selection; daily_for_DSV",
+  "night_window_local": {
+    "start_hour_inclusive": 18,
+    "end_hour_exclusive": 6,
+    "nominal_duration_hours": 12
+  },
+  "humid_pole_candidate_by_p90_nocturnal_lwd": "site1.csv",
+  "site_p90_nocturnal_lwd_hours": {
+    "site1.csv": 12.0,
+    "site2.csv": 12.0,
+    "site3.csv": 12.0,
+    "site4.csv": 12.0,
+    "site5.csv": 12.0,
+    "site7.csv": 10.199999999999989,
+    "site6.csv": 3.8000000000000114
+  },
+  "source": {
+    "url": "https://data.mendeley.com/datasets/sd4b8vpvyb/1",
+    "doi": "10.17632/sd4b8vpvyb.1",
+    "licence": "CC BY-NC 4.0",
+    "purpose": "site-level leaf-wetness duration and weather-risk evaluation"
+  },
+  "input_files": [
+    {
+      "path": "data\\raw_public\\leafwetness\\Leaf Wetness and Agrometeorological Dataset\\site1.csv",
+      "sha256": "4c0abbb24409ce35c65642eefb8220d5de903b9347d06df07361162d82c4f6ac",
+      "size_bytes": 509237
+    },
+    {
+      "path": "data\\raw_public\\leafwetness\\Leaf Wetness and Agrometeorological Dataset\\site2.csv",
+      "sha256": "9ba17c06d482c22a6c5fb9a3527077d738aac7210f2d414b73545a76eba298ad",
+      "size_bytes": 516603
+    },
+    {
+      "path": "data\\raw_public\\leafwetness\\Leaf Wetness and Agrometeorological Dataset\\site3.csv",
+      "sha256": "ca3da9c8b42528a893a3e1610043e58dd37cc0462a46557cb7fde77bcffebe1e",
+      "size_bytes": 485187
+    },
+    {
+      "path": "data\\raw_public\\leafwetness\\Leaf Wetness and Agrometeorological Dataset\\site4.csv",
+      "sha256": "824bc1ab7b79ef0da0024bd5d47c0c8017de9f27e2367d1ebb8ccd70921d0b07",
+      "size_bytes": 421597
+    },
+    {
+      "path": "data\\raw_public\\leafwetness\\Leaf Wetness and Agrometeorological Dataset\\site5.csv",
+      "sha256": "d12291ebef6717e86a0a94b44c82e1dd422f7cb7aba20dc003b4ad0a5b6cba2e",
+      "size_bytes": 450364
+    },
+    {
+      "path": "data\\raw_public\\leafwetness\\Leaf Wetness and Agrometeorological Dataset\\site6.csv",
+      "sha256": "194b35f6d4ca9ff1c93594d7173c2cf74a3e644cdad8ec7f61ad22c994ebe6bc",
+      "size_bytes": 509320
+    },
+    {
+      "path": "data\\raw_public\\leafwetness\\Leaf Wetness and Agrometeorological Dataset\\site7.csv",
+      "sha256": "6bd4d0fe46c5e23f9a55469c2bc795376f4b19f19f4148cbf5ae4bc4b4a55415",
+      "size_bytes": 513112
+    }
+  ],
+  "mapping": {
+    "timestamp": "time",
+    "site": "__source_file",
+    "leaf_wetness": "leaf_top",
+    "rh": "rh",
+    "air_temperature": "temperature"
+  },
+  "download_date": "2026-11-09"
+}
