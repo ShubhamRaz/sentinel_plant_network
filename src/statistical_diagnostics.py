@@ -1,9 +1,8 @@
 """Design-based diagnostics for the 4-treatment x 4-block RCBD simulation.
 
-This script computes residual diagnostics from plot-level observations. Plant
-subsamples are not treated as independent experimental units. It does not
-declare assumptions passed; it reports Shapiro-Wilk and Levene statistics for
-the analyst to interpret alongside plots and the small sample size.
+Inference uses the 16 plot-level experimental units. Plant subsamples must not
+be treated as independent treatment replicates. This module reports assumption
+diagnostics; it does not automatically certify the RCBD assumptions.
 """
 from __future__ import annotations
 
@@ -20,9 +19,10 @@ def rcbd_diagnostics(
     response: str,
     treatment_col: str = "treatment",
     block_col: str = "block",
-    reference: str = "T1",
     candidate: str = "T4",
+    reference: str = "T1",
     noninferiority_margin_fraction: float = 0.05,
+    include_yield_noninferiority: bool = False,
 ):
     required = {response, treatment_col, block_col}
     missing = required - set(frame.columns)
@@ -32,8 +32,8 @@ def rcbd_diagnostics(
     d[response] = pd.to_numeric(d[response], errors="coerce")
     d = d.dropna()
     pivot = d.pivot(index=block_col, columns=treatment_col, values=response)
-    if pivot.isna().any().any() or reference not in pivot or candidate not in pivot:
-        raise ValueError("A complete balanced RCBD with reference and candidate treatments is required")
+    if pivot.isna().any().any() or candidate not in pivot:
+        raise ValueError("A complete balanced RCBD with the candidate treatment is required")
     if pivot.shape[0] < 3 or pivot.shape[1] < 3:
         raise ValueError("Too few blocks or treatments for RCBD diagnostics")
 
@@ -51,8 +51,7 @@ def rcbd_diagnostics(
     mse = ss_error / df_error
     ss_treatment = float(n_blocks * np.square(treatment_means - grand).sum())
     ss_block = float(n_treatments * np.square(block_means - grand).sum())
-    ss_treatment_total = float((n_treatments - 1) * 0 + ss_treatment)
-    ms_treatment = ss_treatment_total / (n_treatments - 1)
+    ms_treatment = ss_treatment / (n_treatments - 1)
     f_treatment = ms_treatment / mse if mse > 0 else float("inf")
     p_treatment = float(stats.f.sf(f_treatment, n_treatments - 1, df_error))
 
@@ -69,29 +68,37 @@ def rcbd_diagnostics(
         },
         "interpretation": (
             "Diagnostics are descriptive; non-significant tests do not prove assumptions. "
-            "Inspect residual plots and consider the small number of independent plots."
+            "Inspect residual plots and account for the small number of independent plots."
         ),
     }
 
     contrasts = {}
-    se_difference = float(np.sqrt(2.0 * mse / n_blocks))
-    t_critical = float(stats.t.ppf(0.95, df_error))
-    for ref in [c for c in pivot.columns if c != candidate]:
-        ref_mean = float(treatment_means[ref])
-        cand_mean = float(treatment_means[candidate])
-        difference = cand_mean - ref_mean
-        margin = -noninferiority_margin_fraction * ref_mean
-        t_stat = (difference - margin) / se_difference if se_difference > 0 else float("inf")
-        p_one_sided = float(stats.t.sf(t_stat, df_error))
-        lower_bound = difference - t_critical * se_difference
-        contrasts[f"{candidate}_vs_{ref}"] = {
-            "candidate_mean": cand_mean, "reference_mean": ref_mean,
-            "difference": float(difference), "margin": float(margin),
-            "standard_error": se_difference, "df_error": int(df_error),
-            "one_sided_95_ci_lower": float(lower_bound),
-            "t_statistic": float(t_stat), "p_value_one_sided": p_one_sided,
-            "non_inferior": bool(lower_bound > margin),
-        }
+    if include_yield_noninferiority:
+        if response != "marketable_yield_t_ha":
+            raise ValueError("Yield non-inferiority can only be evaluated for marketable_yield_t_ha")
+        if reference not in pivot:
+            raise ValueError(f"Reference treatment {reference!r} not found")
+        standard_error = float(np.sqrt(2.0 * mse / n_blocks))
+        t_critical = float(stats.t.ppf(0.95, df_error))
+        for ref in [c for c in pivot.columns if c != candidate]:
+            ref_mean = float(treatment_means[ref])
+            candidate_mean = float(treatment_means[candidate])
+            difference = candidate_mean - ref_mean
+            margin = -noninferiority_margin_fraction * ref_mean
+            if standard_error == 0.0:
+                t_stat = float("inf") if difference > margin else float("-inf")
+            else:
+                t_stat = (difference - margin) / standard_error
+            p_one_sided = float(stats.t.sf(t_stat, df_error))
+            lower_bound = difference - t_critical * standard_error
+            contrasts[f"{candidate}_vs_{ref}"] = {
+                "candidate_mean": candidate_mean, "reference_mean": ref_mean,
+                "difference": float(difference), "margin": float(margin),
+                "standard_error": standard_error, "df_error": int(df_error),
+                "one_sided_95_ci_lower": float(lower_bound),
+                "t_statistic": float(t_stat), "p_value_one_sided": p_one_sided,
+                "non_inferior": bool(lower_bound > margin),
+            }
 
     return {
         "design": "randomized_complete_block",
@@ -106,7 +113,7 @@ def rcbd_diagnostics(
             "p_value_treatment": p_treatment,
         },
         "assumption_checks": assumption_checks,
-        "yield_noninferiority": contrasts,
+        "yield_noninferiority": contrasts if include_yield_noninferiority else None,
     }
 
 
@@ -115,7 +122,9 @@ def run_all_diagnostics(csv_path: Path):
     outputs = {}
     for response in ("marketable_yield_t_ha", "applied_water_mm", "iwp_kg_m3", "audpc_pct_days"):
         if response in frame:
-            outputs[response] = rcbd_diagnostics(frame, response)
+            outputs[response] = rcbd_diagnostics(
+                frame, response, include_yield_noninferiority=(response == "marketable_yield_t_ha")
+            )
     return outputs
 
 
