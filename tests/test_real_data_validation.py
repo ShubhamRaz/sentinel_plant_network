@@ -50,6 +50,7 @@ def test_leaf_wetness_adapter_computes_daily_duration_and_site_ranking():
         {"site": "station"},
     )
     assert result["humid_pole_candidate_by_p90_daily_lwd"] == "site_c"
+    assert result["quality"]["duplicate_timestamps"] == 0
     assert len(result["daily_table"]) == 9
     assert result["daily_table"]["leaf_wetness_hours"].between(0, 24).all()
 
@@ -72,4 +73,5 @@ def test_libelium_adapter_detects_gap_and_computes_two_node_sufficiency():
     assert set(result["node_quality"]) == {"Goraj-1", "Goraj-2"}
     assert result["two_node_sufficiency"] is not None
     assert result["two_node_sufficiency"]["paired_rows"] > 100
+    assert result["quality"]["duplicate_timestamps"] == 0  # identical times across nodes are not duplicates
     assert result["node_quality"]["Goraj-2"]["gaps_over_threshold"] >= 1
