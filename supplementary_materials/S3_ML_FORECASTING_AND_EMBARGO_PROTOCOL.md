@@ -56,21 +56,39 @@ Excluded columns in the Tomato dataset include:
 All metrics below are derived directly from `supplementary_materials/tables/tomato_vwc_forecasting_metrics.csv`:
 
 ### Sector 1 (Zone 1, Open Field — 652 Test Records):
-| Model | Test RMSE (% VWC) | Test MAE (% VWC) | Test $R^2$ | Validation RMSE (% VWC) | Drought Recall |
+| Model | Test RMSE (% VWC) | Test MAE (% VWC) | Test $R^2$ | Validation RMSE (% VWC) | Drought Recall (VWC $\le 22\%$) |
 | :--- | :---: | :---: | :---: | :---: | :---: |
-| **Naive Persistence** | 1.1961 | 0.2416 | -0.6623 | N/A | 1.00 |
-| **Ridge Regression** | 1.0683 | 0.7068 | -0.3261 | 1.0697 | 1.00 |
-| **Random Forest** | 0.9719 | 0.4510 | -0.0975 | 1.1487 | 1.00 |
-| **Gradient Boosting (GBDT)** | **0.9145** | **0.3772** | **+0.0283** | 1.1847 | 1.00 |
+| **Naive Persistence** | 1.1961 | **0.2416** | -0.6623 | N/A | 1.00* |
+| **Ridge Regression** | 1.0683 | 0.7068 | -0.3261 | 1.0697 | 1.00* |
+| **Random Forest** | 0.9719 | 0.4510 | -0.0975 | 1.1487 | 1.00* |
+| **Gradient Boosting (GBDT)** | **0.9145** | 0.3772 | **+0.0283** | 1.1847 | 1.00* |
 
-*Performance Gain:* GBDT achieves a **23.6% reduction in RMSE** over naive persistence (0.9145% vs. 1.1961% VWC) on held-out test data without future leakage.
+*Performance Gain & Trade-off:* GBDT achieves a **23.6% reduction in RMSE** over naive persistence (0.9145% vs. 1.1961% VWC), but yields a higher MAE (0.3772% vs. 0.2416% VWC).
 
 ### Sector 2 (Zone 2, Open Field — 1,030 Test Records):
-| Model | Test RMSE (% VWC) | Test MAE (% VWC) | Test $R^2$ | Validation RMSE (% VWC) | Drought Recall |
+| Model | Test RMSE (% VWC) | Test MAE (% VWC) | Test $R^2$ | Validation RMSE (% VWC) | Drought Recall (VWC $\le 22\%$) |
 | :--- | :---: | :---: | :---: | :---: | :---: |
-| **Naive Persistence** | 0.6890 | 0.1505 | -0.1262 | N/A | 1.00 |
-| **Ridge Regression** | **0.5933** | **0.3468** | **+0.1651** | 0.3675 | 1.00 |
-| **Random Forest** | 0.7570 | 0.4750 | -0.3592 | 0.4706 | 1.00 |
-| **Gradient Boosting (GBDT)** | 0.8785 | 0.6234 | -0.8307 | 0.3582 | 1.00 |
+| **Naive Persistence** | 0.6890 | **0.1505** | -0.1262 | N/A | 1.00* |
+| **Ridge Regression** | **0.5933** | 0.3468 | **+0.1651** | 0.3675 | 1.00* |
+| **Random Forest** | 0.7570 | 0.4750 | -0.3592 | 0.4706 | 1.00* |
+| **Gradient Boosting (GBDT)** | 0.8785 | 0.6234 | -0.8307 | 0.3582 | 1.00* |
 
-*Performance Gain:* Ridge regression achieves a **13.9% reduction in RMSE** over persistence (0.5933% vs. 0.6890% VWC).
+*Performance Gain & Trade-off:* Ridge regression achieves a **13.9% reduction in RMSE** over persistence (0.5933% vs. 0.6890% VWC), but produces higher MAE (0.3468% vs. 0.1505% VWC).
+
+---
+
+## 6. Critical Performance Interpretation & Evidence Boundaries
+
+1. **RMSE vs. MAE Divergence (Absence of General Superiority):**
+   - The evaluated machine learning models reduce RMSE relative to persistence by 23.6% (Zone 1 GBDT) and 13.9% (Zone 2 Ridge), but simultaneously exhibit higher MAE than persistence.
+   - *Mathematical Mechanism:* RMSE applies an $L_2$ quadratic loss penalty $(\hat{y}_t - y_t)^2$ that penalizes large excursions (such as abrupt moisture drawdowns or unmodeled wetting events). Supervised regressors minimize squared error, pulling predictions toward local conditional expectations and compressing peak residuals. In contrast, naive persistence incurs near-zero absolute error ($L_1$ loss) across static, quiescent dry-down sequences where moisture changes minimally over 24 hours, but suffers large penalties during sudden state transitions.
+   - *Scientific Conclusion:* General ML superiority over naive persistence cannot be claimed. Machine learning models should be characterized as variance-reducing filters that mitigate large catastrophic forecast deviations at the cost of higher typical background error.
+
+2. **Low Positive $R^2$ Explained:**
+   - Test $R^2$ values are modest (+0.0283 in Zone 1, +0.1651 in Zone 2), explaining only 2.8% to 16.5% of variance beyond the test set mean.
+   - This reflects the genuine difficulty of 24-hour ahead horizon soil moisture forecasting under open-field conditions where future manual/automated irrigation decisions, deep percolation, and unmeasured root-zone water uptake introduce stochasticity.
+
+3. **Artifactual 100% Drought-Crossing Recall:**
+   - Asterisk (*) indicates that the 1.00 (100%) drought-crossing recall is **an artifact of class imbalance under the arbitrary 22.0% VWC threshold**.
+   - During the held-out chronological test partitions (situated in late summer dry-down), 100% of the true VWC measurements (652/652 in Zone 1, 1,030/1,030 in Zone 2) were already below 22.0% VWC ($y_{\text{true}} \le 22.0\%$).
+   - Because all ground-truth instances belong to the positive class and all models (including persistence) predicted values below 22.0%, recall is trivially 1.0. This metric does not demonstrate discriminatory event-detection capability and should not be presented as evidence of superior drought forecasting.

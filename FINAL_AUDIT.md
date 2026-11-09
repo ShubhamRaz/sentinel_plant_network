@@ -10,8 +10,8 @@
 ## 1. Executive Summary
 
 > **Validation Status Update (November 2026):** All corrective reruns on the original public benchmark datasets have been completed with verified metadata:
-> - **Leaf Wetness:** Verified as UTC from archive `README.md` (`"All date and time are reported in UTC"`) and ISO8601 `"Z"` timestamps; 20% capacitive wetness threshold established from Colucci et al. (IEEE Trans. AgriFood Electronics); nocturnal 18:00–06:00 UTC window enforced.
-> - **Tomato Precision Irrigation:** 144-step (24-hour) embargo purge applied across chronological train/validation/test splits to eliminate horizon leakage; forward-looking target tokens purged; non-cumulative rolling nature of `water_vol_past_4h` flagged.
+> - **Leaf Wetness:** Verified as UTC from archive `README.md` (`"All date and time are reported in UTC"`) and ISO8601 `"Z"` timestamps; sensor calibrated benchmark established as 50.0% from Filipescu et al. (IEEE Trans. AgriFood Electronics, 2024, DOI: 10.1109/TAFE.2024.3401252); protocol high-sensitivity dew-onset threshold evaluated at 20.0%; nocturnal 18:00–06:00 UTC window enforced; exactly 153 missing hourly observation gaps detected across all 7 sites under a 90-min threshold.
+> - **Tomato Precision Irrigation:** 144-step (24-hour) embargo purge applied across chronological train/validation/test splits to eliminate horizon leakage; forward-looking target tokens purged; non-cumulative rolling nature of `water_vol_past_4h` flagged. GBDT and Ridge reduce RMSE by 23.6% and 13.9%, but persistence yields lower MAE; $R^2$ values are modest (+0.028, +0.165); 100% drought recall is an artifact of class imbalance (all test labels $\le 22.0\%$ VWC).
 > - **Libelium Telemetry:** Fractional $m^3/m^3$ scaled to % VWC; Protocol v2.0 `ProtocolConfig` threshold of $r_s < 0.70$ enforced for adaptive spatial sufficiency.
 >
 > All machine-readable per-dataset JSON/CSV outputs, publication plots, and the provenance manifest (`DATASETS_MANIFEST.json`) have been generated and retained. This research project is an edge-architecture and public-dataset/simulation validation study. No physical hardware deployment or field experiments are conducted or claimed.
@@ -25,7 +25,7 @@ The Sentinel Plant Network proposes an edge-autonomous, risk-oriented dual-pole 
 | Domain | Scope Inspected | Verification Method | Status |
 | :--- | :--- | :--- | :--- |
 | **Software Implementation** | `src/models.py`, `src/ml_baselines.py`, `src/run_experiments.py`, `src/statistical_diagnostics.py`, `src/real_data_validation.py` | Line-by-line code review, execution, and bug-fix verification | **COMPLETE** |
-| **Automated Testing** | 20 Python tests, deterministic simulation runs, C++ host tests, PlatformIO targets, LaTeX | Full pytest suite and GitHub Actions workflow | **COMPLETE** (20/20 passing) |
+| **Automated Testing** | 22 Python tests, deterministic simulation runs, C++ host tests, PlatformIO targets, LaTeX | Full pytest suite and GitHub Actions workflow | **COMPLETE** (22/22 passing) |
 | **Public Dataset Validation** | Tomato, Leaf Wetness, Libelium public datasets | Corrected adapters executed on original Mendeley datasets with verified metadata and manifest | **COMPLETE** |
 | **Synthetic Statistical Method Checks** | RCBD ANOVA, Shapiro-Wilk, Levene test, yield non-inferiority, REML MixedLM | Python recomputation on synthetic plot-level observations | **COMPLETE** (simulation only; not field inference) |
 | **Firmware Compilation** | C++17 `sentinel_protocol.h`, `node_firmware.ino`, `gateway_firmware.ino`, `platformio.ini` | Protocol static assertion (24-byte pack), host test verification, CI PlatformIO build check | **COMPLETE in CI** |
@@ -41,7 +41,7 @@ The Sentinel Plant Network proposes an edge-autonomous, risk-oriented dual-pole 
 The audited codebase contains:
 - `src/`: Protocol v2.0 Python models (`models.py`), machine learning baselines (`ml_baselines.py`), digital-twin simulation orchestrator (`run_experiments.py`), statistical diagnostics (`statistical_diagnostics.py`), real-dataset validation adapters (`real_data_validation.py`), and visualization generator (`plot_real_data_validation.py`).
 - `firmware/`: Shared protocol headers (`common/sentinel_protocol.h`), node firmware (`node_esp32s3/node_firmware.ino`), gateway firmware (`gateway_esp32s3/gateway_firmware.ino`), PlatformIO build targets (`esp32_build/`), and configuration (`platformio.ini`).
-- `tests/`: 20 automated tests (`test_sentinel_network.py`, `test_real_data_validation.py`, `test_firmware_host.cpp`).
+- `tests/`: 22 automated unit tests (`test_sentinel_network.py`, `test_real_data_validation.py`) plus C++ firmware host tests (`test_firmware_host.cpp`).
 - `paper/`: Journal manuscript in LaTeX (`Sentinel_Plant_Network_Journal_Paper.tex`) and compiled PDF.
 - `data/`: Configuration mappings (`data/mappings/`), dataset manifest (`data/raw_public/DATASETS_MANIFEST.json`).
 - `.github/workflows/`: Reproducibility CI workflow (`reproducibility.yml`).
@@ -108,23 +108,27 @@ The corrected validation pipeline was executed on the original downloaded files 
 - **Verified 24-Hour Ahead VWC Forecasting Benchmark (Held-out Test Split, No Leakage):**
   - **Zone 1:** Persistence RMSE 1.196% VWC (MAE 0.242%, $R^2 = -0.662$); Ridge RMSE 1.068% VWC (MAE 0.707%, $R^2 = -0.326$); Random Forest RMSE 0.972% VWC (MAE 0.451%, $R^2 = -0.098$); **GBDT RMSE 0.914% VWC** (MAE 0.377% VWC, $R^2 = +0.028$, validation RMSE 1.185%). GBDT achieves a 23.6% RMSE reduction over persistence.
   - **Zone 2:** Persistence RMSE 0.689% VWC (MAE 0.150%, $R^2 = -0.126$); **Ridge RMSE 0.593% VWC** (MAE 0.347% VWC, $R^2 = +0.165$, validation RMSE 0.368%); Random Forest RMSE 0.757% VWC (MAE 0.475%, $R^2 = -0.359$); GBDT RMSE 0.878% VWC (MAE 0.623%, $R^2 = -0.831$). Ridge achieves a 13.9% RMSE reduction over persistence.
-  - **Conclusion:** Both open-field sectors demonstrate that ML forecasting baselines reliably outperform naive persistence when evaluated on strictly purged chronological test sets. Output retained: `results/real_data_validation/tomato/tomato_vwc_forecasting_metrics.csv`.
+  - **Critical Evaluation:** While GBDT and Ridge reduce RMSE by penalizing large forecasting excursions ($L_2$ loss), naive persistence achieves lower MAE than the ML models (0.242% vs 0.377% in Zone 1; 0.150% vs 0.347% in Zone 2). Test $R^2$ values are modest (+0.028 in Zone 1, +0.165 in Zone 2), explaining 2.8% to 16.5% of variance. The 100% drought-crossing recall is an artifact of class imbalance under the 22% VWC threshold, as 100% of test instances were already below 22% VWC. General ML superiority is therefore NOT claimed. Output retained: `results/real_data_validation/tomato/tomato_vwc_forecasting_metrics.csv`.
 
 ### 4.2 Leaf Wetness and Agrometeorological Dataset — Verified UTC Nocturnal Rerun
 - **Source:** Mendeley Data `10.17632/sd4b8vpvyb.1` (Version 1, CC BY-NC 4.0).
 - **Files Validated:** `site1.csv` through `site7.csv` (Total: 55,550 hourly records across Italian agro-ecosystems).
 - **Verification Details:**
   - Archive `README.md` explicitly specifies: `"All date and time are reported in UTC"`, confirmed by ISO8601 `"Z"` timestamp strings in `sites.json`.
-  - Capacitive wetness benchmark threshold established at 20.0% based on Colucci et al. (*IEEE Transactions on AgriFood Electronics*).
+  - Authoritative sensor publication: Filipescu, E., Colucci, G. P., & Trinchero, D. (2024). *Design and Implementation of a Capacitive Leaf Wetness Sensor Based on Capacitance-to-Digital Conversion*. IEEE Transactions on AgriFood Electronics, vol. 2, no. 2, pp. 244–251, doi: 10.1109/TAFE.2024.3401252.
+  - Sensor's calibrated benchmark threshold established at 50.0% in published field trials; 20.0% evaluated as protocol high-sensitivity dew-onset early-warning threshold. Candidate Node A selection (Site 2) is invariant across both 20% and 50% thresholds.
+  - Cadence-aware gap threshold: 90.0 minutes applied to 60-minute data detects exactly 153 missing observation gaps across all 7 sites (Site 1: 5, Site 2: 23, Site 3: 35, Site 4: 71, Site 5: 12, Site 6: 2, Site 7: 5). The earlier figure of 55,543 was an artifact of applying a 20-minute gap threshold to 60-minute data.
   - Nocturnal evaluation window: 18:00 to 06:00 UTC (12.0 hours nominal).
-- **Verified Nocturnal LWD Distribution and Humid Pole Selection:**
-  - **Site 2 (Sardinia, Plain, 33m):** $P_{90} = 12.0\text{ h/night}$, Mean = **11.23 h/night** (348 nights, std = 2.54; isolated as candidate humid pole Node A).
+- **Verified Nocturnal LWD Distribution, Saturation Ceiling, and Tie Handling:**
+  - **Saturation Ceiling:** Under the 12-hour nocturnal window, five sites (Sites 1, 2, 3, 4, 5) reach the saturation ceiling of $P_{90} = 12.0\text{ h/night}$.
+  - **Secondary Criterion:** Highest mean nocturnal LWD among max-$P_{90}$ tied candidates decisively isolates **Site 2 (Sardinia, Plain, 33m)** with Mean = **11.23 h/night** (348 nights, std = 2.54; isolated as candidate humid pole Node A).
   - **Site 1 (Sardinia, Hill, 125m):** $P_{90} = 12.0\text{ h/night}$, Mean = 8.58 h/night (345 nights, std = 4.51).
   - **Site 3 (Tuscany, Hill, 242m):** $P_{90} = 12.0\text{ h/night}$, Mean = 5.98 h/night (333 nights, std = 4.73).
   - **Site 5 (Piedmont, Hill, 187m):** $P_{90} = 12.0\text{ h/night}$, Mean = 4.69 h/night (307 nights, std = 4.84).
   - **Site 4 (Marche, Hill, 258m):** $P_{90} = 12.0\text{ h/night}$, Mean = 3.87 h/night (297 nights, std = 4.66).
   - **Site 7 (Piedmont, High, 418m):** $P_{90} = 10.2\text{ h/night}$, Mean = 2.43 h/night (359 nights, std = 4.05).
   - **Site 6 (Piedmont, High, 434m):** $P_{90} = 3.8\text{ h/night}$, Mean = **0.98 h/night** (353 nights, std = 2.77; driest station).
+- **Order Invariance:** Automated test confirms that candidate Node A selection is identical under sorted, reversed, and shuffled input file orderings.
 - **Wallin vs. LWS-Modified DSV:**
   - Site 2 accumulates maximum daily risk ($\mathrm{DSV}_{\mathrm{LWS}}$ reaches 4 in 41.2% of days). Standard Wallin DSV based solely on weather-station RH ($\ge 90\%$) underestimates disease conduciveness during hours when ambient RH drops between 80% and 89% while foliar dew persists.
 
@@ -224,7 +228,7 @@ The corrected validation pipeline was executed on the original downloaded files 
 
 ## 8. Summary of Action Items & Readiness
 
-1. **Software & Mathematics:** COMPLETE. Python models, purged ML pipelines, and statistical analysis are verified and backed by 20 automated tests.
+1. **Software & Mathematics:** COMPLETE. Python models, purged ML pipelines, and statistical analysis are verified and backed by 22 automated unit tests.
 2. **Public Dataset Validation:** COMPLETE. All three Mendeley datasets evaluated with verified metadata (UTC, 20% LWS threshold, 144-step embargo purge, 0.70 Spearman threshold), generating reproducible metrics, plots, and a checksum manifest (`DATASETS_MANIFEST.json`).
 3. **Firmware Compilation:** COMPLETE in CI. Protocol bit-packing verified by static assertions and host tests. PlatformIO builds cleanly in CI on `espressif32@6.12.0`.
 4. **Physical Hardware Validation:** NOT STARTED. Formally documented as out-of-scope for this dataset-only/simulation study. Exhaustive bench testing procedures and acceptance criteria are specified in `HARDWARE_BENCH_TEST_PLAN.md`.

@@ -98,13 +98,17 @@ pytest-cov>=4.1.0,<6.0.0
 
 ---
 
-## 3. GitHub Actions Continuous Integration Workflow
+## 3. GitHub Actions Continuous Integration Workflow & Evidence Boundaries
 
-The repository includes `.github/workflows/reproducibility.yml`, which executes on every push:
+The repository includes `.github/workflows/reproducibility.yml`, which executes on every push and pull request:
 1. Provisions Ubuntu latest environment with Python 3.11.
-2. Installs dependencies and runs `pytest -q`.
-3. Runs `run_experiments.py` twice into separate isolated directories and executes SHA-256 byte comparison on all generated outputs.
-4. Compiles C++17 host firmware protocol assertions via `g++ -std=c++17 -Wall -Wextra -Werror tests/test_firmware_host.cpp`.
-5. Compiles ESP32-S3 firmware targets (`node_a`, `node_b`, `gateway`) using PlatformIO.
-6. Installs TeX Live and compiles `paper/Sentinel_Plant_Network_Journal_Paper.tex` via `latexmk`.
+2. Installs dependencies and runs `pytest -q` (**22 automated unit tests** covering data adapters, order-invariance, cadence-aware gap detection, embargo purging, spatial sufficiency, gateway FSM, and RCBD statistical diagnostics).
+3. Runs `src/run_experiments.py` twice into separate isolated directories (`$RUNNER_TEMP/sentinel_run_a` and `$RUNNER_TEMP/sentinel_run_b`) and executes SHA-256 byte comparison on all generated CSV and JSON outputs.
+4. Compiles C++17 host firmware protocol assertions via `g++ -std=c++17 -Wall -Wextra -Werror tests/test_firmware_host.cpp` (verifying packet framing, 16-bit CRC validation, valve pulse durations, and state transitions).
+5. Compiles ESP32-S3 firmware targets (`node_a`, `node_b`, `gateway`) using PlatformIO (`pio run -c firmware/platformio.ini`).
+6. Installs TeX Live toolchain and compiles `paper/Sentinel_Plant_Network_Journal_Paper.tex` via `latexmk`.
 7. Uploads verified digital-twin and manuscript artifacts.
+
+### Scope Distinction:
+- **CI Scope:** The CI workflow validates software units, algorithmic reproducibility, firmware compilation, and LaTeX manuscript builds. It does not re-download the external raw datasets on every push to avoid unnecessary bandwidth and third-party API dependencies.
+- **External Dataset Validation:** The public-dataset validation suite (`src/real_data_validation.py`) is executed against locally downloaded authentic Mendeley Data archives. All generated tables, metrics, figures, and manifests are permanently committed to `results/real_data_validation/`, `supplementary_materials/tables/`, and `supplementary_materials/figures/`. Checksums can be verified anytime using `python scripts/verify_checksums.py`.

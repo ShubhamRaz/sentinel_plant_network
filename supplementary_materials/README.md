@@ -57,18 +57,20 @@ supplementary_materials/
 | Dataset | Mendeley DOI | Version | License | Primary Purpose | Verified Metadata |
 | :--- | :--- | :---: | :---: | :--- | :--- |
 | **Tomato Precision Irrigation** | [10.17632/c837v6p8ph.2](https://doi.org/10.17632/c837v6p8ph.2) | V2 | CC BY 4.0 | 24h VWC forecasting & irrigation telemetry | 10-min cadence; 144-step embargo purge; forward-looking target tokens stripped; `water_vol_past_4h` flagged as non-cumulative. |
-| **Seven-Site Leaf Wetness** | [10.17632/sd4b8vpvyb.1](https://doi.org/10.17632/sd4b8vpvyb.1) | V1 | CC BY-NC 4.0 | Microclimatic LWD diversity & Wallin vs. LWS DSV | Timestamps verified as **UTC**; wetness benchmark verified as **20.0%**; nocturnal 18:00–06:00 UTC window enforced. |
+| **Seven-Site Leaf Wetness** | [10.17632/sd4b8vpvyb.1](https://doi.org/10.17632/sd4b8vpvyb.1) | V1 | CC BY-NC 4.0 | Microclimatic LWD diversity & Wallin vs. LWS DSV | Timestamps verified as **UTC**; sensor calibrated benchmark is **50.0%** (Filipescu et al., 2024, IEEE Trans. AgriFood Electronics, DOI: 10.1109/TAFE.2024.3401252); protocol dew-onset early-warning threshold evaluated at **20.0%**; nocturnal 18:00–06:00 UTC window enforced; exactly 153 missing hourly observation gaps detected across all 7 sites. |
 | **Libelium Two-Node Olive Grove** | [10.17632/cnfh4stzzx.2](https://doi.org/10.17632/cnfh4stzzx.2) | V2 | CC BY 4.0 | Two-node telemetry quality & spatial decoupling | VWC converted from $\text{m}^3/\text{m}^3$ to % VWC; ProtocolConfig $r_s < 0.70$ threshold yields 873 triggers (65.1%). |
 
 ---
 
 ## 4. Key Verified Research Findings
 
-1. **Purged Chronological 24h VWC Forecasting:**
-   - On strictly non-overlapping, embargoed test partitions, **GBDT achieves 0.914% VWC RMSE (MAE 0.377% VWC, $R^2 = +0.028$) in Zone 1**, reducing error by 23.6% over naive persistence (1.196% VWC).
-   - In Zone 2, **Ridge regression achieves 0.593% VWC RMSE (MAE 0.347% VWC, $R^2 = +0.165$)**, reducing error by 13.9% over persistence (0.689% VWC).
-2. **Microclimatic Humid-Pole Selection:**
-   - Nocturnal leaf-wetness duration (18:00–06:00 UTC, 20% threshold) isolates **Site 2 (Sardinia, Plain) as the field's humid microclimate pole** ($P_{90} = 12.0\text{ h/night}$, seasonal mean 11.23 h/night), whereas high-elevation Site 6 exhibits mean nocturnal wetness of only 0.98 h/night.
+1. **Purged Chronological 24h VWC Forecasting & Metric Trade-Offs:**
+   - On strictly non-overlapping, 144-step embargoed test partitions, **GBDT achieves 0.914% VWC RMSE (MAE 0.377% VWC, $R^2 = +0.028$) in Zone 1**, reducing RMSE by 23.6% over naive persistence (1.196% VWC).
+   - In Zone 2, **Ridge regression achieves 0.593% VWC RMSE (MAE 0.347% VWC, $R^2 = +0.165$)**, reducing RMSE by 13.9% over persistence (0.689% VWC).
+   - *Absence of General ML Superiority:* Because supervised models optimize squared error ($L_2$ loss), they smooth predictions and reduce peak excursions, but exhibit higher MAE than naive persistence (0.242% in Zone 1; 0.150% in Zone 2), which incurs near-zero absolute deviation during quiet dry-down periods. Test $R^2$ values are modest (+0.028 and +0.165), and the 100% drought recall is an artifact of all test instances remaining below 22% VWC during the evaluated late-season partition.
+2. **Microclimatic Humid-Pole Selection & Tie Handling:**
+   - Nocturnal leaf-wetness duration (18:00–06:00 UTC, 20% protocol threshold) identifies five candidate sites reaching the 12-hour saturation ceiling ($P_{90} = 12.0\text{ h/night}$).
+   - Applying a secondary selection criterion (highest mean nocturnal LWD among max-$P_{90}$ candidates) deterministically isolates **Site 2 as candidate Node A** (seasonal mean 11.23 h/night at 20%; 9.49 h/night at 50%), whereas high-elevation Site 6 exhibits mean nocturnal wetness of only 0.98 h/night. Candidate selection is invariant to the threshold (20% vs. 50%) and input file order.
    - Physical leaf-wetness sensor integration ($\mathrm{DSV}_{\mathrm{LWS}}$) captures extended nocturnal dew when ambient relative humidity drops into the 80–89% range, where standard weather station $\mathrm{DSV}_{\text{Wallin}}$ ($\text{RH} \ge 90\%$) records zero risk accumulation.
 3. **Adaptive Two-Node Spatial Sufficiency:**
    - Across 1,617 aligned observations in an Albanian olive grove, trailing 48-hour Spearman rank correlation dropped to $r_s = -0.739$ with a mean absolute divergence of 4.07% VWC.

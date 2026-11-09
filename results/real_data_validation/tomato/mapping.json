@@ -1,0 +1,6 @@
+{
+  "timestamp": "ts",
+  "vwc": "soil_moisture",
+  "irrigation_volume": "water_vol_past_4h",
+  "site": "__source_file"
+}

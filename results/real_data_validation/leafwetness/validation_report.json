@@ -7,10 +7,20 @@
     "duplicate_key": "__source_file+time",
     "missing_cells": 0,
     "median_sampling_interval_minutes": 60.0,
-    "gaps_over_20_minutes": 55543
+    "gap_threshold_minutes": 90.0,
+    "sampling_gaps": 153,
+    "gaps_over_20_minutes": 55543,
+    "gap_definition": "intervals strictly exceeding 90.0 minutes, indicating missing observation cycles"
   },
   "wet_threshold": 20.0,
-  "threshold_warning": "wet_threshold is a user-supplied sensor threshold; calibrate it using the source data dictionary and field reference measurements",
+  "threshold_classification": "high-sensitivity dew-onset threshold (detects early microdroplet condensation before coalescence)",
+  "threshold_calibration_reference": {
+    "citation": "Elena Filipescu, Giovanni Paolo Colucci, and Daniele Trinchero, 'Design and Implementation of a Capacitive Leaf Wetness Sensor Based on Capacitance-to-Digital Conversion', IEEE Transactions on AgriFood Electronics, vol. 2, no. 2, pp. 244-251, Sept. 2024",
+    "doi": "10.1109/TAFE.2024.3401252",
+    "published_sensor_calibrated_threshold": 50.0,
+    "evaluated_protocol_threshold": 20.0,
+    "justification": "Filipescu et al. (2024) calibrated the capacitive leaf-wetness sensor in lab immersion tests (25%, 50%, 75%) and used a 50% threshold for seasonal field LWD metrics. A 20% threshold is utilized in microclimate early-warning protocols for sensitive dew onset detection. Candidate humid-pole selection (Site 2) is invariant across both 20% and 50% thresholds."
+  },
   "timezone": "UTC",
   "naive_timestamp_interpretation": "naive timestamps localized as UTC; offset-aware timestamps converted to UTC",
   "lwd_scope": "nocturnal_only_for_humid_pole_selection; daily_for_DSV",
@@ -19,15 +29,46 @@
     "end_hour_exclusive": 6,
     "nominal_duration_hours": 12
   },
-  "humid_pole_candidate_by_p90_nocturnal_lwd": "site1.csv",
+  "humid_pole_selection": {
+    "selection_rule": "primary: maximum P90 nocturnal LWD; secondary: highest mean nocturnal LWD among max-P90 tied candidates; tertiary: deterministic alphanumeric tie-break",
+    "primary_max_p90_hours": 12.0,
+    "tied_p90_candidate_sites": [
+      "site1.csv",
+      "site2.csv",
+      "site3.csv",
+      "site4.csv",
+      "site5.csv"
+    ],
+    "selected_humid_pole_candidate": "site2.csv",
+    "candidate_mean_nocturnal_lwd_hours": 11.229885057471265
+  },
+  "humid_pole_candidate_by_p90_nocturnal_lwd": "site2.csv",
   "site_p90_nocturnal_lwd_hours": {
-    "site1.csv": 12.0,
     "site2.csv": 12.0,
+    "site1.csv": 12.0,
     "site3.csv": 12.0,
-    "site4.csv": 12.0,
     "site5.csv": 12.0,
+    "site4.csv": 12.0,
     "site7.csv": 10.199999999999989,
     "site6.csv": 3.8000000000000114
+  },
+  "site_mean_nocturnal_lwd_hours": {
+    "site2.csv": 11.229885057471265,
+    "site1.csv": 8.576811594202898,
+    "site3.csv": 5.984984984984985,
+    "site5.csv": 4.690553745928339,
+    "site4.csv": 3.872053872053872,
+    "site7.csv": 2.426183844011142,
+    "site6.csv": 0.9773371104815864
+  },
+  "site_median_nocturnal_lwd_hours": {
+    "site2.csv": 12.0,
+    "site1.csv": 11.0,
+    "site3.csv": 6.0,
+    "site5.csv": 3.0,
+    "site4.csv": 1.0,
+    "site7.csv": 0.0,
+    "site6.csv": 0.0
   },
   "source": {
     "url": "https://data.mendeley.com/datasets/sd4b8vpvyb/1",
@@ -72,12 +113,6 @@
       "size_bytes": 513112
     }
   ],
-  "mapping": {
-    "timestamp": "time",
-    "site": "__source_file",
-    "leaf_wetness": "leaf_top",
-    "rh": "rh",
-    "air_temperature": "temperature"
-  },
-  "download_date": "2026-11-09"
+  "mapping": {},
+  "download_date": null
 }

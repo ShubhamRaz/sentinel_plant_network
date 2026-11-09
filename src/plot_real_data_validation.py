@@ -76,22 +76,28 @@ def plot_leafwetness():
         rep = json.load(f)
 
     p90_dict = rep["site_p90_nocturnal_lwd_hours"]
-    sites = sorted(p90_dict.keys(), key=lambda s: p90_dict[s], reverse=True)
+    mean_dict = rep.get("site_mean_nocturnal_lwd_hours", {})
+    selected_candidate = rep.get("humid_pole_candidate_by_p90_nocturnal_lwd", "site2.csv")
+
+    # Sort deterministically by primary (P90) then secondary (mean)
+    sites = sorted(p90_dict.keys(), key=lambda s: (p90_dict[s], mean_dict.get(s, 0.0)), reverse=True)
     p90_vals = [p90_dict[s] for s in sites]
+    mean_vals = [mean_dict.get(s, 0.0) for s in sites]
     site_labels = [s.replace(".csv", "").upper() for s in sites]
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4.5))
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4.8))
 
-    # Bar chart of P90 LWD
-    colors = ["#1b9e77" if v == max(p90_vals) else "#4575b4" for v in p90_vals]
+    # Bar chart of P90 LWD with secondary mean noted
+    colors = ["#1b9e77" if s == selected_candidate else "#4575b4" for s in sites]
     bars = ax1.bar(site_labels, p90_vals, color=colors, edgecolor="black", lw=0.6)
     ax1.set_ylabel("90th Percentile Nocturnal LWD (hours/night)")
     ax1.set_xlabel("Monitoring Station / Microclimate Site")
-    ax1.set_title("A: Nocturnal Microclimatic LWD ($P_{90}$)")
-    for bar in bars:
+    ax1.set_title("A: Nocturnal LWD ($P_{90}$) & Candidate Node A Selection")
+    for bar, s, mval in zip(bars, sites, mean_vals):
         yval = bar.get_height()
-        ax1.text(bar.get_x() + bar.get_width()/2.0, yval + 0.4, f"{yval:.1f}h", ha="center", va="bottom", fontsize=8.5)
-    ax1.set_ylim(0, 14)
+        annot = f"{yval:.1f}h\n(μ={mval:.1f}h)" if s == selected_candidate else f"{yval:.1f}h"
+        ax1.text(bar.get_x() + bar.get_width()/2.0, yval + 0.3, annot, ha="center", va="bottom", fontsize=8.0)
+    ax1.set_ylim(0, 15)
 
     # Boxplot of DSV comparison
     dsv_data = []

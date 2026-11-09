@@ -23,13 +23,13 @@
       ],
       "mapping": {
         "timestamp": "ts",
-        "site": "__source_file",
         "vwc": "soil_moisture",
-        "irrigation_volume": "water_vol_past_4h"
+        "irrigation_volume": "water_vol_past_4h",
+        "site": "__source_file"
       },
       "validation_parameters": {
-        "wet_threshold": 50.0,
-        "step_minutes": 10.0
+        "wet_threshold": 20.0,
+        "step_minutes": null
       },
       "report": "results\\real_data_validation\\tomato\\validation_report.json"
     },
@@ -40,7 +40,7 @@
         "licence": "CC BY-NC 4.0",
         "purpose": "site-level leaf-wetness duration and weather-risk evaluation"
       },
-      "download_date": "2026-11-09",
+      "download_date": null,
       "input_files": [
         {
           "path": "data\\raw_public\\leafwetness\\Leaf Wetness and Agrometeorological Dataset\\site1.csv",
@@ -78,13 +78,7 @@
           "size_bytes": 513112
         }
       ],
-      "mapping": {
-        "timestamp": "time",
-        "site": "__source_file",
-        "leaf_wetness": "leaf_top",
-        "rh": "rh",
-        "air_temperature": "temperature"
-      },
+      "mapping": {},
       "validation_parameters": {
         "wet_threshold": 20.0,
         "timezone": "UTC",
@@ -115,7 +109,7 @@
         "scale_vwc": 100.0
       },
       "validation_parameters": {
-        "wet_threshold": 50.0,
+        "wet_threshold": 20.0,
         "gap_minutes": 20.0
       },
       "report": "results\\real_data_validation\\libelium\\validation_report.json"

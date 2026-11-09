@@ -7,7 +7,10 @@
     "duplicate_key": "__source_file+ts",
     "missing_cells": 288,
     "median_sampling_interval_minutes": 10.0,
-    "gaps_over_20_minutes": 1534
+    "gap_threshold_minutes": 20.0,
+    "sampling_gaps": 1534,
+    "gaps_over_20_minutes": 1534,
+    "gap_definition": "intervals strictly exceeding 20.0 minutes, indicating missing observation cycles"
   },
   "grouping_column": "__source_file",
   "sector_or_file_count": 2,
@@ -53,12 +56,12 @@
           {
             "model": "random_forest",
             "split": "test",
-            "rmse": 0.9718783539128212,
-            "mae": 0.4509619300059438,
-            "r2": -0.09751686529447512,
+            "rmse": 0.9718783539128213,
+            "mae": 0.450961930005944,
+            "r2": -0.09751686529447534,
             "drought_crossing_recall": 1.0,
             "drought_events": 652,
-            "validation_rmse": 1.1487242462148224
+            "validation_rmse": 1.1487242462148226
           },
           {
             "model": "gradient_boosting",
@@ -123,11 +126,11 @@
             "model": "random_forest",
             "split": "test",
             "rmse": 0.756960461584822,
-            "mae": 0.4749516435882592,
+            "mae": 0.47495164358825925,
             "r2": -0.35920225351544066,
             "drought_crossing_recall": 1.0,
             "drought_events": 1030,
-            "validation_rmse": 0.4706318580164827
+            "validation_rmse": 0.4706318580164828
           },
           {
             "model": "gradient_boosting",
@@ -190,12 +193,12 @@
           {
             "model": "random_forest",
             "split": "test",
-            "rmse": 0.9718783539128212,
-            "mae": 0.4509619300059438,
-            "r2": -0.09751686529447512,
+            "rmse": 0.9718783539128213,
+            "mae": 0.450961930005944,
+            "r2": -0.09751686529447534,
             "drought_crossing_recall": 1.0,
             "drought_events": 652,
-            "validation_rmse": 1.1487242462148224
+            "validation_rmse": 1.1487242462148226
           },
           {
             "model": "gradient_boosting",
@@ -247,11 +250,11 @@
             "model": "random_forest",
             "split": "test",
             "rmse": 0.756960461584822,
-            "mae": 0.4749516435882592,
+            "mae": 0.47495164358825925,
             "r2": -0.35920225351544066,
             "drought_crossing_recall": 1.0,
             "drought_events": 1030,
-            "validation_rmse": 0.4706318580164827
+            "validation_rmse": 0.4706318580164828
           },
           {
             "model": "gradient_boosting",
@@ -295,9 +298,9 @@
   ],
   "mapping": {
     "timestamp": "ts",
-    "site": "__source_file",
     "vwc": "soil_moisture",
-    "irrigation_volume": "water_vol_past_4h"
+    "irrigation_volume": "water_vol_past_4h",
+    "site": "__source_file"
   },
   "download_date": "2026-11-09"
 }
