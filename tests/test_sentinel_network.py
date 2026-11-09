@@ -162,6 +162,7 @@ class TestSentinelPlantNetwork(unittest.TestCase):
         self.assertEqual(out["blocks"], 4)
         self.assertEqual(out["rcbd_anova"]["df_error"], 9)
         self.assertIn("shapiro_wilk_residuals", out["assumption_checks"])
+        self.assertIn("levene_median_by_treatment_residuals", out["assumption_checks"])
         self.assertIn("T4_vs_T1", out["yield_noninferiority"])
 
 
