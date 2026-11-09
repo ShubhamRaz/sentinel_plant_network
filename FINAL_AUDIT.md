@@ -1,6 +1,6 @@
 # Sentinel Plant Network — Comprehensive Research Audit & Verification Report
 
-**Branch:** `main` (corrective work proposed in `fix/research-validation-audit`)  
+**Branch:** `dev/complete-validation` (synchronized with `main`)  
 **Protocol Version:** Protocol v2.0  
 **Audit Date:** November 2026  
 **Auditor:** Sentinel Plant Network Automated & Research Quality System  
@@ -39,7 +39,7 @@ The Sentinel Plant Network proposes an edge-autonomous, risk-oriented dual-pole 
 The audited codebase contains:
 - `src/`: Protocol v2.0 Python models (`models.py`), machine learning baselines (`ml_baselines.py`), digital-twin simulation orchestrator (`run_experiments.py`), statistical diagnostics (`statistical_diagnostics.py`), real-dataset validation adapters (`real_data_validation.py`), and visualization generator (`plot_real_data_validation.py`).
 - `firmware/`: Shared protocol headers (`common/sentinel_protocol.h`), node firmware (`node_esp32s3/node_firmware.ino`), gateway firmware (`gateway_esp32s3/gateway_firmware.ino`), PlatformIO build targets (`esp32_build/`), and configuration (`platformio.ini`).
-- `tests/`: 17 automated tests (`test_sentinel_network.py`, `test_real_data_validation.py`, `test_firmware_host.cpp`).
+- `tests/`: 20 automated tests (`test_sentinel_network.py`, `test_real_data_validation.py`, `test_firmware_host.cpp`).
 - `paper/`: Journal manuscript in LaTeX (`Sentinel_Plant_Network_Journal_Paper.tex`) and compiled PDF.
 - `data/`: Configuration mappings (`data/mappings/`), dataset manifest (`data/raw_public/DATASETS_MANIFEST.json`).
 - `.github/workflows/`: Reproducibility CI workflow (`reproducibility.yml`).
