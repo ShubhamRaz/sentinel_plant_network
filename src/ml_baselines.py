@@ -49,22 +49,17 @@ def _prepare_time_series(
         step = float(expected_step_minutes)
     if not np.isfinite(step) or step <= 0:
         raise ValueError("Could not infer a valid sampling interval")
-    horizon_minutes = horizon_steps * step
-    future_time = df[timestamp_col].shift(-horizon_steps)
     future_target = df[target_col].shift(-horizon_steps)
-    # Do not let row shifts jump across missing periods and masquerade as a
-    # fixed-duration forecast horizon or a fixed-duration lag.
+    # Validate every adjacent interval, rather than only comparing net elapsed
+    # time. A short interval following a long gap must not cancel that gap.
     tolerance = max(0.01, step * 0.02)
-    exact_horizon = (
-        (future_time - df[timestamp_col]).dt.total_seconds().div(60)
-        .sub(horizon_minutes).abs() <= tolerance
-    )
-    contiguous_lags = pd.Series(True, index=df.index)
-    for lag in (1, 2, 3, 6, 12, 24):
-        elapsed = (
-            df[timestamp_col] - df[timestamp_col].shift(lag)
-        ).dt.total_seconds().div(60)
-        contiguous_lags &= elapsed.sub(lag * step).abs() <= tolerance
+    deltas_all = df[timestamp_col].diff().dt.total_seconds().div(60)
+    bad_transition = deltas_all.sub(step).abs().gt(tolerance)
+    bad_transition.iloc[0] = True
+    bad_prefix = bad_transition.astype("int64").cumsum()
+    future_bad_count = bad_prefix.shift(-horizon_steps) - bad_prefix
+    exact_horizon = future_bad_count.eq(0) & future_target.notna()
+    contiguous_lags = bad_transition.rolling(24, min_periods=24).sum().eq(0)
 
     if feature_cols is None:
         excluded = {timestamp_col, target_col}
@@ -206,20 +201,20 @@ def benchmark_blight_classifier(
     if not np.isfinite(step) or step <= 0:
         raise ValueError("Could not infer a valid sampling interval")
     tolerance = max(0.01, step * 0.02)
-    future_time = df[timestamp_col].shift(-horizon_steps)
-    elapsed_future = (future_time - df[timestamp_col]).dt.total_seconds().div(60)
-    exact_horizon = elapsed_future.sub(horizon_steps * step).abs() <= tolerance
+    delta_all = df[timestamp_col].diff().dt.total_seconds().div(60)
+    bad_transition = delta_all.sub(step).abs().gt(tolerance)
+    bad_transition.iloc[0] = True
+    bad_prefix = bad_transition.astype("int64").cumsum()
+    future_bad_count = bad_prefix.shift(-horizon_steps) - bad_prefix
     target = pd.to_numeric(df[risk_target_col], errors="coerce").shift(-horizon_steps)
+    exact_horizon = future_bad_count.eq(0) & target.notna()
 
     X = df[list(feature_cols)].apply(pd.to_numeric, errors="coerce")
     for lag in (1, 2, 3, 6, 12):
         for col in feature_cols:
             X[f"{col}_lag_{lag}"] = pd.to_numeric(df[col], errors="coerce").shift(lag)
 
-    contiguous_lags = pd.Series(True, index=df.index)
-    for lag in (1, 2, 3, 6, 12):
-        elapsed = (df[timestamp_col] - df[timestamp_col].shift(lag)).dt.total_seconds().div(60)
-        contiguous_lags &= elapsed.sub(lag * step).abs() <= tolerance
+    contiguous_lags = bad_transition.rolling(12, min_periods=12).sum().eq(0)
     valid = exact_horizon & contiguous_lags & target.notna() & X.notna().any(axis=1)
     X, y = X.loc[valid], target.loc[valid].astype(int)
     if len(X) < 60:
