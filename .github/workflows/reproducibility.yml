@@ -83,7 +83,7 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add paper/Sentinel_Plant_Network_Journal_Paper.pdf
-            git commit -m "Update compiled Sentinel Plant Network manuscript"
+            git commit -m "Update compiled Sentinel Plant Network manuscript [skip ci]"
             git push origin "HEAD:${GITHUB_REF_NAME}"
           fi
       - name: Upload reproducible digital-twin outputs

@@ -27,11 +27,11 @@ python -m pip install -r requirements.txt
 ```
 
 ### Step 2: Automated Unit and Integration Testing
-Run the 20-test test suite:
+Run the 25-test Python test suite:
 ```bash
 pytest -v
 ```
-All 20 tests must pass.
+All 25 tests must pass.
 
 ### Step 3: Reproduce Deterministic Digital-Twin Simulations
 ```bash
@@ -102,7 +102,7 @@ pytest-cov>=4.1.0,<6.0.0
 
 The repository includes `.github/workflows/reproducibility.yml`, which executes on every push and pull request:
 1. Provisions Ubuntu latest environment with Python 3.11.
-2. Installs dependencies and runs `pytest -q` (**22 automated unit tests** covering data adapters, order-invariance, cadence-aware gap detection, embargo purging, spatial sufficiency, gateway FSM, and RCBD statistical diagnostics).
+2. Installs dependencies and runs `pytest -q` (**25 automated Python unit tests** covering data adapters, order-invariance, cadence-aware gap detection, embargo purging, spatial sufficiency, gateway FSM, and RCBD statistical diagnostics).
 3. Runs `src/run_experiments.py` twice into separate isolated directories (`$RUNNER_TEMP/sentinel_run_a` and `$RUNNER_TEMP/sentinel_run_b`) and executes SHA-256 byte comparison on all generated CSV and JSON outputs.
 4. Compiles C++17 host firmware protocol assertions via `g++ -std=c++17 -Wall -Wextra -Werror tests/test_firmware_host.cpp` (verifying packet framing, 16-bit CRC validation, valve pulse durations, and state transitions).
 5. Compiles ESP32-S3 firmware targets (`node_a`, `node_b`, `gateway`) using PlatformIO (`pio run -c firmware/platformio.ini`).

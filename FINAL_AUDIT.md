@@ -25,7 +25,7 @@ The Sentinel Plant Network proposes an edge-autonomous, risk-oriented dual-pole 
 | Domain | Scope Inspected | Verification Method | Status |
 | :--- | :--- | :--- | :--- |
 | **Software Implementation** | `src/models.py`, `src/ml_baselines.py`, `src/run_experiments.py`, `src/statistical_diagnostics.py`, `src/real_data_validation.py` | Line-by-line code review, execution, and bug-fix verification | **COMPLETE** |
-| **Automated Testing** | 22 Python tests, deterministic simulation runs, C++ host tests, PlatformIO targets, LaTeX | Full pytest suite and GitHub Actions workflow | **COMPLETE** (22/22 passing) |
+| **Automated Testing** | 25 Python tests, deterministic simulation runs, 1 C++ firmware host test executable, PlatformIO targets, LaTeX | Full pytest suite and GitHub Actions workflow | **COMPLETE** (25/25 passing) |
 | **Public Dataset Validation** | Tomato, Leaf Wetness, Libelium public datasets | Corrected adapters executed on original Mendeley datasets with verified metadata and manifest | **COMPLETE** |
 | **Synthetic Statistical Method Checks** | RCBD ANOVA, Shapiro-Wilk, Levene test, yield non-inferiority, REML MixedLM | Python recomputation on synthetic plot-level observations | **COMPLETE** (simulation only; not field inference) |
 | **Firmware Compilation** | C++17 `sentinel_protocol.h`, `node_firmware.ino`, `gateway_firmware.ino`, `platformio.ini` | Protocol static assertion (24-byte pack), host test verification, CI PlatformIO build check | **COMPLETE in CI** |
@@ -41,7 +41,7 @@ The Sentinel Plant Network proposes an edge-autonomous, risk-oriented dual-pole 
 The audited codebase contains:
 - `src/`: Protocol v2.0 Python models (`models.py`), machine learning baselines (`ml_baselines.py`), digital-twin simulation orchestrator (`run_experiments.py`), statistical diagnostics (`statistical_diagnostics.py`), real-dataset validation adapters (`real_data_validation.py`), and visualization generator (`plot_real_data_validation.py`).
 - `firmware/`: Shared protocol headers (`common/sentinel_protocol.h`), node firmware (`node_esp32s3/node_firmware.ino`), gateway firmware (`gateway_esp32s3/gateway_firmware.ino`), PlatformIO build targets (`esp32_build/`), and configuration (`platformio.ini`).
-- `tests/`: 22 automated unit tests (`test_sentinel_network.py`, `test_real_data_validation.py`) plus C++ firmware host tests (`test_firmware_host.cpp`).
+- `tests/`: 25 automated Python unit tests (`test_sentinel_network.py`, `test_real_data_validation.py`) plus 1 C++ firmware host test executable (`test_firmware_host.cpp`).
 - `paper/`: Journal manuscript in LaTeX (`Sentinel_Plant_Network_Journal_Paper.tex`) and compiled PDF.
 - `data/`: Configuration mappings (`data/mappings/`), dataset manifest (`data/raw_public/DATASETS_MANIFEST.json`).
 - `.github/workflows/`: Reproducibility CI workflow (`reproducibility.yml`).
@@ -122,9 +122,14 @@ The corrected validation pipeline was executed on the original downloaded files 
   - Published comparative analysis cutoff reported as 50.0% in Filipescu et al. (2024), evaluated alongside immersion tests without establishing an experimental wet/dry classification boundary for the seven-site dataset; 20.0% evaluated as research-selected sensitivity threshold for comparative protocol analysis. Candidate Node A selection (Site 2) is invariant across both 20% and 50% thresholds.
   - Cadence-aware gap threshold: 90.0 minutes applied to 60-minute data detects exactly 153 missing observation gaps across all 7 sites (Site 1: 5, Site 2: 23, Site 3: 35, Site 4: 71, Site 5: 12, Site 6: 2, Site 7: 5). The earlier figure of 55,543 was an artifact of applying a 20-minute gap threshold to 60-minute data.
   - Nocturnal evaluation window: 18:00 to 06:00 UTC (12.0 hours nominal).
+- **Multi-Year Regional Monitoring and Scope Limitations:**
+  - `sites.json` documents that the seven agrometeorological stations were monitored asynchronously across three separate calendar years (Sites 1, 3, 5 in 2022; Sites 2, 4 in 2023; Sites 6, 7 in 2024) across distinct Italian agricultural regions.
+  - They represent regional microclimatic diversity across topographically contrasting agro-ecological zones, rather than concurrent sensors within a single experimental field parcel.
+  - Temporal and geographical divergence limits direct station-to-station comparisons and cannot demonstrate simultaneous within-field dual-pole network performance.
+  - Site 2 represents the highest-ranked humid station in the regional multi-site dataset under Protocol v2.0, not a co-located parcel's humid microclimate pole.
 - **Verified Nocturnal LWD Distribution, Saturation Ceiling, and Tie Handling:**
   - **Saturation Ceiling:** Under the 12-hour nocturnal window, five sites (Sites 1, 2, 3, 4, 5) reach the saturation ceiling of $P_{90} = 12.0\text{ h/night}$.
-  - **Secondary Criterion:** Highest mean nocturnal LWD among max-$P_{90}$ tied candidates decisively isolates **Site 2 (Sardinia, Plain, 33m)** with Mean = **11.23 h/night** (348 nights, std = 2.54; isolated as candidate humid pole Node A).
+  - **Secondary Criterion:** Highest mean nocturnal LWD among max-$P_{90}$ tied candidates decisively isolates **Site 2 (Sardinia, Plain, 33m)** with Mean = **11.23 h/night** (348 nights, std = 2.54; isolated as candidate Node A under Protocol v2.0).
   - **Site 1 (Sardinia, Hill, 125m):** $P_{90} = 12.0\text{ h/night}$, Mean = 8.58 h/night (345 nights, std = 4.51).
   - **Site 3 (Tuscany, Hill, 242m):** $P_{90} = 12.0\text{ h/night}$, Mean = 5.98 h/night (333 nights, std = 4.73).
   - **Site 5 (Piedmont, Hill, 187m):** $P_{90} = 12.0\text{ h/night}$, Mean = 4.69 h/night (307 nights, std = 4.84).
@@ -222,7 +227,7 @@ The corrected validation pipeline was executed on the original downloaded files 
 ## 7. Research Manuscript Verification
 
 - **File Inspected:** `paper/Sentinel_Plant_Network_Journal_Paper.tex`.
-- **Citations:** Verified all 15 references (Vachaud, Wallin, Idso, Jackson, Mendeley datasets, HiWATER, CABI).
+- **Citations:** Verified all 15 references (Vachaud, Wallin, Idso, Jackson, Mendeley datasets, HiWATER, CABI). Explicitly clarified that three Mendeley datasets were empirically processed in the validation pipeline, whereas HiWATER (Li et al., 2017) served solely as a literature-derived parameter reference for digital-twin soil moisture distributions.
 - **Formulas:** Verified LaTeX math for relative difference $\delta_{ij}$, ITS, CWSI clipping, Tetens VPD, Wallin/LWS DSV, and RCBD ANOVA / non-inferiority formulas.
 - **Evidence Boundaries:** The manuscript strictly labels all numerical agronomic results (e.g., 25.8% water savings, 34.4 t/ha yield) as **synthetic digital-twin benchmarks**.
 - **Empirical Validation Section:** Section 6 updated to report genuine findings from the three Mendeley datasets while explicitly acknowledging that they originate from external Mediterranean/European sites and do not replace physical field trials.
@@ -231,7 +236,7 @@ The corrected validation pipeline was executed on the original downloaded files 
 
 ## 8. Summary of Action Items & Readiness
 
-1. **Software & Mathematics:** COMPLETE. Python models, purged ML pipelines, and statistical analysis are verified and backed by 22 automated unit tests.
+1. **Software & Mathematics:** COMPLETE. Python models, purged ML pipelines, and statistical analysis are verified and backed by 25 automated Python unit tests (25/25 passing) and 1 C++ firmware host test executable.
 2. **Public Dataset Validation:** COMPLETE. All three Mendeley datasets evaluated with verified metadata (UTC, 20% LWS threshold, 144-step embargo purge, 0.70 Spearman threshold), generating reproducible metrics, plots, and a checksum manifest (`DATASETS_MANIFEST.json`).
 3. **Firmware Compilation:** COMPLETE in CI. Protocol bit-packing verified by static assertions and host tests. PlatformIO builds cleanly in CI on `espressif32@6.12.0`.
 4. **Physical Hardware Validation:** NOT STARTED. Formally documented as out-of-scope for this dataset-only/simulation study. Exhaustive bench testing procedures and acceptance criteria are specified in `HARDWARE_BENCH_TEST_PLAN.md`.

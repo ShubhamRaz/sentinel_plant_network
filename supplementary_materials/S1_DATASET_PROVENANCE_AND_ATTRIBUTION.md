@@ -59,6 +59,9 @@ None of the original raw datasets are redistributed directly within this reposit
   - **Candidate Selection Invariance:** Across analytical thresholds, Site 2 is decisively isolated as candidate Node A:
     - At 20%: Max $P_{90} = 12.0\text{ h/night}$, mean $= 11.23\text{ h/night}$.
     - At 50%: Max $P_{90} = 12.0\text{ h/night}$, mean $= 9.49\text{ h/night}$.
+- **Multi-Year Regional Scope and Limitations:**
+  - **Asynchronous Regional Monitoring:** Metadata in `sites.json` confirm that the seven agrometeorological stations were operated in separate Italian agricultural regions across different calendar years (Sites 1, 3, 5 in 2022; Sites 2, 4 in 2023; Sites 6, 7 in 2024).
+  - **Scope Limitation:** These stations represent regional microclimatic contrast across agro-climatic zones, NOT concurrent within-field nodes in a single experimental parcel. Site 2 represents the highest-ranked humid station in the regional multi-site dataset under Protocol v2.0, not a co-located field parcel's humid microclimate pole. Temporal and geographical divergence limits direct station-to-station comparisons and cannot demonstrate simultaneous dual-pole network performance.
 - **Cadence-Aware Gap Detection:**
   - Nominal Cadence: 60.0 minutes (hourly).
   - Documented Gap Threshold: 90.0 minutes (intervals $> 90$ min flag omitted observation cycles).
@@ -88,3 +91,17 @@ None of the original raw datasets are redistributed directly within this reposit
   - Units: Moisture recorded in fractional volume $\text{m}^3/\text{m}^3$ (mean ~0.29). Scaled by $\times 100$ to percentage points (% VWC).
   - Stations: Goraj-1 (6,462 rows) and Goraj-2 (2,973 rows); 1,617 aligned 10-minute steps.
   - Spatial Sufficiency Evaluation: Trailing 48h rolling window ($W = 278$ steps at 10.3-minute cadence) evaluated under Protocol v2.0 ProtocolConfig threshold ($r_s < 0.70$ or $|\Delta\theta| > 10.0\%\text{ VWC}$).
+
+---
+
+## 5. Distinction Between Evaluated Empirical Datasets and Literature Parameter References
+
+To ensure full transparency and auditability, we explicitly distinguish empirical validation datasets from literature parameter sources:
+- **Empirically Evaluated Datasets (3 Public Mendeley Datasets):**
+  1. Tomato Multi-Sector Precision Irrigation Dataset (Mendeley Data `10.17632/c837v6p8ph.2`).
+  2. Seven-Site Leaf Wetness and Agrometeorological Dataset (Mendeley Data `10.17632/sd4b8vpvyb.1`).
+  3. Libelium Olive Grove Multi-Sensor Dataset (Mendeley Data `10.17632/cnfh4stzzx.2`).
+  Raw archives of these three datasets were downloaded, parsed, cleaned, and evaluated through automated validation pipelines (`src/real_data_validation.py`), generating the empirical tables, metrics, and figures presented in this repository.
+- **Literature Parameter Reference (HiWATER Sensor Network):**
+  - The publication by Li et al. (2017) (*A multiscale dataset for understanding complex eco-hydrological processes in a heterogeneous oasis system*, *Sci. Data* 4:170083, PMC5501970) provided empirical ranges and distributions for spatial soil moisture offsets ($\delta_i \in [-16.0\%, +18.5\%]$) and Vachaud temporal stability parameters used to initialize the synthetic digital-twin simulation.
+  - Raw observation files from the HiWATER campaign were **not** ingested or processed by the empirical validation pipeline; HiWATER served strictly as a published parameter reference for the synthetic digital-twin modeling framework.

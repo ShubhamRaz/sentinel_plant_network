@@ -24,7 +24,7 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 \`\`\`
 
-Run the test suite (22 automated unit tests):
+Run the test suite (25 automated Python unit tests):
 
 \`\`\`bash
 pytest -q

@@ -53,10 +53,11 @@ To ensure rigorous biological alignment, two separate temporal aggregation pipel
 
 1. **Nocturnal Leaf Wetness Duration (LWD) & Humid-Pole Selection:**
    - Window: 18:00:00 UTC (inclusive) to 06:00:00 UTC (exclusive). Nominal duration: exactly 12.0 hours per night.
-   - Purpose: Identification of microclimatic humid pole (candidate Node A). Dew formation and oomycete zoospore release occur predominantly during nocturnal hours.
+   - Purpose: Evaluation of regional microclimatic wetness and selection of candidate Node A under Protocol v2.0. Dew formation and oomycete zoospore release occur predominantly during nocturnal hours.
+   - **Multi-Year Regional Scope Limitation:** Metadata in `sites.json` confirm that the seven stations operated asynchronously across separate Italian regions and monitoring years (Sites 1, 3, 5: 2022; Sites 2, 4: 2023; Sites 6, 7: 2024). They represent regional microclimatic diversity across topographically distinct agro-climatic zones, not concurrent nodes in a single experimental field. Site 2 represents the highest-ranked humid station in the regional multi-site dataset under Protocol v2.0, not a co-located parcel's humid microclimate pole. Temporal and geographical divergence limits direct station-to-station comparisons and cannot demonstrate concurrent within-field dual-pole network performance.
    - **Multi-Tier Deterministic Ranking:**
      * *Primary criterion:* Maximum $P_{90}$ nocturnal LWD. Under the 12-hour ceiling, five sites (Sites 1, 2, 3, 4, 5) hit $P_{90} = 12.0\text{ h/night}$.
-     * *Secondary criterion:* Highest mean nocturnal LWD among max-$P_{90}$ tied candidates decisively isolates **Site 2** (mean 11.23 h/night vs Site 1 at 8.58 h/night, Site 3 at 5.98 h/night, Site 5 at 4.69 h/night, Site 4 at 3.87 h/night).
+     * *Secondary criterion:* Highest mean nocturnal LWD among max-$P_{90}$ tied candidates decisively isolates **Site 2** as the highest-ranked humid station under the protocol (mean 11.23 h/night vs Site 1 at 8.58 h/night, Site 3 at 5.98 h/night, Site 5 at 4.69 h/night, Site 4 at 3.87 h/night).
      * *Tertiary tie-break:* Alphabetically smallest site identifier guarantees complete order-invariance if both $P_{90}$ and mean tie.
 2. **Daily Disease Severity Values (DSV):**
    - Window: Full 24-hour diurnal cycle (00:00:00 to 23:59:59 UTC).
