@@ -3,7 +3,7 @@
 **Manuscript Title:** Risk-Oriented Dual-Pole Sparse Sensing and Uncertainty-Aware Irrigation Decision Support for Solanaceous Crops: Architecture, Synthetic Digital-Twin Benchmarks, and External Validation Protocol  
 **Protocol Version:** Protocol v2.0  
 **Research Group:** Sentinel Plant Network Research Group  
-**Repository Branch:** `release/journal-supplementary-package`  
+**Repository Branch:** `fix/final-journal-scientific-audit`  
 
 ---
 
@@ -72,7 +72,7 @@ supplementary_materials/
    - Nocturnal leaf-wetness duration (18:00–06:00 UTC, 20% protocol threshold) identifies five candidate sites reaching the 12-hour saturation ceiling ($P_{90} = 12.0\text{ h/night}$).
    - Applying a secondary selection criterion (highest mean nocturnal LWD among max-$P_{90}$ candidates) deterministically isolates **Site 2 as candidate Node A** (seasonal mean 11.23 h/night at 20%; 9.49 h/night at 50%), whereas high-elevation Site 6 exhibits mean nocturnal wetness of only 0.98 h/night. Candidate selection is invariant to the threshold (20% vs. 50%) and input file order.
    - *Multi-Year Regional Scope:* The seven stations were monitored asynchronously across separate Italian regions and years (Sites 1, 3, 5: 2022; Sites 2, 4: 2023; Sites 6, 7: 2024), demonstrating regional microclimatic contrast rather than concurrent within-field nodes. Temporal/geographical separation limits direct station-to-station comparisons and cannot demonstrate simultaneous dual-pole network performance.
-   - Physical leaf-wetness sensor integration ($\mathrm{DSV}_{\mathrm{LWS}}$) captures extended nocturnal dew when ambient relative humidity drops into the 80–89% range, where standard weather station $\mathrm{DSV}_{\text{Wallin}}$ ($\text{RH} \ge 90\%$) records zero risk accumulation.
+   - Physical leaf-wetness sensor integration ($\mathrm{DSV}_{\mathrm{LWS}}$) captures extended nocturnal dew when ambient relative humidity drops into the 80–89% range, where standard weather station $\mathrm{DSV}_{\text{Wallin}}$ ($\text{RH} \ge 90\%$) records zero risk accumulation. At Site 2, daily $\mathrm{DSV}_{\mathrm{LWS}}$ reached the maximum rating of 4 on 41.2% of days (compared to 19.3% under $\mathrm{DSV}_{\text{Wallin}}$), illustrating the epidemiological rationale for direct foliar sensing rather than in-situ validation of physical network placement.
 3. **Adaptive Two-Node Spatial Sufficiency:**
    - Across 1,617 aligned observations in an Albanian olive grove, trailing 48-hour Spearman rank correlation dropped to $r_s = -0.739$ with a mean absolute divergence of 4.07% VWC.
    - Under Protocol v2.0's $r_s < 0.70$ threshold, **873 trailing windows triggered $\mathcal{F}_{\text{insuff}} = 1$ (65.1%)**, demonstrating that natural topographical heterogeneity causes frequent micro-zone decoupling and confirming the operational necessity of adaptive spatial sufficiency monitoring.

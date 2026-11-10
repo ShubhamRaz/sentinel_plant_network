@@ -1,6 +1,6 @@
 # Sentinel Plant Network — Comprehensive Research Audit & Verification Report
 
-**Branch:** `release/journal-supplementary-package` (based on `main`)  
+**Branch:** `fix/final-journal-scientific-audit` (based on `main`)  
 **Protocol Version:** Protocol v2.0  
 **Audit Date:** November 2026  
 **Auditor:** Sentinel Plant Network Automated & Research Quality System  
@@ -18,7 +18,7 @@
 
 This document presents a line-by-line audit and verification of the Sentinel Plant Network repository, covering software implementation, mathematical models, automated tests, public-dataset empirical validation, statistical methodology, ESP32-S3 firmware readiness, and the accompanying research manuscript.
 
-The Sentinel Plant Network proposes an edge-autonomous, risk-oriented dual-pole sparse sensing and irrigation decision-support architecture for solanaceous crops (potato and tomato). Rather than placing sensors to capture the spatial mean, Protocol v2.0 anchors Node A at the field's humid microclimate pole (90th percentile of nocturnal leaf wetness duration) and Node B at the persistent dry soil-moisture pole (Vachaud negative relative difference with minimal temporal variance). A local gateway arbitrates drought stress and late blight (*Phytophthora infestans*) disease risk via a 6-state finite state machine (FSM).
+The Sentinel Plant Network proposes an edge-autonomous, risk-oriented dual-pole sparse sensing and irrigation decision-support architecture for solanaceous crops (potato and tomato). Rather than placing sensors to capture the spatial mean, Protocol v2.0 defines a targeted placement design objective: anchoring Node A at the field's humid microclimate pole (90th percentile of nocturnal leaf wetness duration) and Node B at the persistent dry soil-moisture pole (Vachaud negative relative difference with minimal temporal variance). In empirical public-dataset validation, the asynchronously monitored seven-site dataset identifies a highest-ranked regional station under this ranking rule; it evaluates between-station microclimatic variability across multi-year regional records rather than establishing a humid pole within a single simultaneously monitored experimental field. A local gateway arbitrates drought stress and late blight (*Phytophthora infestans*) disease risk via a 6-state finite state machine (FSM).
 
 ### Summary Audit Matrix
 
@@ -138,7 +138,7 @@ The corrected validation pipeline was executed on the original downloaded files 
   - **Site 6 (Piedmont, High, 434m):** $P_{90} = 3.8\text{ h/night}$, Mean = **0.98 h/night** (353 nights, std = 2.77; driest station).
 - **Order Invariance:** Automated test confirms that candidate Node A selection is identical under sorted, reversed, and shuffled input file orderings.
 - **Wallin vs. LWS-Modified DSV:**
-  - Site 2 accumulates maximum daily risk ($\mathrm{DSV}_{\mathrm{LWS}}$ reaches 4 in 41.2% of days). Standard Wallin DSV based solely on weather-station RH ($\ge 90\%$) underestimates disease conduciveness during hours when ambient RH drops between 80% and 89% while foliar dew persists.
+  - At Site 2, daily $\mathrm{DSV}_{\mathrm{LWS}}$ reached the maximum rating of 4 on 41.2% of days (compared to 19.3% under standard $\mathrm{DSV}_{\text{Wallin}}$). Standard Wallin DSV based solely on ambient RH ($\ge 90\%$) misses extended foliar wetness periods during nights when ambient RH drops between 80% and 89% while canopy dew persists. This divergence illustrates that in humid microclimates, direct sensor measurement of foliar wetness detects disease-conducive conditions that ambient RH proxies overlook, providing empirical rationale for foliar wetness monitoring without representing an in-situ experimental comparison between an actual field-mean weather station and a deployed Sentinel network.
 
 ### 4.3 Libelium Olive Grove Multi-Sensor Dataset — Verified Spatial Sufficiency Rerun
 - **Source:** Mendeley Data `10.17632/cnfh4stzzx.2` (Version 2, CC BY 4.0).

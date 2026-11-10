@@ -12,7 +12,7 @@
 
 Protocol v2.0 relies on three core empirical assumptions:
 1. **Shallow root-zone soil moisture (VWC) in open-field solanaceous crops is predictable 24 hours ahead**, enabling proactive irrigation scheduling prior to stomatal closure.
-2. **Nocturnal leaf wetness duration (LWD) and microclimatic disease conduciveness vary substantially across topographically complex parcels**, allowing the identification of a persistent "humid pole" that accumulates pathogen risk faster than the field mean.
+2. **Nocturnal leaf wetness duration (LWD) and microclimatic disease conduciveness vary substantially across regional and topographically complex environments**, supporting the proposed design objective of identifying a persistent "humid pole" that accumulates pathogen risk faster than the field mean.
 3. **In real agricultural parcels, two-node telemetry exhibits spatial decoupling and sensor degradation**, necessitating continuous trailing correlation and divergence monitoring (the adaptive spatial sufficiency trigger).
 
 To test these assumptions against genuine agricultural sensor measurements, the corrected validation pipeline was executed on the original downloaded files of three public datasets published on Mendeley Data. A fourth cited source, the HiWATER dense sensor network (Li et al., 2017), served strictly as a literature-derived parameter reference for spatial soil moisture offsets and Vachaud temporal stability distributions in the synthetic digital twin; raw HiWATER observation files were not processed in this empirical pipeline.
@@ -136,6 +136,7 @@ Protocol v2.0 selects Node A using nocturnal leaf-wetness duration ($\text{LWD}_
 The adapter computed daily Wallin Disease Severity Values ($\mathrm{DSV}_{\text{Wallin}}$ based solely on $\mathrm{RH} \ge 90\%$) and leaf-wetness-modified values ($\mathrm{DSV}_{\mathrm{LWS}}$ integrating physical surface wetness):
 - During clear nights with radiative cooling, surface wetness on lower leaves persists even when aspirated air RH drops into the 80--89% range.
 - Standard Wallin DSV recorded zero severity accumulation during these periods, whereas $\mathrm{DSV}_{\mathrm{LWS}}$ accumulated 1 to 2 severity units per day.
+- At Site 2, daily $\mathrm{DSV}_{\mathrm{LWS}}$ reached the maximum rating of 4 on 41.2% of days (compared to 19.3% under $\mathrm{DSV}_{\text{Wallin}}$). This divergence demonstrates that direct sensor measurement of foliar wetness detects disease-conducive conditions that ambient RH proxies overlook, providing empirical rationale for foliar wetness monitoring; it reflects between-index behavior on regional agrometeorological data and does not represent an in-situ experimental comparison between an actual field-mean weather station and a deployed Sentinel network.
 - Output tables retained: `results/real_data_validation/leafwetness/nightly_leafwetness_lwd.csv` and `results/real_data_validation/leafwetness/daily_leafwetness_dsv.csv`.
 
 ---
@@ -182,7 +183,7 @@ The script `src/plot_real_data_validation.py` generated three publication-qualit
 1. `figures/real_data_validation/tomato_vwc_forecasting_benchmark.png`:
    - Comparison of 24h VWC forecast RMSE and MAE across Persistence, Ridge, Random Forest, and GBDT across open-field Zone 1 and Zone 2 on strictly purged test splits.
 2. `figures/real_data_validation/leafwetness_microclimate_dsv_ranking.png`:
-   - Panel A: Bar chart of $P_{90}$ nocturnal LWD across all 7 stations, isolating Site 1 and Site 2 ($12.0\text{ h/night}$) as humid poles.
+   - Panel A: Bar chart of $P_{90}$ nocturnal LWD across all 7 stations, illustrating regional microclimatic contrast with Sites 1–5 reaching the $12.0\text{ h/night}$ saturation ceiling and Site 2 isolated as candidate Node A via secondary tie-breaking.
    - Panel B: Boxplot distribution of daily LWS-modified Disease Severity Values across sites.
 3. `figures/real_data_validation/libelium_two_node_spatial_sufficiency.png`:
    - Dual-panel time series showing trailing 48h rolling divergence $|\Delta\theta|$ and rolling Spearman rank correlation $r_s$ between Goraj-1 and Goraj-2, highlighting the 873 windows where the adaptive sufficiency trigger was active.

@@ -73,6 +73,7 @@ None of the original raw datasets are redistributed directly within this reposit
 - **Temporal Scope:**
   - Nocturnal 18:00–06:00 UTC window (12.0 hours nominal) used strictly for humid-pole selection.
   - Daily (24h) data used for Wallin and LWS-modified Disease Severity Values (DSV).
+  - **Epidemiological Risk Indicator Comparison:** Comparing daily Wallin DSV (ambient $\mathrm{RH} \ge 90\%$) against LWS-modified DSV demonstrates that at Site 2, daily $\mathrm{DSV}_{\mathrm{LWS}}$ reached the maximum rating of 4 on 41.2% of days (versus 19.3% under $\mathrm{DSV}_{\text{Wallin}}$). This divergence demonstrates that foliar wetness persists when ambient air humidity dips into the 80–89% range, providing empirical rationale for foliar wetness monitoring without claiming in-situ validation of actual Node A placement in a field.
 
 ---
 

@@ -64,4 +64,4 @@ To ensure rigorous biological alignment, two separate temporal aggregation pipel
    - Models:
      - **Wallin DSV:** Lookup based on ambient temperature ($T_a$) and duration of hours with $\mathrm{RH} \ge 90\%$.
      - **LWS-Modified DSV:** Lookup substituting physical leaf wetness duration ($W(t) = 1$) for $\mathrm{RH} \ge 90\%$.
-   - Demonstrates that ambient relative humidity underestimates foliar pathogen risk during radiatively cooled clear nights where foliar dew persists while aspirated air humidity dips between 80% and 89%.
+   - Demonstrates that ambient relative humidity underestimates foliar pathogen risk during radiatively cooled clear nights where foliar dew persists while aspirated air humidity dips between 80% and 89%. (At Site 2, daily $\mathrm{DSV}_{\mathrm{LWS}} = 4$ occurred on 41.2% of days vs. 19.3% under $\mathrm{DSV}_{\text{Wallin}}$, demonstrating between-index sensitivity without claiming an in-situ comparison with a physical field network).
