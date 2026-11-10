@@ -16,6 +16,7 @@
 \usepackage{microtype}
 \usepackage{url}
 \def\UrlBreaks{\do\/\do-\do\_}
+\usepackage{balance}
 \usepackage[numbers,sort&compress]{natbib}
 \usepackage{hyperref}
 
@@ -348,7 +349,7 @@ Over a trailing 48-hour rolling window ($W = 278$ steps at 10.3-minute nominal c
 This empirical finding confirms that real agricultural parcels with topographical variation frequently undergo spatial decoupling where one micro-zone dries or re-wets at a different rate from another. The dynamic sufficiency trigger successfully detects this condition, preventing unmonitored localized water stress and signaling the operational requirement to deploy intermediate Node~C.
 
 \subsection{Evidence Boundaries and Reproducibility}
-All validation runs were executed with explicit column mappings and recorded with per-input SHA-256 checksums in \texttt{results/real\_data\_validation/DATASETS\_MANIFEST.json}. The corresponding publication figures were generated via \texttt{src/plot\_real\_data\_validation.py}.
+All validation runs were executed with explicit column mappings and recorded with per-input SHA-256 checksums in \path{results/real_data_validation/DATASETS_MANIFEST.json}. The corresponding publication figures were generated via \path{src/plot_real_data_validation.py}.
 
 These external dataset results validate the computational algorithms, data pipelines, and control triggers on real sensor streams. They do not constitute a physical field trial of the Sentinel Plant Network in its target agro-ecological environment (Jharkhand, India). Soil hydraulic properties, in-situ dielectric probe calibration, LoRa packet error rates under monsoon canopy attenuation, and agronomic yield impacts remain subject to future physical field experimentation.
 
@@ -381,9 +382,10 @@ The one-sided statistic is $t_{NI}=(\Delta_r-M_r)/SED$ with 9 residual degrees o
 \[
  L_{95}=\Delta_r-t_{0.95,9}\,SED.
 \]
-Non-inferiority is supported only when $L_{95}>M_r$. This model-based contrast uses the RCBD residual error term; it is not an unpaired or plant-subsample $t$-test. The script \texttt{src/statistical\_diagnostics.py} regenerates the assumptions and contrast outputs from the 16 plot-level rows. Outputs must be recomputed whenever seeds, configuration, or input data change. In the current synthetic baseline run, the marketable-yield residual Shapiro--Wilk statistic is $W=0.9507$ ($p=0.5002$), and the median-centred Levene residual-variance statistic across treatment groups is $W_{\mathrm{Levene}}=1.5489$ ($p=0.2528$). These non-significant tests do not demonstrate that the normality or homoscedasticity assumptions are true; residual plots and sensitivity analyses remain necessary.
+Non-inferiority is supported only when $L_{95}>M_r$. This model-based contrast uses the RCBD residual error term; it is not an unpaired or plant-subsample $t$-test. The script \path{src/statistical_diagnostics.py} regenerates the assumptions and contrast outputs from the 16 plot-level rows. Outputs must be recomputed whenever seeds, configuration, or input data change. In the current synthetic baseline run, the marketable-yield residual Shapiro--Wilk statistic is $W=0.9507$ ($p=0.5002$), and the median-centred Levene residual-variance statistic across treatment groups is $W_{\mathrm{Levene}}=1.5489$ ($p=0.2528$). These non-significant tests do not demonstrate that the normality or homoscedasticity assumptions are true; residual plots and sensitivity analyses remain necessary.
 
-\begin{thebibliography}{99}\footnotesize\setlength{\itemsep}{1.5pt plus 0.5pt}
+\balance
+\begin{thebibliography}{99}\footnotesize\setlength{\itemsep}{1.5pt plus 0.5pt}\interlinepenalty=10000
 
 \bibitem{vachaud1985_iwa}
 G.~Vachaud, A.~Passerat De Silans, P.~Balabanis, and M.~Vauclin, ``Temporal stability of spatially measured soil water probability density function,'' \textit{Soil Science Society of America Journal}, vol.~49, no.~4, pp.~822--828, 1985. Verified application in agricultural hydrology: \href{https://iwaponline.com/ws/article/22/5/5070/88251/Temporal-stability-of-soil-water-content-in}{IWA Water Supply 22(5):5070 (2022)}.
