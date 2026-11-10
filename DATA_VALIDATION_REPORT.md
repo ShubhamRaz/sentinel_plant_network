@@ -12,10 +12,10 @@
 
 Protocol v2.0 relies on three core empirical assumptions:
 1. **Shallow root-zone soil moisture (VWC) in open-field solanaceous crops is predictable 24 hours ahead**, enabling proactive irrigation scheduling prior to stomatal closure.
-2. **Nocturnal leaf wetness duration (LWD) and microclimatic disease conduciveness vary substantially across topographically complex parcels**, allowing the identification of a persistent "humid pole" that accumulates pathogen risk faster than the field mean.
+2. **Nocturnal leaf wetness duration (LWD) and microclimatic disease conduciveness vary substantially across regional and topographically complex environments**, supporting the proposed design objective of identifying a persistent "humid pole" that accumulates pathogen risk faster than the field mean.
 3. **In real agricultural parcels, two-node telemetry exhibits spatial decoupling and sensor degradation**, necessitating continuous trailing correlation and divergence monitoring (the adaptive spatial sufficiency trigger).
 
-To test these assumptions against genuine agricultural sensor measurements, the corrected validation pipeline was executed on the original downloaded files of three public datasets published on Mendeley Data.
+To test these assumptions against genuine agricultural sensor measurements, the corrected validation pipeline was executed on the original downloaded files of three public datasets published on Mendeley Data. A fourth cited source, the HiWATER dense sensor network (Li et al., 2017), served strictly as a literature-derived parameter reference for spatial soil moisture offsets and Vachaud temporal stability distributions in the synthetic digital twin; raw HiWATER observation files were not processed in this empirical pipeline.
 
 > [!IMPORTANT]
 > **Evidence Boundary:** These public benchmark datasets originate from Mediterranean and European agro-ecosystems (Italy and Albania). They validate the computational adapters, telemetry quality algorithms, forecasting baselines, and sufficiency triggers on genuine sensor streams. They **do not** substitute for target-field dielectric calibration, local soil hydraulic characterization, physical LoRa range testing, or pre-registered agronomic field trials in Jharkhand, India.
@@ -36,7 +36,8 @@ To test these assumptions against genuine agricultural sensor measurements, the 
 1. **Leaf-Wetness Dataset (`sd4b8vpvyb/1`):**
    - **Timezone:** Authoritatively established as **UTC**. The dataset `README.md` explicitly states: `All date and time are reported in UTC.` Furthermore, `sites.json` specifies timestamps with trailing `"Z"` (ISO 8601 UTC).
    - **Measurement Units:** Sensor readings are dimensionless normalized percentages ($0$--$100$) from custom double-sided capacitive PCB sensors measuring upper (`leaf_top`) and lower (`leaf_bot`) foliar wetness.
-   - **Documented Wetness Threshold:** In the authors' accompanying reference paper (*Colucci et al., IEEE Transactions on AgriFood Electronics*), the primary calibrated classification threshold is **20%** (derived from visual inspection ground-truth), with sensitivity analysis evaluated across **30%** and **40%**. The protocol's earlier arbitrary default of 50% is treated as a high-stringency sensitivity threshold.
+   - **Authoritative Publication & Threshold Justification:** Associated authoritative sensor publication: Filipescu, E., Colucci, G. P., & Trinchero, D. (2024). *Design and Implementation of a Capacitive Leaf Wetness Sensor Based on Capacitance-to-Digital Conversion*. IEEE Transactions on AgriFood Electronics, vol. 2, no. 2, pp. 244–251, doi: 10.1109/TAFE.2024.3401252. The publication reported seasonal leaf-wetness comparisons using a **50.0%** analysis cutoff alongside sensor immersion tests, without establishing an experimentally validated wet/dry classification boundary for the separate seven-site dataset. In our research protocol, **20.0%** is evaluated as a research-selected sensitivity threshold for comparative protocol analysis. Under the 12-hour nocturnal window, five stations (Sites 1–5) tie at the 12.0 h/night $P_{90}$ saturation ceiling; Site 2 is selected by the secondary criterion (highest seasonal nocturnal mean: 11.23 h/night at 20% and 9.49 h/night at 50%). Candidate selection is invariant across both 20% and 50% thresholds.
+   - **Cadence-Aware Gap Detection:** The sampling cadence is nominal 60.0 minutes (hourly). Using a cadence-aware gap threshold of 90.0 minutes (> 1.5 hr interval flags missing observation), exactly 153 missing observation gaps were detected across all 7 sites (Site 1: 5, Site 2: 23, Site 3: 35, Site 4: 71, Site 5: 12, Site 6: 2, Site 7: 5). The earlier reported count of 55,543 was an artifact of applying a 20-minute gap threshold to 60-minute data.
    - **Nocturnal 18:00–06:00 Window:** The nominal nocturnal duration is 12 hours. Because the seven stations are located in Italy (latitudes 38.987°N to 45.559°N, longitudes 7.835°E to 13.746°E), nocturnal wetness was computed strictly within the 18:00–06:00 window.
    - **Multi-Year Asynchrony:** `sites.json` documents that stations were monitored across different years (Sites 1, 3, 5 in 2022; Sites 2, 4 in 2023; Sites 6, 7 in 2024). They represent regional microclimates rather than simultaneous within-field nodes.
 2. **Tomato Dataset (`c837v6p8ph/2`):**
@@ -82,18 +83,10 @@ To test these assumptions against genuine agricultural sensor measurements, the 
 | **Random Forest** | Test | 0.972 | 0.451 | -0.098 | 1.149 |
 | **Gradient Boosting (GBDT)** | **Test** | **0.914** | **0.377** | **+0.028** | **1.185** |
 
-*GBDT achieved a 23.6% RMSE reduction over persistence (0.914% vs. 1.196% VWC) on strictly embargoed test data.*
-
-#### Sector 2 (Zone 2, Open Field — Test $n=1030$; Purged Train $n=4658$; Purged Val $n=885$):
-| Model | Split | Test RMSE (% VWC) | Test MAE (% VWC) | Test $R^2$ | Validation RMSE (% VWC) |
-| :--- | :--- | :---: | :---: | :---: | :---: |
-| **Persistence (Baseline)** | Test | 0.689 | 0.150 | -0.126 | N/A |
-| **Ridge Regression** | **Test** | **0.593** | **0.347** | **+0.165** | **0.368** |
-| **Random Forest** | Test | 0.757 | 0.475 | -0.359 | 0.471 |
-| **Gradient Boosting (GBDT)** | Test | 0.878 | 0.623 | -0.831 | 0.358 |
-
-*Ridge regression achieved a 13.9% RMSE reduction over persistence (0.593% vs. 0.689% VWC).*
-
+*Performance Interpretation & Metric Trade-Offs:*
+- **RMSE vs. MAE Trade-off:** GBDT achieved a 23.6% RMSE reduction over persistence (0.914% vs. 1.196% VWC) on strictly embargoed test data, and Ridge achieved a 13.9% RMSE reduction in Zone 2 (0.593% vs. 0.689% VWC). However, naive persistence achieves lower MAE than the ML models (0.242% vs. 0.377% in Zone 1; 0.150% vs. 0.347% in Zone 2). This occurs because squared-error minimization ($L_2$ loss) compresses large prediction spikes, whereas persistence incurs near-zero absolute error ($L_1$ loss) during quiet, quiescent dry-downs. General ML superiority is therefore NOT claimed.
+- **Low Positive $R^2$:** Test $R^2$ values are modest (+0.028 in Zone 1, +0.165 in Zone 2), explaining 2.8% to 16.5% of variance beyond the test set mean. This reflects the genuine difficulty of 24-hour ahead horizon soil moisture forecasting under open-field conditions without explicit future irrigation schedule knowledge.
+- **Artifactual Drought Recall:** The 100% drought-crossing recall is an artifact of class imbalance under the arbitrary 22.0% VWC threshold, because during the held-out test periods (which occur in later dry stages of the crop season), 100% of the actual VWC measurements (652/652 in Zone 1, 1,030/1,030 in Zone 2) were already below 22.0% VWC.
 - **Irrigation Telemetry Volume Assessment:** In the preprocessed tables, `water_vol_past_4h` represents a rolling 4-hour window sum. Across all 21,460 records, the sum of reported values is $218,433.6\text{ L}$ ($79,516.8\text{ L}$ in Zone 1; $138,916.8\text{ L}$ in Zone 2). As documented, this value is an integral over a rolling variable and is flagged with `cumulative_volume_verified: false` to avoid double-counting.
 
 ---
@@ -102,7 +95,8 @@ To test these assumptions against genuine agricultural sensor measurements, the 
 
 ### 4.1 Dataset Characteristics & Schema Inspection
 - **Source Files Evaluated:** `site1.csv` through `site7.csv` (Total: 55,550 hourly records, 0 parse failures).
-- **Timezone:** Verified as UTC from dataset `README.md` (line 17).
+- **Timezone:** Verified as UTC from dataset `README.md` (line 17) and ISO 8601 `"Z"` suffix in `sites.json`.
+- **Sampling Interval & Gaps:** Nominal cadence is 60.0 minutes (hourly). Using a 90-minute gap threshold, exactly 153 missing observation gaps were detected across all 7 sites (Site 1: 5, Site 2: 23, Site 3: 35, Site 4: 71, Site 5: 12, Site 6: 2, Site 7: 5).
 - **Mapping Used (`data/mappings/leafwetness_mapping.json`):**
   ```json
   {
@@ -115,28 +109,34 @@ To test these assumptions against genuine agricultural sensor measurements, the 
   ```
 
 ### 4.2 Nocturnal Leaf Wetness Duration & Humid Pole Selection
-Protocol v2.0 selects Node A using the 90th percentile of **nocturnal** leaf-wetness duration ($P_{90}(\text{LWD}_{\text{noct}})$), evaluated strictly during the 18:00–06:00 window (nominal 12 hours).
+Protocol v2.0 selects Node A using nocturnal leaf-wetness duration ($\text{LWD}_{\text{noct}}$), evaluated strictly during the 18:00–06:00 UTC window (nominal 12 hours).
 
 #### Sensitivity Analysis Across Wetness Thresholds (18:00–06:00 Nocturnal Window):
-| Station ID | Location / Terrain | Records | $P_{90}$ LWD at 20% (h/night)* | $P_{90}$ LWD at 30% (h/night) | $P_{90}$ LWD at 40% (h/night) | $P_{90}$ LWD at 50% (h/night) | Mean LWD at 20% (h/night) |
-| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Site 2** | Sardinia (Plain, 33m) | 8,278 | **12.0** | 12.0 | 12.0 | 12.0 | **11.23** |
-| **Site 1** | Sardinia (Hill, 125m) | 8,244 | **12.0** | 12.0 | 12.0 | 12.0 | **8.58** |
-| **Site 3** | Tuscany (Hill, 242m) | 7,854 | **12.0** | 12.0 | 11.0 | 10.0 | **5.98** |
-| **Site 5** | Piedmont (Hill, 187m) | 7,331 | **12.0** | 12.0 | 11.0 | 10.0 | **4.69** |
-| **Site 4** | Marche (Hill, 258m) | 6,874 | **12.0** | 11.0 | 11.0 | 9.0 | **3.87** |
-| **Site 7** | Piedmont (High, 418m) | 8,538 | **10.2** | 6.0 | 2.0 | 0.0 | **2.43** |
-| **Site 6** | Piedmont (High, 434m) | 8,431 | **3.8** | 1.0 | 0.0 | 0.0 | **0.98** |
+| Station ID | Location / Terrain | Records | $P_{90}$ LWD at 20% (h/night)* | $P_{90}$ LWD at 30% (h/night) | $P_{90}$ LWD at 40% (h/night) | $P_{90}$ LWD at 50% (h/night)** | Mean LWD at 20% (h/night) | Mean LWD at 50% (h/night) |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Site 2** | Sardinia (Plain, 33m) | 8,278 | **12.0** | 12.0 | 12.0 | **12.0** | **11.23** | **9.49** |
+| **Site 1** | Sardinia (Hill, 125m) | 8,244 | **12.0** | 12.0 | 12.0 | **12.0** | **8.58** | 5.65 |
+| **Site 3** | Tuscany (Hill, 242m) | 7,854 | **12.0** | 12.0 | 11.0 | 10.0 | **5.98** | 3.66 |
+| **Site 5** | Piedmont (Hill, 187m) | 7,331 | **12.0** | 12.0 | 11.0 | 10.0 | **4.69** | 2.61 |
+| **Site 4** | Marche (Hill, 258m) | 6,874 | **12.0** | 11.0 | 11.0 | 9.0 | **3.87** | 2.44 |
+| **Site 7** | Piedmont (High, 418m) | 8,538 | **10.2** | 6.0 | 2.0 | 0.0 | **2.43** | 0.28 |
+| **Site 6** | Piedmont (High, 434m) | 8,431 | **3.8** | 1.0 | 0.0 | 0.0 | **0.98** | 0.15 |
 
-*\*20% threshold is the primary benchmark calibrated against visual inspection by the dataset authors (Colucci et al., IEEE Transactions on AgriFood Electronics).*
+*\*20% threshold is evaluated as a research-selected sensitivity threshold for comparative protocol analysis.*  
+*\*\*50% threshold is the published leaf-wetness analysis cutoff reported by Filipescu, Colucci, and Trinchero (IEEE Transactions on AgriFood Electronics, 2024), evaluated alongside immersion tests without establishing an experimental wet/dry classification boundary for the seven-site dataset.*
 
-- **Humid Pole Candidate:** Sites 1 and 2 exhibit maximum nocturnal wetness persistence ($P_{90} = 12.0\text{ h/night}$). Site 2 exhibits the highest seasonal mean nocturnal LWD (**11.23 h/night**, median 12.0 h/night), confirming it as the most persistent humid microclimate.
-- **Microclimatic Contrast:** In contrast to the humid Sardinian plain, high-elevation Piedmont stations (Sites 6 and 7) exhibit mean nocturnal LWD of only 0.98 and 2.43 h/night, demonstrating pronounced multi-station microclimatic diversity.
+- **Humid Pole Candidate Selection & Tie-Break Rule:**
+  - *Primary Criterion:* 90th percentile nocturnal LWD ($P_{90}$). Under the 12-hour nocturnal window, five sites (Sites 1, 2, 3, 4, 5) reach the saturation ceiling of $P_{90} = 12.0\text{ h/night}$.
+  - *Secondary Criterion:* Highest mean nocturnal LWD among max-$P_{90}$ tied candidates decisively isolates **Site 2** (seasonal mean 11.23 h/night at 20%; 9.49 h/night at 50%), far exceeding Site 1 (8.58 h/night) and Site 3 (5.98 h/night).
+  - *Tertiary Criterion:* Deterministic alphabetical site name ordering applied if both $P_{90}$ and mean tie.
+  - *Order Independence:* Candidate selection is 100% deterministic and invariant to input file ordering.
+- **Between-Station Variability:** High-elevation Piedmont stations (Sites 6 and 7) exhibit mean nocturnal LWD of only 0.98 and 2.43 h/night, showing substantial between-station differences in nocturnal leaf-wetness measurements across the regional datasets, with geographic and temporal differences limiting direct spatial interpretation.
 
 ### 4.3 Daily Wallin DSV vs. LWS-Modified DSV Progression
 The adapter computed daily Wallin Disease Severity Values ($\mathrm{DSV}_{\text{Wallin}}$ based solely on $\mathrm{RH} \ge 90\%$) and leaf-wetness-modified values ($\mathrm{DSV}_{\mathrm{LWS}}$ integrating physical surface wetness):
 - During clear nights with radiative cooling, surface wetness on lower leaves persists even when aspirated air RH drops into the 80--89% range.
 - Standard Wallin DSV recorded zero severity accumulation during these periods, whereas $\mathrm{DSV}_{\mathrm{LWS}}$ accumulated 1 to 2 severity units per day.
+- At Site 2, daily $\mathrm{DSV}_{\mathrm{LWS}}$ reached the maximum rating of 4 on 41.2% of days (compared to 19.3% under $\mathrm{DSV}_{\text{Wallin}}$). This divergence demonstrates that direct sensor measurement of foliar wetness detects disease-conducive conditions that ambient RH proxies overlook, providing empirical rationale for foliar wetness monitoring; it reflects between-index behavior on regional agrometeorological data and does not represent an in-situ experimental comparison between an actual field-mean weather station and a deployed Sentinel network.
 - Output tables retained: `results/real_data_validation/leafwetness/nightly_leafwetness_lwd.csv` and `results/real_data_validation/leafwetness/daily_leafwetness_dsv.csv`.
 
 ---
@@ -183,7 +183,7 @@ The script `src/plot_real_data_validation.py` generated three publication-qualit
 1. `figures/real_data_validation/tomato_vwc_forecasting_benchmark.png`:
    - Comparison of 24h VWC forecast RMSE and MAE across Persistence, Ridge, Random Forest, and GBDT across open-field Zone 1 and Zone 2 on strictly purged test splits.
 2. `figures/real_data_validation/leafwetness_microclimate_dsv_ranking.png`:
-   - Panel A: Bar chart of $P_{90}$ nocturnal LWD across all 7 stations, isolating Site 1 and Site 2 ($12.0\text{ h/night}$) as humid poles.
+   - Panel A: Bar chart of $P_{90}$ nocturnal LWD across all 7 stations, illustrating regional microclimatic contrast with Sites 1–5 reaching the $12.0\text{ h/night}$ saturation ceiling and Site 2 isolated as candidate Node A via secondary tie-breaking.
    - Panel B: Boxplot distribution of daily LWS-modified Disease Severity Values across sites.
 3. `figures/real_data_validation/libelium_two_node_spatial_sufficiency.png`:
    - Dual-panel time series showing trailing 48h rolling divergence $|\Delta\theta|$ and rolling Spearman rank correlation $r_s$ between Goraj-1 and Goraj-2, highlighting the 873 windows where the adaptive sufficiency trigger was active.
@@ -195,6 +195,6 @@ The script `src/plot_real_data_validation.py` generated three publication-qualit
 1. **Raw Un-preprocessed Tomato 24h Forecasting:** Skipped because raw files contain frequent missing data intervals (max contiguous run of 65 steps = 10.8 hours), precluding an unbroken 24-hour ahead horizon (144 steps) without imputation. Preprocessed tables were evaluated instead.
 2. **Tomato Greenhouse Sectors (Zones 3, 4, 5):** Skipped because the Sentinel Plant Network targets open-field solanaceous crops; greenhouse/polytunnel microclimates do not match open-field ET dynamics.
 3. **Cumulative Tomato Irrigation Volume:** Summing `water_vol_past_4h` row-by-row was flagged as non-cumulative because it is a rolling 4-hour window sum; raw incremental valve volumes require event-level reconstruction.
-4. **Synchronous Single-Field Network in Leaf Wetness:** The seven agrometeorological stations were deployed in different Italian regions across different calendar years (2022--2024); they validate regional microclimatic LWD diversity, not a concurrent 7-node parcel network.
+4. **Multi-Year Regional Leaf-Wetness Observations and Their Limitations:** The seven agrometeorological stations were deployed in different Italian regions across different calendar years (Sites 1, 3, 5: 2022; Sites 2, 4: 2023; Sites 6, 7: 2024); they validate regional microclimatic LWD diversity across diverse agro-climatic zones, not a concurrent within-field network. Temporal and geographical divergence limits direct station-to-station comparisons and cannot demonstrate simultaneous dual-pole network performance. Site 2 represents the highest-ranked humid station in the regional multi-site dataset under Protocol v2.0, not a co-located parcel's humid microclimate pole.
 5. **Absence of Ground-Truth Pathogen Imagery:** Public datasets contain agrometeorological risk proxies ($\mathrm{DSV}$), not daily photographic potato late-blight lesion area measurements.
 6. **Calibration Transfer to Target Parcel:** Mediterranean soils (calcareous loam in Albania, Italian clay-loam) differ from the targeted sandy-clay-loam soils in Jharkhand, India. External data validation does not replace in-situ dielectric probe calibration or physical field trials.

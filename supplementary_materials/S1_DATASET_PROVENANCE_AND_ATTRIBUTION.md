@@ -23,8 +23,8 @@ None of the original raw datasets are redistributed directly within this reposit
 - **Citation:**
   > Adamo, T., Colizzi, L., Dimauro, G., Guerriero, E., & Lomonte, N. (2026). *Soil Moisture, Irrigation Actuator and Weather Dataset from a Multi-Sector Precision-Irrigation*. Mendeley Data, V2, doi: 10.17632/c837v6p8ph.2.
 - **Evaluated Files & Hashes:**
-  - `dataset_zone_1_preprocessed.csv` (9,531 rows, 762.6 KB, SHA-256: `a93caea23ec083b4007f3525206daef9d8d697e889b7829288f619b08d2777b7`)
-  - `dataset_zone_2_preprocessed.csv` (11,929 rows, 955.1 KB, SHA-256: `91cb5ee31359c55b6ef79eeadfb3d2f70356247c43c1626f2f35492d244005f1`)
+  - `dataset_zone_1_preprocessed.csv` (9,531 rows, 1,760,164 bytes, SHA-256: `e3c8ce709e89d1a7944bfbcfc0120a2f0166b4198cdf390efad659fd3acb9a89`)
+  - `dataset_zone_2_preprocessed.csv` (11,929 rows, 2,164,170 bytes, SHA-256: `7436f9d1b03da0dd4a76cf2005e9ded38881d88d6b85c7f20cf7a3dc561ee5ac`)
 - **Metadata & Units:**
   - Cadence: 10.0 minutes nominal sampling interval.
   - Soil Moisture (`soil_moisture`): Volumetric water content percentage (% VWC).
@@ -41,23 +41,39 @@ None of the original raw datasets are redistributed directly within this reposit
 - **Direct Source URL:** https://data.mendeley.com/datasets/sd4b8vpvyb/1
 - **Citation:**
   > Colucci, G. P., Filipescu, E., Scatozza, F., & Trinchero, D. (2025). *Leaf Wetness and Agrometeorological Dataset*. Mendeley Data, V1, doi: 10.17632/sd4b8vpvyb.1.
-- **Reference Paper:**
-  > Colucci, G. P., Filipescu, E., Scatozza, F., & Trinchero, D. (2025). *Long-term capacitive leaf wetness sensing and microclimatic characterization across agricultural parcels*. IEEE Transactions on AgriFood Electronics, doi: 10.1109/TAFE.2025.xxxxxxx.
+- **Authoritative Publication:**
+  > Filipescu, E., Colucci, G. P., & Trinchero, D. (2024). *Design and Implementation of a Capacitive Leaf Wetness Sensor Based on Capacitance-to-Digital Conversion*. IEEE Transactions on AgriFood Electronics, vol. 2, no. 2, pp. 244–251, doi: 10.1109/TAFE.2024.3401252.
 - **Evaluated Files & Hashes (55,550 Hourly Records):**
-  - `site1.csv`: 8,760 rows, 509.2 KB, SHA-256: `4c0abbb24409ce35c65642eefb8220d5de903b9347d06df07361162d82c4f6ac`
-  - `site2.csv`: 8,760 rows, 516.6 KB, SHA-256: `9ba17c06d482c22a6c5fb9a3527077d738aac7210f2d414b73545a76eba298ad`
-  - `site3.csv`: 7,854 rows, 485.2 KB, SHA-256: `ca3da9c8b42528a893a3e1610043e58dd37cc0462a46557cb7fde77bcffebe1e`
-  - `site4.csv`: 6,874 rows, 421.6 KB, SHA-256: `824bc1ab7b79ef0da0024bd5d47c0c8017de9f27e2367d1ebb8ccd70921d0b07`
-  - `site5.csv`: 7,331 rows, 450.4 KB, SHA-256: `d12291ebef6717e86a0a94b44c82e1dd422f7cb7aba20dc003b4ad0a5b6cba2e`
-  - `site6.csv`: 8,431 rows, 509.3 KB, SHA-256: `194b35f6d4ca9ff1c93594d7173c2cf74a3e644cdad8ec7f61ad22c994ebe6bc`
-  - `site7.csv`: 8,538 rows, 513.1 KB, SHA-256: `6bd4d0fe46c5e23f9a55469c2bc795376f4b19f19f4148cbf5ae4bc4b4a55415`
+  - `site1.csv`: 8,760 rows, 509,237 bytes, SHA-256: `4c0abbb24409ce35c65642eefb8220d5de903b9347d06df07361162d82c4f6ac`
+  - `site2.csv`: 8,760 rows, 516,603 bytes, SHA-256: `9ba17c06d482c22a6c5fb9a3527077d738aac7210f2d414b73545a76eba298ad`
+  - `site3.csv`: 7,854 rows, 485,187 bytes, SHA-256: `ca3da9c8b42528a893a3e1610043e58dd37cc0462a46557cb7fde77bcffebe1e`
+  - `site4.csv`: 6,874 rows, 421,597 bytes, SHA-256: `824bc1ab7b79ef0da0024bd5d47c0c8017de9f27e2367d1ebb8ccd70921d0b07`
+  - `site5.csv`: 7,331 rows, 450,364 bytes, SHA-256: `d12291ebef6717e86a0a94b44c82e1dd422f7cb7aba20dc003b4ad0a5b6cba2e`
+  - `site6.csv`: 8,431 rows, 509,320 bytes, SHA-256: `194b35f6d4ca9ff1c93594d7173c2cf74a3e644cdad8ec7f61ad22c994ebe6bc`
+  - `site7.csv`: 8,538 rows, 513,112 bytes, SHA-256: `6bd4d0fe46c5e23f9a55469c2bc795376f4b19f19f4148cbf5ae4bc4b4a55415`
 - **Verified Timestamp Timezone:**
   - **UTC.** Explicitly established in dataset archive `README.md` (line 17: `"All date and time are reported in UTC"`) and ISO 8601 `"Z"` suffix in `sites.json`.
-- **Verified Wetness Sensor Threshold:**
-  - **20.0%.** Established from Colucci et al. (IEEE Trans. AgriFood Electronics), where 20% normalized capacitive reading corresponds to visual water droplet bridging on the transducer interdigitated electrodes.
+- **Threshold Interpretation & Sensitivity Choices:**
+  - **Published Analysis Cutoff (50.0%):** Filipescu et al. (2024) reported seasonal field leaf-wetness comparisons using a 50% cutoff alongside sensor immersion experiments. However, the published cutoff was not established as an experimentally validated wet/dry decision boundary for all field conditions or across the separate seven-site dataset.
+  - **Research-Selected Sensitivity Threshold (20.0%):** A 20.0% threshold is evaluated as a research-selected sensitivity threshold for comparative protocol analysis. Neither threshold is claimed to be a universal experimentally calibrated wet/dry boundary.
+  - **Candidate Selection Invariance:** Across analytical thresholds, Site 2 is decisively isolated as candidate Node A:
+    - At 20%: Max $P_{90} = 12.0\text{ h/night}$, mean $= 11.23\text{ h/night}$.
+    - At 50%: Max $P_{90} = 12.0\text{ h/night}$, mean $= 9.49\text{ h/night}$.
+- **Multi-Year Regional Scope and Limitations:**
+  - **Asynchronous Regional Monitoring:** Metadata in `sites.json` confirm that the seven agrometeorological stations were operated in separate Italian agricultural regions across different calendar years (Sites 1, 3, 5 in 2022; Sites 2, 4 in 2023; Sites 6, 7 in 2024).
+  - **Scope Limitation:** These stations represent regional microclimatic contrast across agro-climatic zones, NOT concurrent within-field nodes in a single experimental parcel. Site 2 represents the highest-ranked humid station in the regional multi-site dataset under Protocol v2.0, not a co-located field parcel's humid microclimate pole. Temporal and geographical divergence limits direct station-to-station comparisons and cannot demonstrate simultaneous dual-pole network performance.
+- **Cadence-Aware Gap Detection:**
+  - Nominal Cadence: 60.0 minutes (hourly).
+  - Documented Gap Threshold: 90.0 minutes (intervals $> 90$ min flag omitted observation cycles).
+  - Actual Gaps: Exactly 153 missing observation gaps across all 7 sites (Site 1: 5, Site 2: 23, Site 3: 35, Site 4: 71, Site 5: 12, Site 6: 2, Site 7: 5). The earlier figure of 55,543 was an artifact of applying a 20-minute gap threshold to 60-minute data.
+- **Humid-Pole Ranking & Tie Handling:**
+  - Saturation Ceiling: Five sites (Sites 1, 2, 3, 4, 5) achieve the maximum $P_{90} = 12.0\text{ h/night}$ saturation ceiling under the 12-hour nocturnal window (18:00–06:00 UTC).
+  - Secondary Criterion: Highest mean nocturnal LWD among max-$P_{90}$ candidates decisively selects **Site 2** (mean 11.23 h/night vs Site 1 at 8.58 h/night, Site 3 at 5.98 h/night).
+  - Tertiary Deterministic Rule: Alphabetically smallest site identifier guarantees complete order-invariance if both $P_{90}$ and mean tie.
 - **Temporal Scope:**
   - Nocturnal 18:00–06:00 UTC window (12.0 hours nominal) used strictly for humid-pole selection.
   - Daily (24h) data used for Wallin and LWS-modified Disease Severity Values (DSV).
+  - **Epidemiological Risk Indicator Comparison:** Comparing daily Wallin DSV (ambient $\mathrm{RH} \ge 90\%$) against LWS-modified DSV demonstrates that at Site 2, daily $\mathrm{DSV}_{\mathrm{LWS}}$ reached the maximum rating of 4 on 41.2% of days (versus 19.3% under $\mathrm{DSV}_{\text{Wallin}}$). This divergence demonstrates that foliar wetness persists when ambient air humidity dips into the 80–89% range, providing empirical rationale for foliar wetness monitoring without claiming in-situ validation of actual Node A placement in a field.
 
 ---
 
@@ -76,3 +92,17 @@ None of the original raw datasets are redistributed directly within this reposit
   - Units: Moisture recorded in fractional volume $\text{m}^3/\text{m}^3$ (mean ~0.29). Scaled by $\times 100$ to percentage points (% VWC).
   - Stations: Goraj-1 (6,462 rows) and Goraj-2 (2,973 rows); 1,617 aligned 10-minute steps.
   - Spatial Sufficiency Evaluation: Trailing 48h rolling window ($W = 278$ steps at 10.3-minute cadence) evaluated under Protocol v2.0 ProtocolConfig threshold ($r_s < 0.70$ or $|\Delta\theta| > 10.0\%\text{ VWC}$).
+
+---
+
+## 5. Distinction Between Evaluated Empirical Datasets and Literature Parameter References
+
+To ensure full transparency and auditability, we explicitly distinguish empirical validation datasets from literature parameter sources:
+- **Empirically Evaluated Datasets (3 Public Mendeley Datasets):**
+  1. Tomato Multi-Sector Precision Irrigation Dataset (Mendeley Data `10.17632/c837v6p8ph.2`).
+  2. Seven-Site Leaf Wetness and Agrometeorological Dataset (Mendeley Data `10.17632/sd4b8vpvyb.1`).
+  3. Libelium Olive Grove Multi-Sensor Dataset (Mendeley Data `10.17632/cnfh4stzzx.2`).
+  Raw archives of these three datasets were downloaded, parsed, cleaned, and evaluated through automated validation pipelines (`src/real_data_validation.py`), generating the empirical tables, metrics, and figures presented in this repository.
+- **Literature Parameter Reference (HiWATER Sensor Network):**
+  - The publication by Li et al. (2017) (*A multiscale dataset for understanding complex eco-hydrological processes in a heterogeneous oasis system*, *Sci. Data* 4:170083, PMC5501970) provided empirical ranges and distributions for spatial soil moisture offsets ($\delta_i \in [-16.0\%, +18.5\%]$) and Vachaud temporal stability parameters used to initialize the synthetic digital-twin simulation.
+  - Raw observation files from the HiWATER campaign were **not** ingested or processed by the empirical validation pipeline; HiWATER served strictly as a published parameter reference for the synthetic digital-twin modeling framework.

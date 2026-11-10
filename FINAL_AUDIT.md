@@ -1,6 +1,6 @@
 # Sentinel Plant Network — Comprehensive Research Audit & Verification Report
 
-**Branch:** `release/journal-supplementary-package` (based on `main`)  
+**Branch:** `fix/final-journal-scientific-audit` (based on `main`)  
 **Protocol Version:** Protocol v2.0  
 **Audit Date:** November 2026  
 **Auditor:** Sentinel Plant Network Automated & Research Quality System  
@@ -10,22 +10,22 @@
 ## 1. Executive Summary
 
 > **Validation Status Update (November 2026):** All corrective reruns on the original public benchmark datasets have been completed with verified metadata:
-> - **Leaf Wetness:** Verified as UTC from archive `README.md` (`"All date and time are reported in UTC"`) and ISO8601 `"Z"` timestamps; 20% capacitive wetness threshold established from Colucci et al. (IEEE Trans. AgriFood Electronics); nocturnal 18:00–06:00 UTC window enforced.
-> - **Tomato Precision Irrigation:** 144-step (24-hour) embargo purge applied across chronological train/validation/test splits to eliminate horizon leakage; forward-looking target tokens purged; non-cumulative rolling nature of `water_vol_past_4h` flagged.
+> - **Leaf Wetness:** Verified as UTC from archive `README.md` (`"All date and time are reported in UTC"`) and ISO8601 `"Z"` timestamps; published 50% analysis cutoff reported by Filipescu et al. (IEEE Trans. AgriFood Electronics, 2024, DOI: 10.1109/TAFE.2024.3401252); research-selected sensitivity threshold evaluated at 20.0% (neither threshold established as a universal calibrated wet/dry boundary); nocturnal 18:00–06:00 UTC window enforced; exactly 153 missing hourly observation gaps detected across all 7 sites under a 90-min threshold.
+> - **Tomato Precision Irrigation:** 144-step (24-hour) embargo purge applied across chronological train/validation/test splits to eliminate horizon leakage; forward-looking target tokens purged; non-cumulative rolling nature of `water_vol_past_4h` flagged. GBDT and Ridge reduce RMSE by 23.6% and 13.9%, but persistence yields lower MAE; $R^2$ values are modest (+0.028, +0.165); 100% drought recall is an artifact of class imbalance (all test labels $\le 22.0\%$ VWC).
 > - **Libelium Telemetry:** Fractional $m^3/m^3$ scaled to % VWC; Protocol v2.0 `ProtocolConfig` threshold of $r_s < 0.70$ enforced for adaptive spatial sufficiency.
 >
 > All machine-readable per-dataset JSON/CSV outputs, publication plots, and the provenance manifest (`DATASETS_MANIFEST.json`) have been generated and retained. This research project is an edge-architecture and public-dataset/simulation validation study. No physical hardware deployment or field experiments are conducted or claimed.
 
 This document presents a line-by-line audit and verification of the Sentinel Plant Network repository, covering software implementation, mathematical models, automated tests, public-dataset empirical validation, statistical methodology, ESP32-S3 firmware readiness, and the accompanying research manuscript.
 
-The Sentinel Plant Network proposes an edge-autonomous, risk-oriented dual-pole sparse sensing and irrigation decision-support architecture for solanaceous crops (potato and tomato). Rather than placing sensors to capture the spatial mean, Protocol v2.0 anchors Node A at the field's humid microclimate pole (90th percentile of nocturnal leaf wetness duration) and Node B at the persistent dry soil-moisture pole (Vachaud negative relative difference with minimal temporal variance). A local gateway arbitrates drought stress and late blight (*Phytophthora infestans*) disease risk via a 6-state finite state machine (FSM).
+The Sentinel Plant Network proposes an edge-autonomous, risk-oriented dual-pole sparse sensing and irrigation decision-support architecture for solanaceous crops (potato and tomato). Rather than placing sensors to capture the spatial mean, Protocol v2.0 defines a targeted placement design objective: anchoring Node A at the field's humid microclimate pole (90th percentile of nocturnal leaf wetness duration) and Node B at the persistent dry soil-moisture pole (Vachaud negative relative difference with minimal temporal variance). In empirical public-dataset validation, the asynchronously monitored seven-site dataset identifies a highest-ranked regional station under this ranking rule; it evaluates between-station microclimatic variability across multi-year regional records rather than establishing a humid pole within a single simultaneously monitored experimental field. A local gateway arbitrates drought stress and late blight (*Phytophthora infestans*) disease risk via a 6-state finite state machine (FSM).
 
 ### Summary Audit Matrix
 
 | Domain | Scope Inspected | Verification Method | Status |
 | :--- | :--- | :--- | :--- |
 | **Software Implementation** | `src/models.py`, `src/ml_baselines.py`, `src/run_experiments.py`, `src/statistical_diagnostics.py`, `src/real_data_validation.py` | Line-by-line code review, execution, and bug-fix verification | **COMPLETE** |
-| **Automated Testing** | 20 Python tests, deterministic simulation runs, C++ host tests, PlatformIO targets, LaTeX | Full pytest suite and GitHub Actions workflow | **COMPLETE** (20/20 passing) |
+| **Automated Testing** | 25 Python tests, deterministic simulation runs, 1 C++ firmware host test executable, PlatformIO targets, LaTeX | Full pytest suite and GitHub Actions workflow | **COMPLETE** (25/25 passing) |
 | **Public Dataset Validation** | Tomato, Leaf Wetness, Libelium public datasets | Corrected adapters executed on original Mendeley datasets with verified metadata and manifest | **COMPLETE** |
 | **Synthetic Statistical Method Checks** | RCBD ANOVA, Shapiro-Wilk, Levene test, yield non-inferiority, REML MixedLM | Python recomputation on synthetic plot-level observations | **COMPLETE** (simulation only; not field inference) |
 | **Firmware Compilation** | C++17 `sentinel_protocol.h`, `node_firmware.ino`, `gateway_firmware.ino`, `platformio.ini` | Protocol static assertion (24-byte pack), host test verification, CI PlatformIO build check | **COMPLETE in CI** |
@@ -41,7 +41,7 @@ The Sentinel Plant Network proposes an edge-autonomous, risk-oriented dual-pole 
 The audited codebase contains:
 - `src/`: Protocol v2.0 Python models (`models.py`), machine learning baselines (`ml_baselines.py`), digital-twin simulation orchestrator (`run_experiments.py`), statistical diagnostics (`statistical_diagnostics.py`), real-dataset validation adapters (`real_data_validation.py`), and visualization generator (`plot_real_data_validation.py`).
 - `firmware/`: Shared protocol headers (`common/sentinel_protocol.h`), node firmware (`node_esp32s3/node_firmware.ino`), gateway firmware (`gateway_esp32s3/gateway_firmware.ino`), PlatformIO build targets (`esp32_build/`), and configuration (`platformio.ini`).
-- `tests/`: 20 automated tests (`test_sentinel_network.py`, `test_real_data_validation.py`, `test_firmware_host.cpp`).
+- `tests/`: 25 automated Python unit tests (`test_sentinel_network.py`, `test_real_data_validation.py`) plus 1 C++ firmware host test executable (`test_firmware_host.cpp`).
 - `paper/`: Journal manuscript in LaTeX (`Sentinel_Plant_Network_Journal_Paper.tex`) and compiled PDF.
 - `data/`: Configuration mappings (`data/mappings/`), dataset manifest (`data/raw_public/DATASETS_MANIFEST.json`).
 - `.github/workflows/`: Reproducibility CI workflow (`reproducibility.yml`).
@@ -57,7 +57,7 @@ The audited codebase contains:
          token in c.lower() for token in leakage_tokens
      )]
      ```
-   - *Verification:* Verified via `test_temporal_leakage_features_excluded` in `tests/test_real_data_validation.py`. Genuine 24h VWC forecast RMSE is 0.917% VWC (GBDT) in Zone 1 and 0.572% VWC (Ridge) in Zone 2 without any access to future data.
+   - *Verification:* Verified via `test_temporal_leakage_features_excluded` in `tests/test_real_data_validation.py`. Genuine 24h VWC forecast RMSE is 0.914% VWC (GBDT) in Zone 1 and 0.593% VWC (Ridge) in Zone 2 without any access to future data.
 
 2. **Libelium VWC Fractional Scaling (`src/real_data_validation.py`):**
    - *Issue:* The Mendeley Libelium dataset records soil volumetric water content in $m^3/m^3$ (`teros11_vwc_m3_m3`, mean ~0.29 $m^3/m^3$). Protocol v2.0's spatial divergence threshold is defined in percentage points (`10.0% VWC`). Comparing $m^3/m^3$ directly against 10.0 meant divergence would never exceed the trigger threshold.
@@ -74,7 +74,7 @@ The audited codebase contains:
 
 ### 3.1 Unit Test Suite
 Ran `.venv\Scripts\pytest.exe -v`:
-- Total tests: 17 passed in 4.20s.
+- Total tests: 25 passed in 26.47s (local suite passing 25/25).
 - Covered areas:
   - Adaptive spatial sufficiency trigger under divergence and low rank correlation.
   - Chronological split non-overlapping temporal separation.
@@ -87,6 +87,9 @@ Ran `.venv\Scripts\pytest.exe -v`:
   - Real dataset validation adapters (Tomato, Leaf Wetness, Libelium).
   - Temporal leakage prevention test.
   - Fractional VWC scaling test.
+  - Multi-tier deterministic humid-pole candidate ranking (primary $P_{90}$, secondary mean nocturnal LWD, tertiary alphabetical tie-breaker).
+  - Invariance of candidate selection under input row and file shuffling permutations.
+  - Cadence-aware gap detection differentiating 10-minute series from hourly series.
 
 ### 3.2 Digital-Twin Simulation Reproducibility
 The simulation script `src/run_experiments.py` was executed with fixed seed `20261106`. All derived data, summary metrics, and figures were generated deterministically. In the GitHub Actions workflow `reproducibility.yml`, the pipeline is executed twice into independent runner directories and all CSV/JSON outputs are byte-compared via SHA-256; zero mismatches are permitted.
@@ -99,7 +102,7 @@ The corrected validation pipeline was executed on the original downloaded files 
 
 ### 4.1 Tomato Precision Irrigation Dataset — Verified Purged Rerun
 - **Source:** Mendeley Data `10.17632/c837v6p8ph.2` (Version 2, CC BY 4.0).
-- **Files Validated:** `dataset_zone_1_preprocessed.csv` (9,531 rows, 762.6 KB, SHA-256: `a93caea2...`), `dataset_zone_2_preprocessed.csv` (11,929 rows, 955.1 KB, SHA-256: `91cb5ee3...`). Total: 21,460 records.
+- **Files Validated:** `dataset_zone_1_preprocessed.csv` (9,531 rows, 1.76 MB, SHA-256: `e3c8ce709e...`), `dataset_zone_2_preprocessed.csv` (11,929 rows, 2.16 MB, SHA-256: `7436f9d1b0...`). Total: 21,460 records.
 - **Verification Details:**
   - Raw un-preprocessed files (`dataset_zone_1.csv`) possess intermittent gaps (maximum contiguous run of 10-minute intervals was only 65 steps = 10.8 h), which precludes unbroken 24-hour lag/horizon construction without imputation; preprocessed open-field files were evaluated.
   - Chronological splits (70% train, 15% validation, 15% test) strictly enforce a 144-step ($24.0\text{ h}$) embargo purge at partition boundaries, completely eliminating future label leakage into preceding sets.
@@ -108,25 +111,34 @@ The corrected validation pipeline was executed on the original downloaded files 
 - **Verified 24-Hour Ahead VWC Forecasting Benchmark (Held-out Test Split, No Leakage):**
   - **Zone 1:** Persistence RMSE 1.196% VWC (MAE 0.242%, $R^2 = -0.662$); Ridge RMSE 1.068% VWC (MAE 0.707%, $R^2 = -0.326$); Random Forest RMSE 0.972% VWC (MAE 0.451%, $R^2 = -0.098$); **GBDT RMSE 0.914% VWC** (MAE 0.377% VWC, $R^2 = +0.028$, validation RMSE 1.185%). GBDT achieves a 23.6% RMSE reduction over persistence.
   - **Zone 2:** Persistence RMSE 0.689% VWC (MAE 0.150%, $R^2 = -0.126$); **Ridge RMSE 0.593% VWC** (MAE 0.347% VWC, $R^2 = +0.165$, validation RMSE 0.368%); Random Forest RMSE 0.757% VWC (MAE 0.475%, $R^2 = -0.359$); GBDT RMSE 0.878% VWC (MAE 0.623%, $R^2 = -0.831$). Ridge achieves a 13.9% RMSE reduction over persistence.
-  - **Conclusion:** Both open-field sectors demonstrate that ML forecasting baselines reliably outperform naive persistence when evaluated on strictly purged chronological test sets. Output retained: `results/real_data_validation/tomato/tomato_vwc_forecasting_metrics.csv`.
+  - **Critical Evaluation:** While GBDT and Ridge reduce RMSE by penalizing large forecasting excursions ($L_2$ loss), naive persistence achieves lower MAE than the ML models (0.242% vs 0.377% in Zone 1; 0.150% vs 0.347% in Zone 2). Test $R^2$ values are modest (+0.028 in Zone 1, +0.165 in Zone 2), explaining 2.8% to 16.5% of variance. The 100% drought-crossing recall is an artifact of class imbalance under the 22% VWC threshold, as 100% of test instances were already below 22% VWC. General ML superiority is therefore NOT claimed. Output retained: `results/real_data_validation/tomato/tomato_vwc_forecasting_metrics.csv`.
 
 ### 4.2 Leaf Wetness and Agrometeorological Dataset — Verified UTC Nocturnal Rerun
 - **Source:** Mendeley Data `10.17632/sd4b8vpvyb.1` (Version 1, CC BY-NC 4.0).
 - **Files Validated:** `site1.csv` through `site7.csv` (Total: 55,550 hourly records across Italian agro-ecosystems).
 - **Verification Details:**
   - Archive `README.md` explicitly specifies: `"All date and time are reported in UTC"`, confirmed by ISO8601 `"Z"` timestamp strings in `sites.json`.
-  - Capacitive wetness benchmark threshold established at 20.0% based on Colucci et al. (*IEEE Transactions on AgriFood Electronics*).
+  - Authoritative sensor publication: Filipescu, E., Colucci, G. P., & Trinchero, D. (2024). *Design and Implementation of a Capacitive Leaf Wetness Sensor Based on Capacitance-to-Digital Conversion*. IEEE Transactions on AgriFood Electronics, vol. 2, no. 2, pp. 244–251, doi: 10.1109/TAFE.2024.3401252.
+  - Published comparative analysis cutoff reported as 50.0% in Filipescu et al. (2024), evaluated alongside immersion tests without establishing an experimental wet/dry classification boundary for the seven-site dataset; 20.0% evaluated as research-selected sensitivity threshold for comparative protocol analysis. Candidate Node A selection (Site 2) is invariant across both 20% and 50% thresholds.
+  - Cadence-aware gap threshold: 90.0 minutes applied to 60-minute data detects exactly 153 missing observation gaps across all 7 sites (Site 1: 5, Site 2: 23, Site 3: 35, Site 4: 71, Site 5: 12, Site 6: 2, Site 7: 5). The earlier figure of 55,543 was an artifact of applying a 20-minute gap threshold to 60-minute data.
   - Nocturnal evaluation window: 18:00 to 06:00 UTC (12.0 hours nominal).
-- **Verified Nocturnal LWD Distribution and Humid Pole Selection:**
-  - **Site 2 (Sardinia, Plain, 33m):** $P_{90} = 12.0\text{ h/night}$, Mean = **11.23 h/night** (348 nights, std = 2.54; isolated as candidate humid pole Node A).
+- **Multi-Year Regional Monitoring and Scope Limitations:**
+  - `sites.json` documents that the seven agrometeorological stations were monitored asynchronously across three separate calendar years (Sites 1, 3, 5 in 2022; Sites 2, 4 in 2023; Sites 6, 7 in 2024) across distinct Italian agricultural regions.
+  - They represent regional microclimatic diversity across topographically contrasting agro-ecological zones, rather than concurrent sensors within a single experimental field parcel.
+  - Temporal and geographical divergence limits direct station-to-station comparisons and cannot demonstrate simultaneous within-field dual-pole network performance.
+  - Site 2 represents the highest-ranked humid station in the regional multi-site dataset under Protocol v2.0, not a co-located parcel's humid microclimate pole.
+- **Verified Nocturnal LWD Distribution, Saturation Ceiling, and Tie Handling:**
+  - **Saturation Ceiling:** Under the 12-hour nocturnal window, five sites (Sites 1, 2, 3, 4, 5) reach the saturation ceiling of $P_{90} = 12.0\text{ h/night}$.
+  - **Secondary Criterion:** Highest mean nocturnal LWD among max-$P_{90}$ tied candidates decisively isolates **Site 2 (Sardinia, Plain, 33m)** with Mean = **11.23 h/night** (348 nights, std = 2.54; isolated as candidate Node A under Protocol v2.0).
   - **Site 1 (Sardinia, Hill, 125m):** $P_{90} = 12.0\text{ h/night}$, Mean = 8.58 h/night (345 nights, std = 4.51).
   - **Site 3 (Tuscany, Hill, 242m):** $P_{90} = 12.0\text{ h/night}$, Mean = 5.98 h/night (333 nights, std = 4.73).
   - **Site 5 (Piedmont, Hill, 187m):** $P_{90} = 12.0\text{ h/night}$, Mean = 4.69 h/night (307 nights, std = 4.84).
   - **Site 4 (Marche, Hill, 258m):** $P_{90} = 12.0\text{ h/night}$, Mean = 3.87 h/night (297 nights, std = 4.66).
   - **Site 7 (Piedmont, High, 418m):** $P_{90} = 10.2\text{ h/night}$, Mean = 2.43 h/night (359 nights, std = 4.05).
   - **Site 6 (Piedmont, High, 434m):** $P_{90} = 3.8\text{ h/night}$, Mean = **0.98 h/night** (353 nights, std = 2.77; driest station).
+- **Order Invariance:** Automated test confirms that candidate Node A selection is identical under sorted, reversed, and shuffled input file orderings.
 - **Wallin vs. LWS-Modified DSV:**
-  - Site 2 accumulates maximum daily risk ($\mathrm{DSV}_{\mathrm{LWS}}$ reaches 4 in 41.2% of days). Standard Wallin DSV based solely on weather-station RH ($\ge 90\%$) underestimates disease conduciveness during hours when ambient RH drops between 80% and 89% while foliar dew persists.
+  - At Site 2, daily $\mathrm{DSV}_{\mathrm{LWS}}$ reached the maximum rating of 4 on 41.2% of days (compared to 19.3% under standard $\mathrm{DSV}_{\text{Wallin}}$). Standard Wallin DSV based solely on ambient RH ($\ge 90\%$) misses extended foliar wetness periods during nights when ambient RH drops between 80% and 89% while canopy dew persists. This divergence illustrates that in humid microclimates, direct sensor measurement of foliar wetness detects disease-conducive conditions that ambient RH proxies overlook, providing empirical rationale for foliar wetness monitoring without representing an in-situ experimental comparison between an actual field-mean weather station and a deployed Sentinel network.
 
 ### 4.3 Libelium Olive Grove Multi-Sensor Dataset — Verified Spatial Sufficiency Rerun
 - **Source:** Mendeley Data `10.17632/cnfh4stzzx.2` (Version 2, CC BY 4.0).
@@ -215,7 +227,7 @@ The corrected validation pipeline was executed on the original downloaded files 
 ## 7. Research Manuscript Verification
 
 - **File Inspected:** `paper/Sentinel_Plant_Network_Journal_Paper.tex`.
-- **Citations:** Verified all 15 references (Vachaud, Wallin, Idso, Jackson, Mendeley datasets, HiWATER, CABI).
+- **Citations:** Verified all 15 references (Vachaud, Wallin, Idso, Jackson, Mendeley datasets, HiWATER, CABI). Explicitly clarified that three Mendeley datasets were empirically processed in the validation pipeline, whereas HiWATER (Li et al., 2017) served solely as a literature-derived parameter reference for digital-twin soil moisture distributions.
 - **Formulas:** Verified LaTeX math for relative difference $\delta_{ij}$, ITS, CWSI clipping, Tetens VPD, Wallin/LWS DSV, and RCBD ANOVA / non-inferiority formulas.
 - **Evidence Boundaries:** The manuscript strictly labels all numerical agronomic results (e.g., 25.8% water savings, 34.4 t/ha yield) as **synthetic digital-twin benchmarks**.
 - **Empirical Validation Section:** Section 6 updated to report genuine findings from the three Mendeley datasets while explicitly acknowledging that they originate from external Mediterranean/European sites and do not replace physical field trials.
@@ -224,7 +236,7 @@ The corrected validation pipeline was executed on the original downloaded files 
 
 ## 8. Summary of Action Items & Readiness
 
-1. **Software & Mathematics:** COMPLETE. Python models, purged ML pipelines, and statistical analysis are verified and backed by 20 automated tests.
+1. **Software & Mathematics:** COMPLETE. Python models, purged ML pipelines, and statistical analysis are verified and backed by 25 automated Python unit tests (25/25 passing) and 1 C++ firmware host test executable.
 2. **Public Dataset Validation:** COMPLETE. All three Mendeley datasets evaluated with verified metadata (UTC, 20% LWS threshold, 144-step embargo purge, 0.70 Spearman threshold), generating reproducible metrics, plots, and a checksum manifest (`DATASETS_MANIFEST.json`).
 3. **Firmware Compilation:** COMPLETE in CI. Protocol bit-packing verified by static assertions and host tests. PlatformIO builds cleanly in CI on `espressif32@6.12.0`.
 4. **Physical Hardware Validation:** NOT STARTED. Formally documented as out-of-scope for this dataset-only/simulation study. Exhaustive bench testing procedures and acceptance criteria are specified in `HARDWARE_BENCH_TEST_PLAN.md`.

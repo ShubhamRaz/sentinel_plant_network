@@ -226,3 +226,176 @@ def test_explicit_future_derived_forecast_features_are_rejected():
             horizon_steps=144,
             feature_cols=["future_dsv_target"],
         )
+
+
+def test_humid_pole_candidate_selection_is_order_independent():
+    """Verify that multi-tier humid-pole candidate selection is deterministic and invariant to input order.
+
+    When multiple sites hit the saturation ceiling (P90 = 12.0h), the secondary criterion
+    (highest mean nocturnal LWD among max-P90 tied sites) breaks the tie deterministically.
+    """
+    records_site_a = []
+    records_site_b = []
+    records_site_c = []
+    ts = pd.date_range("2026-02-01 18:00", periods=72, freq="h", tz="UTC")
+
+    for stamp in ts:
+        hour = stamp.hour
+        # Site A: wet during first 8 hours of night -> P90 = 12h, but lower mean
+        is_night = (hour >= 18) or (hour < 6)
+        wet_a = 90.0 if (is_night and hour < 2) else 10.0
+        # Site B: wet during all 12 hours of night -> P90 = 12h, higher mean (~12h)
+        wet_b = 95.0 if is_night else 10.0
+        # Site C: rarely wet -> low P90
+        wet_c = 10.0
+
+        records_site_a.append({"timestamp": stamp, "station": "station_a", "leaf_wetness": wet_a, "relative_humidity": 90.0, "air_temperature": 15.0})
+        records_site_b.append({"timestamp": stamp, "station": "station_b", "leaf_wetness": wet_b, "relative_humidity": 90.0, "air_temperature": 15.0})
+        records_site_c.append({"timestamp": stamp, "station": "station_c", "leaf_wetness": wet_c, "relative_humidity": 90.0, "air_temperature": 15.0})
+
+    df_a = pd.DataFrame(records_site_a)
+    df_b = pd.DataFrame(records_site_b)
+    df_c = pd.DataFrame(records_site_c)
+
+    orderings = [
+        pd.concat([df_a, df_b, df_c], ignore_index=True),
+        pd.concat([df_b, df_a, df_c], ignore_index=True),
+        pd.concat([df_c, df_a, df_b], ignore_index=True),
+        pd.concat([df_c, df_b, df_a], ignore_index=True),
+    ]
+
+    selected_candidates = []
+    for frame in orderings:
+        res = validate_leafwetness(frame, {"site": "station"}, wet_threshold=20.0, timezone="UTC")
+        selected_candidates.append(res["humid_pole_selection"]["selected_humid_pole_candidate"])
+
+    # In every single ordering, station_b MUST be selected because of higher mean LWD
+    assert all(c == "station_b" for c in selected_candidates), f"Got candidates: {selected_candidates}"
+
+
+def test_cadence_aware_gap_detection_hourly_vs_ten_minute():
+    """Verify that hourly time series uses 90-min threshold, while 10-min series uses 20-min threshold."""
+    # 1. 10-minute series with one 40-minute gap (remove 3 consecutive 10-min readings)
+    ts_10m = list(pd.date_range("2026-03-01 00:00", periods=50, freq="10min", tz="UTC"))
+    del ts_10m[20:23]  # removes 3 steps, creating a 40-minute gap between step 19 and 20
+    df_10m = pd.DataFrame({"ts": ts_10m, "val": 25.0})
+    from real_data_validation import _quality_summary
+    q_10m = _quality_summary(df_10m, "ts")
+    assert q_10m["median_sampling_interval_minutes"] == 10.0
+    assert q_10m["gap_threshold_minutes"] == 20.0
+    assert q_10m["sampling_gaps"] == 1
+
+    # 2. Hourly series (normal interval 60 min) with one 180-minute gap (remove 2 hourly readings)
+    ts_1h = list(pd.date_range("2026-03-01 00:00", periods=50, freq="h", tz="UTC"))
+    del ts_1h[25:27]  # removes 2 steps, creating a 3-hour (180 min) gap
+    df_1h = pd.DataFrame({"time": ts_1h, "val": 15.0})
+    q_1h = _quality_summary(df_1h, "time")
+    assert q_1h["median_sampling_interval_minutes"] == 60.0
+    assert q_1h["gap_threshold_minutes"] == 90.0
+    # Crucially: normal 60-minute intervals are NOT counted as gaps
+    assert q_1h["sampling_gaps"] == 1
+    assert "gaps_over_20_minutes" not in q_1h
+    assert "gaps_over_20_minutes" not in q_10m
+
+
+def test_humid_pole_ranking_p90_tie_broken_by_mean():
+    """When sites genuinely tie on P90 nocturnal LWD, the secondary criterion (highest mean) selects the winner."""
+    n_nights = 40
+    # 40 calendar days of hourly data (960 hours)
+    ts = pd.date_range("2026-03-01 12:00", periods=n_nights * 24, freq="h", tz="UTC")
+
+    records = []
+    for stamp in ts:
+        hour = stamp.hour
+        is_night = (hour >= 18) or (hour < 6)
+        # Night date: if hour >= 18, belongs to stamp.date(); if hour < 6, belongs to stamp.date() - 1 day
+        night_idx = (stamp.date() - pd.Timestamp("2026-03-01").date()).days
+        if hour < 6:
+            night_idx -= 1
+
+        # station_alpha (alphabetically earlier): wet for 12h on 6 nights out of 40 (15% > 10% -> P90 = 12.0h, Mean = 1.8h)
+        wet_alpha = 90.0 if (is_night and 0 <= night_idx < 6) else 10.0
+        # station_beta (alphabetically later): wet for 12h on 30 nights out of 40 (75% -> P90 = 12.0h, Mean = 9.0h)
+        wet_beta = 90.0 if (is_night and 0 <= night_idx < 30) else 10.0
+
+        records.append({"timestamp": stamp, "station": "station_alpha", "leaf_wetness": wet_alpha, "relative_humidity": 90.0, "air_temperature": 15.0})
+        records.append({"timestamp": stamp, "station": "station_beta", "leaf_wetness": wet_beta, "relative_humidity": 90.0, "air_temperature": 15.0})
+
+    df = pd.DataFrame(records)
+    res = validate_leafwetness(df, {"site": "station"}, wet_threshold=20.0, timezone="UTC")
+
+    p90_alpha = res["site_p90_nocturnal_lwd_hours"]["station_alpha"]
+    p90_beta = res["site_p90_nocturnal_lwd_hours"]["station_beta"]
+    mean_alpha = res["site_mean_nocturnal_lwd_hours"]["station_alpha"]
+    mean_beta = res["site_mean_nocturnal_lwd_hours"]["station_beta"]
+
+    # 1. Independently verify that both stations have an exact P90 tie at the 12-hour saturation ceiling
+    assert p90_alpha == pytest.approx(12.0), f"Expected P90=12.0 for station_alpha, got {p90_alpha}"
+    assert p90_beta == pytest.approx(12.0), f"Expected P90=12.0 for station_beta, got {p90_beta}"
+    assert p90_alpha == p90_beta, "Test design error: P90 values must be genuinely identical"
+
+    # 2. Verify that their mean nocturnal LWD values differ substantially
+    assert mean_beta == pytest.approx(9.0), f"Expected Mean=9.0 for station_beta, got {mean_beta}"
+    assert mean_alpha == pytest.approx(1.8), f"Expected Mean=1.8 for station_alpha, got {mean_alpha}"
+    assert mean_beta > mean_alpha, "station_beta must have higher mean than station_alpha"
+
+    # 3. Verify that the higher-mean station is selected
+    assert res["humid_pole_selection"]["selected_humid_pole_candidate"] == "station_beta"
+    assert res["humid_pole_selection"]["primary_max_p90_hours"] == 12.0
+    assert set(res["humid_pole_selection"]["tied_p90_candidate_sites"]) == {"station_alpha", "station_beta"}
+
+    # 4. Demonstrate selection occurs because of secondary criterion (mean), not tertiary (which would pick station_alpha)
+    assert "station_alpha" < "station_beta", "Alphabetical order must favor station_alpha"
+    assert res["humid_pole_selection"]["selected_humid_pole_candidate"] != "station_alpha", (
+        "station_alpha was wrongly selected by alphabetical order instead of higher mean!"
+    )
+
+
+def test_humid_pole_ranking_p90_and_mean_tie_broken_by_alphabetical():
+    """When sites tie on both P90 and mean nocturnal LWD, the tertiary criterion (alphabetically smallest) selects the winner."""
+    records = []
+    ts = pd.date_range("2026-02-01 18:00", periods=72, freq="h", tz="UTC")
+    for stamp in ts:
+        hour = stamp.hour
+        is_night = (hour >= 18) or (hour < 6)
+        # Identical wetness profiles for site_zeta and site_alpha
+        wet = 95.0 if is_night else 10.0
+        records.append({"timestamp": stamp, "station": "site_zeta", "leaf_wetness": wet, "relative_humidity": 90.0, "air_temperature": 15.0})
+        records.append({"timestamp": stamp, "station": "site_alpha", "leaf_wetness": wet, "relative_humidity": 90.0, "air_temperature": 15.0})
+
+    df = pd.DataFrame(records)
+    res = validate_leafwetness(df, {"site": "station"}, wet_threshold=20.0, timezone="UTC")
+    assert res["site_p90_nocturnal_lwd_hours"]["site_zeta"] == res["site_p90_nocturnal_lwd_hours"]["site_alpha"]
+    assert res["site_mean_nocturnal_lwd_hours"]["site_zeta"] == res["site_mean_nocturnal_lwd_hours"]["site_alpha"]
+    assert res["humid_pole_selection"]["selected_humid_pole_candidate"] == "site_alpha"
+    assert res["humid_pole_selection"]["tertiary_criterion"] == "alphabetically smallest site identifier"
+
+
+def test_humid_pole_ranking_row_and_file_shuffling_permutation_invariance():
+    """Permuting row order and station file concatenation order preserves deterministic 3-tier candidate selection."""
+    records_alpha = []
+    records_beta = []
+    records_gamma = []
+    ts = pd.date_range("2026-02-01 18:00", periods=72, freq="h", tz="UTC")
+    for stamp in ts:
+        hour = stamp.hour
+        is_night = (hour >= 18) or (hour < 6)
+        # alpha and beta tie on P90 (12h) and mean (12h); gamma has lower mean
+        records_alpha.append({"timestamp": stamp, "station": "station_alpha", "leaf_wetness": 95.0 if is_night else 10.0, "relative_humidity": 90.0, "air_temperature": 15.0})
+        records_beta.append({"timestamp": stamp, "station": "station_beta", "leaf_wetness": 95.0 if is_night else 10.0, "relative_humidity": 90.0, "air_temperature": 15.0})
+        records_gamma.append({"timestamp": stamp, "station": "station_gamma", "leaf_wetness": 90.0 if (is_night and hour < 2) else 10.0, "relative_humidity": 90.0, "air_temperature": 15.0})
+
+    df_a = pd.DataFrame(records_alpha)
+    df_b = pd.DataFrame(records_beta)
+    df_g = pd.DataFrame(records_gamma)
+
+    # Test multiple row and file permutations
+    combined = pd.concat([df_b, df_g, df_a], ignore_index=True)
+    for seed in [42, 123, 999, 2026]:
+        shuffled = combined.sample(frac=1.0, random_state=seed).reset_index(drop=True)
+        res = validate_leafwetness(shuffled, {"site": "station"}, wet_threshold=20.0, timezone="UTC")
+        assert res["humid_pole_selection"]["selected_humid_pole_candidate"] == "station_alpha", (
+            f"Failed on seed {seed}: got {res['humid_pole_selection']['selected_humid_pole_candidate']}"
+        )
+
+

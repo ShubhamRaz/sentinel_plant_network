@@ -7,7 +7,9 @@
     "duplicate_key": "device_id+timestamp",
     "missing_cells": 45188,
     "median_sampling_interval_minutes": 10.36811965,
-    "gaps_over_20_minutes": 105
+    "gap_threshold_minutes": 20.0,
+    "sampling_gaps": 105,
+    "gap_definition": "intervals strictly exceeding 20.0 minutes, indicating missing observation cycles"
   },
   "gap_threshold_minutes": 20.0,
   "node_quality": {
@@ -50,7 +52,7 @@
   },
   "input_files": [
     {
-      "path": "data\\raw_public\\libelium\\A Libelium-Based Multisensor Dataset for Precision\\extracted\\Libelium_Olive_Grove_Dataset_Goraj_Kucova_Albania\\Libelium_Olive_Grove_Dataset_Goraj_Kucova_Albania\\libelium_measurements_quality_controlled.csv",
+      "path": "data/raw_public/libelium/A Libelium-Based Multisensor Dataset for Precision/extracted/Libelium_Olive_Grove_Dataset_Goraj_Kucova_Albania/Libelium_Olive_Grove_Dataset_Goraj_Kucova_Albania/libelium_measurements_quality_controlled.csv",
       "sha256": "65d899c4e98b5d08c954da332b937ada81a25bca3265f2cc7fab43929acf307d",
       "size_bytes": 3596067
     }

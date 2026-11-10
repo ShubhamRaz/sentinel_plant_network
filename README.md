@@ -24,7 +24,7 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 \`\`\`
 
-Run the test suite:
+Run the test suite (25 automated Python unit tests):
 
 \`\`\`bash
 pytest -q
@@ -90,7 +90,7 @@ python src/real_data_validation.py \
 python src/plot_real_data_validation.py
 ```
 
-Dataset documentation confirms that the Leaf Wetness dataset timestamps are reported in **UTC** (archive `README.md` and ISO8601 `"Z"` suffix). The capacitive leaf-wetness benchmark threshold of **20.0%** is established from Colucci et al. (*IEEE Transactions on AgriFood Electronics*). Nocturnal LWD (18:00–06:00 UTC) is used for humid-pole selection (isolating Site 2 at 11.23 h/night), while Wallin and LWS-modified DSV remain daily indices.
+Dataset documentation confirms that the Leaf Wetness dataset timestamps are reported in **UTC** (archive `README.md` and ISO8601 `"Z"` suffix). The cited sensor publication reported seasonal leaf-wetness comparisons using a **50.0%** analysis cutoff (Filipescu, Colucci, and Trinchero, 2024, *IEEE Transactions on AgriFood Electronics*, DOI: 10.1109/TAFE.2024.3401252) alongside immersion experiments, while **20.0%** is evaluated as a research-selected sensitivity threshold for comparative protocol analysis (neither threshold is claimed as an experimentally established wet/dry boundary for the seven-site dataset). Nocturnal LWD (18:00–06:00 UTC) is used for humid-pole selection, deterministically isolating Site 2 via secondary mean LWD (11.23 h/night at 20%; 9.49 h/night at 50%), while Wallin and LWS-modified DSV remain daily indices. Candidate selection is invariant across both thresholds and input order. In the hourly dataset, cadence-aware gap detection (90-minute threshold) identifies exactly 153 missing observation gaps across all 7 stations.
 
 In the Tomato dataset, `water_vol_past_4h` is a rolling 4-hour window sum (non-cumulative); 144-step embargo purging is enforced to eliminate chronological forecast leakage. In Libelium, Protocol v2.0's $r_s < 0.70$ threshold is enforced.
 

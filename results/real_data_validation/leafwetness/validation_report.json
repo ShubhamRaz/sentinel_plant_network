@@ -7,10 +7,20 @@
     "duplicate_key": "__source_file+time",
     "missing_cells": 0,
     "median_sampling_interval_minutes": 60.0,
-    "gaps_over_20_minutes": 55543
+    "gap_threshold_minutes": 90.0,
+    "sampling_gaps": 153,
+    "gap_definition": "intervals strictly exceeding 90.0 minutes, indicating missing observation cycles"
   },
   "wet_threshold": 20.0,
-  "threshold_warning": "wet_threshold is a user-supplied sensor threshold; calibrate it using the source data dictionary and field reference measurements",
+  "threshold_classification": "research-selected sensitivity threshold (20.0%)",
+  "threshold_reference": {
+    "citation": "Elena Filipescu, Giovanni Paolo Colucci, and Daniele Trinchero, 'Design and Implementation of a Capacitive Leaf Wetness Sensor Based on Capacitance-to-Digital Conversion', IEEE Transactions on AgriFood Electronics, vol. 2, no. 2, pp. 244-251, Sept. 2024",
+    "doi": "10.1109/TAFE.2024.3401252",
+    "published_analysis_cutoff": 50.0,
+    "evaluated_protocol_threshold": 20.0,
+    "threshold_nature": "research-selected sensitivity threshold",
+    "justification": "Filipescu et al. (2024) reported seasonal leaf-wetness comparisons using a 50% cutoff alongside sensor immersion experiments. However, the published cutoff was not established as a calibrated wet/dry decision boundary for all field conditions or across the separate seven-site dataset. Thresholds of 20% (research-selected sensitivity threshold) and 50% (published analysis cutoff) are evaluated as analytical choices to examine ranking sensitivity. Candidate humid-pole selection (Site 2) is invariant across both 20% and 50% thresholds."
+  },
   "timezone": "UTC",
   "naive_timestamp_interpretation": "naive timestamps localized as UTC; offset-aware timestamps converted to UTC",
   "lwd_scope": "nocturnal_only_for_humid_pole_selection; daily_for_DSV",
@@ -19,15 +29,47 @@
     "end_hour_exclusive": 6,
     "nominal_duration_hours": 12
   },
-  "humid_pole_candidate_by_p90_nocturnal_lwd": "site1.csv",
+  "humid_pole_selection": {
+    "selection_rule": "primary: highest P90 nocturnal LWD; secondary: highest mean nocturnal LWD among max-P90 tied candidates; tertiary: alphabetically smallest site identifier",
+    "primary_max_p90_hours": 12.0,
+    "tied_p90_candidate_sites": [
+      "site1.csv",
+      "site2.csv",
+      "site3.csv",
+      "site4.csv",
+      "site5.csv"
+    ],
+    "selected_humid_pole_candidate": "site2.csv",
+    "candidate_mean_nocturnal_lwd_hours": 11.229885057471265,
+    "tertiary_criterion": "alphabetically smallest site identifier"
+  },
+  "humid_pole_candidate_by_p90_nocturnal_lwd": "site2.csv",
   "site_p90_nocturnal_lwd_hours": {
-    "site1.csv": 12.0,
     "site2.csv": 12.0,
+    "site1.csv": 12.0,
     "site3.csv": 12.0,
-    "site4.csv": 12.0,
     "site5.csv": 12.0,
+    "site4.csv": 12.0,
     "site7.csv": 10.199999999999989,
     "site6.csv": 3.8000000000000114
+  },
+  "site_mean_nocturnal_lwd_hours": {
+    "site2.csv": 11.229885057471265,
+    "site1.csv": 8.576811594202898,
+    "site3.csv": 5.984984984984985,
+    "site5.csv": 4.690553745928339,
+    "site4.csv": 3.872053872053872,
+    "site7.csv": 2.426183844011142,
+    "site6.csv": 0.9773371104815864
+  },
+  "site_median_nocturnal_lwd_hours": {
+    "site2.csv": 12.0,
+    "site1.csv": 11.0,
+    "site3.csv": 6.0,
+    "site5.csv": 3.0,
+    "site4.csv": 1.0,
+    "site7.csv": 0.0,
+    "site6.csv": 0.0
   },
   "source": {
     "url": "https://data.mendeley.com/datasets/sd4b8vpvyb/1",
@@ -37,47 +79,41 @@
   },
   "input_files": [
     {
-      "path": "data\\raw_public\\leafwetness\\Leaf Wetness and Agrometeorological Dataset\\site1.csv",
+      "path": "data/raw_public/leafwetness/Leaf Wetness and Agrometeorological Dataset/site1.csv",
       "sha256": "4c0abbb24409ce35c65642eefb8220d5de903b9347d06df07361162d82c4f6ac",
       "size_bytes": 509237
     },
     {
-      "path": "data\\raw_public\\leafwetness\\Leaf Wetness and Agrometeorological Dataset\\site2.csv",
+      "path": "data/raw_public/leafwetness/Leaf Wetness and Agrometeorological Dataset/site2.csv",
       "sha256": "9ba17c06d482c22a6c5fb9a3527077d738aac7210f2d414b73545a76eba298ad",
       "size_bytes": 516603
     },
     {
-      "path": "data\\raw_public\\leafwetness\\Leaf Wetness and Agrometeorological Dataset\\site3.csv",
+      "path": "data/raw_public/leafwetness/Leaf Wetness and Agrometeorological Dataset/site3.csv",
       "sha256": "ca3da9c8b42528a893a3e1610043e58dd37cc0462a46557cb7fde77bcffebe1e",
       "size_bytes": 485187
     },
     {
-      "path": "data\\raw_public\\leafwetness\\Leaf Wetness and Agrometeorological Dataset\\site4.csv",
+      "path": "data/raw_public/leafwetness/Leaf Wetness and Agrometeorological Dataset/site4.csv",
       "sha256": "824bc1ab7b79ef0da0024bd5d47c0c8017de9f27e2367d1ebb8ccd70921d0b07",
       "size_bytes": 421597
     },
     {
-      "path": "data\\raw_public\\leafwetness\\Leaf Wetness and Agrometeorological Dataset\\site5.csv",
+      "path": "data/raw_public/leafwetness/Leaf Wetness and Agrometeorological Dataset/site5.csv",
       "sha256": "d12291ebef6717e86a0a94b44c82e1dd422f7cb7aba20dc003b4ad0a5b6cba2e",
       "size_bytes": 450364
     },
     {
-      "path": "data\\raw_public\\leafwetness\\Leaf Wetness and Agrometeorological Dataset\\site6.csv",
+      "path": "data/raw_public/leafwetness/Leaf Wetness and Agrometeorological Dataset/site6.csv",
       "sha256": "194b35f6d4ca9ff1c93594d7173c2cf74a3e644cdad8ec7f61ad22c994ebe6bc",
       "size_bytes": 509320
     },
     {
-      "path": "data\\raw_public\\leafwetness\\Leaf Wetness and Agrometeorological Dataset\\site7.csv",
+      "path": "data/raw_public/leafwetness/Leaf Wetness and Agrometeorological Dataset/site7.csv",
       "sha256": "6bd4d0fe46c5e23f9a55469c2bc795376f4b19f19f4148cbf5ae4bc4b4a55415",
       "size_bytes": 513112
     }
   ],
-  "mapping": {
-    "timestamp": "time",
-    "site": "__source_file",
-    "leaf_wetness": "leaf_top",
-    "rh": "rh",
-    "air_temperature": "temperature"
-  },
+  "mapping": {},
   "download_date": "2026-11-09"
 }
