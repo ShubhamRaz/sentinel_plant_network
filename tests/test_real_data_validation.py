@@ -299,26 +299,56 @@ def test_cadence_aware_gap_detection_hourly_vs_ten_minute():
 
 
 def test_humid_pole_ranking_p90_tie_broken_by_mean():
-    """When sites tie on P90 nocturnal LWD, the secondary criterion (highest mean) selects the winner."""
+    """When sites genuinely tie on P90 nocturnal LWD, the secondary criterion (highest mean) selects the winner."""
+    n_nights = 40
+    # 40 calendar days of hourly data (960 hours)
+    ts = pd.date_range("2026-03-01 12:00", periods=n_nights * 24, freq="h", tz="UTC")
+
     records = []
-    ts = pd.date_range("2026-02-01 18:00", periods=72, freq="h", tz="UTC")
     for stamp in ts:
         hour = stamp.hour
         is_night = (hour >= 18) or (hour < 6)
-        # Site X: wet for 8h of night -> P90 = 12h, lower mean
-        wet_x = 90.0 if (is_night and hour < 2) else 10.0
-        # Site Y: wet for all 12h of night -> P90 = 12h, higher mean (12h)
-        wet_y = 90.0 if is_night else 10.0
-        # Site Z: wet for 6h of night -> P90 = 12h, even lower mean
-        wet_z = 90.0 if (is_night and hour < 0) else 10.0
-        records.append({"timestamp": stamp, "station": "site_x", "leaf_wetness": wet_x, "relative_humidity": 90.0, "air_temperature": 15.0})
-        records.append({"timestamp": stamp, "station": "site_y", "leaf_wetness": wet_y, "relative_humidity": 90.0, "air_temperature": 15.0})
-        records.append({"timestamp": stamp, "station": "site_z", "leaf_wetness": wet_z, "relative_humidity": 90.0, "air_temperature": 15.0})
+        # Night date: if hour >= 18, belongs to stamp.date(); if hour < 6, belongs to stamp.date() - 1 day
+        night_idx = (stamp.date() - pd.Timestamp("2026-03-01").date()).days
+        if hour < 6:
+            night_idx -= 1
+
+        # station_alpha (alphabetically earlier): wet for 12h on 6 nights out of 40 (15% > 10% -> P90 = 12.0h, Mean = 1.8h)
+        wet_alpha = 90.0 if (is_night and 0 <= night_idx < 6) else 10.0
+        # station_beta (alphabetically later): wet for 12h on 30 nights out of 40 (75% -> P90 = 12.0h, Mean = 9.0h)
+        wet_beta = 90.0 if (is_night and 0 <= night_idx < 30) else 10.0
+
+        records.append({"timestamp": stamp, "station": "station_alpha", "leaf_wetness": wet_alpha, "relative_humidity": 90.0, "air_temperature": 15.0})
+        records.append({"timestamp": stamp, "station": "station_beta", "leaf_wetness": wet_beta, "relative_humidity": 90.0, "air_temperature": 15.0})
 
     df = pd.DataFrame(records)
     res = validate_leafwetness(df, {"site": "station"}, wet_threshold=20.0, timezone="UTC")
-    assert res["humid_pole_selection"]["selected_humid_pole_candidate"] == "site_y"
-    assert res["humid_pole_selection"]["candidate_mean_nocturnal_lwd_hours"] > res["site_mean_nocturnal_lwd_hours"]["site_x"]
+
+    p90_alpha = res["site_p90_nocturnal_lwd_hours"]["station_alpha"]
+    p90_beta = res["site_p90_nocturnal_lwd_hours"]["station_beta"]
+    mean_alpha = res["site_mean_nocturnal_lwd_hours"]["station_alpha"]
+    mean_beta = res["site_mean_nocturnal_lwd_hours"]["station_beta"]
+
+    # 1. Independently verify that both stations have an exact P90 tie at the 12-hour saturation ceiling
+    assert p90_alpha == pytest.approx(12.0), f"Expected P90=12.0 for station_alpha, got {p90_alpha}"
+    assert p90_beta == pytest.approx(12.0), f"Expected P90=12.0 for station_beta, got {p90_beta}"
+    assert p90_alpha == p90_beta, "Test design error: P90 values must be genuinely identical"
+
+    # 2. Verify that their mean nocturnal LWD values differ substantially
+    assert mean_beta == pytest.approx(9.0), f"Expected Mean=9.0 for station_beta, got {mean_beta}"
+    assert mean_alpha == pytest.approx(1.8), f"Expected Mean=1.8 for station_alpha, got {mean_alpha}"
+    assert mean_beta > mean_alpha, "station_beta must have higher mean than station_alpha"
+
+    # 3. Verify that the higher-mean station is selected
+    assert res["humid_pole_selection"]["selected_humid_pole_candidate"] == "station_beta"
+    assert res["humid_pole_selection"]["primary_max_p90_hours"] == 12.0
+    assert set(res["humid_pole_selection"]["tied_p90_candidate_sites"]) == {"station_alpha", "station_beta"}
+
+    # 4. Demonstrate selection occurs because of secondary criterion (mean), not tertiary (which would pick station_alpha)
+    assert "station_alpha" < "station_beta", "Alphabetical order must favor station_alpha"
+    assert res["humid_pole_selection"]["selected_humid_pole_candidate"] != "station_alpha", (
+        "station_alpha was wrongly selected by alphabetical order instead of higher mean!"
+    )
 
 
 def test_humid_pole_ranking_p90_and_mean_tie_broken_by_alphabetical():

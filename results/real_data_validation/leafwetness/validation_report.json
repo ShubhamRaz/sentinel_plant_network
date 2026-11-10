@@ -12,14 +12,14 @@
     "gap_definition": "intervals strictly exceeding 90.0 minutes, indicating missing observation cycles"
   },
   "wet_threshold": 20.0,
-  "threshold_classification": "research-selected protocol sensitivity threshold (20.0%)",
-  "threshold_calibration_reference": {
+  "threshold_classification": "research-selected sensitivity threshold (20.0%)",
+  "threshold_reference": {
     "citation": "Elena Filipescu, Giovanni Paolo Colucci, and Daniele Trinchero, 'Design and Implementation of a Capacitive Leaf Wetness Sensor Based on Capacitance-to-Digital Conversion', IEEE Transactions on AgriFood Electronics, vol. 2, no. 2, pp. 244-251, Sept. 2024",
     "doi": "10.1109/TAFE.2024.3401252",
-    "published_sensor_calibrated_threshold": 50.0,
+    "published_analysis_cutoff": 50.0,
     "evaluated_protocol_threshold": 20.0,
     "threshold_nature": "research-selected sensitivity threshold",
-    "justification": "Filipescu et al. (2024) calibrated the capacitive leaf-wetness sensor in lab immersion tests (25%, 50%, 75%) and used a 50% threshold for seasonal field LWD metrics. A 20% threshold is evaluated as a research-selected sensitivity threshold for comparative protocol analysis. Candidate humid-pole selection (Site 2) is invariant across both 20% and 50% thresholds."
+    "justification": "Filipescu et al. (2024) reported seasonal leaf-wetness comparisons using a 50% cutoff alongside sensor immersion experiments. However, the published cutoff was not established as a calibrated wet/dry decision boundary for all field conditions or across the separate seven-site dataset. Thresholds of 20% (research-selected sensitivity threshold) and 50% (published analysis cutoff) are evaluated as analytical choices to examine ranking sensitivity. Candidate humid-pole selection (Site 2) is invariant across both 20% and 50% thresholds."
   },
   "timezone": "UTC",
   "naive_timestamp_interpretation": "naive timestamps localized as UTC; offset-aware timestamps converted to UTC",

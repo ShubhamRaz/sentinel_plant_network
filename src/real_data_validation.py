@@ -424,9 +424,9 @@ def validate_leafwetness(
     # Threshold classification & sensitivity context
     thresh_val = float(wet_threshold)
     if thresh_val == 20.0:
-        thresh_desc = "research-selected protocol sensitivity threshold (20.0%)"
+        thresh_desc = "research-selected sensitivity threshold (20.0%)"
     elif thresh_val == 50.0:
-        thresh_desc = "experimentally calibrated sensor benchmark threshold (50.0%, Filipescu et al., 2024)"
+        thresh_desc = "published 50% leaf-wetness analysis cutoff (Filipescu et al., 2024)"
     else:
         thresh_desc = f"user-specified sensitivity threshold ({thresh_val}%)"
 
@@ -435,13 +435,13 @@ def validate_leafwetness(
         "quality": _quality_summary(frame, ts, site, gap_threshold_minutes=gap_minutes if gap_minutes is not None else 90.0),
         "wet_threshold": thresh_val,
         "threshold_classification": thresh_desc,
-        "threshold_calibration_reference": {
+        "threshold_reference": {
             "citation": "Elena Filipescu, Giovanni Paolo Colucci, and Daniele Trinchero, 'Design and Implementation of a Capacitive Leaf Wetness Sensor Based on Capacitance-to-Digital Conversion', IEEE Transactions on AgriFood Electronics, vol. 2, no. 2, pp. 244-251, Sept. 2024",
             "doi": "10.1109/TAFE.2024.3401252",
-            "published_sensor_calibrated_threshold": 50.0,
+            "published_analysis_cutoff": 50.0,
             "evaluated_protocol_threshold": thresh_val,
-            "threshold_nature": "research-selected sensitivity threshold" if thresh_val == 20.0 else ("experimentally calibrated benchmark" if thresh_val == 50.0 else "exploratory threshold"),
-            "justification": "Filipescu et al. (2024) calibrated the capacitive leaf-wetness sensor in lab immersion tests (25%, 50%, 75%) and used a 50% threshold for seasonal field LWD metrics. A 20% threshold is evaluated as a research-selected sensitivity threshold for comparative protocol analysis. Candidate humid-pole selection (Site 2) is invariant across both 20% and 50% thresholds.",
+            "threshold_nature": "research-selected sensitivity threshold" if thresh_val == 20.0 else ("published comparative analysis cutoff" if thresh_val == 50.0 else "exploratory sensitivity threshold"),
+            "justification": "Filipescu et al. (2024) reported seasonal leaf-wetness comparisons using a 50% cutoff alongside sensor immersion experiments. However, the published cutoff was not established as a calibrated wet/dry decision boundary for all field conditions or across the separate seven-site dataset. Thresholds of 20% (research-selected sensitivity threshold) and 50% (published analysis cutoff) are evaluated as analytical choices to examine ranking sensitivity. Candidate humid-pole selection (Site 2) is invariant across both 20% and 50% thresholds.",
         },
         "timezone": timezone,
         "naive_timestamp_interpretation": f"naive timestamps localized as {timezone}; offset-aware timestamps converted to {timezone}",
@@ -530,7 +530,7 @@ def main(argv=None):
     parser.add_argument("--input", nargs="+", type=Path, required=True, help="Extracted CSV/TSV file(s)")
     parser.add_argument("--mapping", type=Path, help="JSON mapping from canonical keys to actual column names")
     parser.add_argument("--output-dir", type=Path, default=Path("results/real_data_validation"))
-    parser.add_argument("--wet-threshold", type=float, default=20.0, help="Capacitive leaf-wetness threshold (20.0 for research-selected sensitivity threshold, 50.0 for Filipescu et al. 2024 calibrated benchmark)")
+    parser.add_argument("--wet-threshold", type=float, default=20.0, help="Capacitive leaf-wetness threshold (20.0 for research-selected sensitivity threshold, 50.0 for Filipescu et al. 2024 published analysis cutoff)")
     parser.add_argument("--timezone", required=False, help="Required for leafwetness: IANA timezone verified from the source dataset metadata")
     parser.add_argument("--night-start-hour", type=int, default=18, help="Local hour when nocturnal window starts (inclusive)")
     parser.add_argument("--night-end-hour", type=int, default=6, help="Local hour when nocturnal window ends (exclusive)")

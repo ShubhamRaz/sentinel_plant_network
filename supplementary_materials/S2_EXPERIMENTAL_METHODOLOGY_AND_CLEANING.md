@@ -39,11 +39,11 @@ Every ingested telemetry series is subjected to automated data-cleaning and qual
 
 - **Fractional Soil Moisture Scaling:** The TEROS 11 probe reports volumetric water content as a dimensionless fraction ($\text{m}^3/\text{m}^3 \in [0.0, 1.0]$). Protocol v2.0 defines all operational thresholds (such as $\mathrm{MAD} = 22.0\%$ and divergence $|\Delta\theta| > 10.0\%$) in percentage points. In `validate_libelium()`, fractional readings are automatically detected and scaled:
   $$\theta_{\% \text{ VWC}} = 100.0 \times \theta_{\text{m}^3/\text{m}^3}$$
-- **Leaf Wetness Capacitive Normalization & Threshold Justification:** The Seven-Site sensors output a percentage scale from 0.0 (dry) to 100.0 (fully wetted):
-  - **Calibrated Benchmark Threshold (50.0%):** Filipescu et al. (2024, *IEEE Trans. AgriFood Electronics*, DOI: 10.1109/TAFE.2024.3401252) calibrated the sensor under controlled water immersion and evaluated seasonal leaf-wetness duration at $\text{LWS} \ge 50\%$.
+- **Leaf Wetness Capacitive Normalization & Threshold Analysis Choices:** The Seven-Site sensors output a percentage scale from 0.0 (dry) to 100.0 (fully wetted):
+  - **Published Analysis Cutoff (50.0%):** Filipescu et al. (2024, *IEEE Trans. AgriFood Electronics*, DOI: 10.1109/TAFE.2024.3401252) reported seasonal leaf-wetness comparisons using a 50% cutoff alongside sensor immersion experiments. However, the published cutoff was not established as an experimentally validated wet/dry decision boundary for all field conditions or across the separate seven-site dataset.
   - **Research-Selected Sensitivity Threshold (20.0%):** In our comparative analysis, a lower threshold of 20.0% is evaluated as a research-selected sensitivity threshold:
     $$W(t) = \begin{cases} 1 & \text{if } \text{LWS}(t) \ge 20.0\% \\ 0 & \text{otherwise} \end{cases}$$
-  - **Candidate Selection Invariance:** Site 2 is selected as candidate Node A under both thresholds (mean 11.23 h/night at 20%, 9.49 h/night at 50%), confirming robustness against threshold choice.
+  - **Candidate Selection Invariance:** Site 2 is selected as candidate Node A under both analytical thresholds (mean 11.23 h/night at 20%, 9.49 h/night at 50%), confirming robustness against threshold choice.
 
 ---
 

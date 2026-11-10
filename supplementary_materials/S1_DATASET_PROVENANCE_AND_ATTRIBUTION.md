@@ -53,10 +53,10 @@ None of the original raw datasets are redistributed directly within this reposit
   - `site7.csv`: 8,538 rows, 513,112 bytes, SHA-256: `6bd4d0fe46c5e23f9a55469c2bc795376f4b19f19f4148cbf5ae4bc4b4a55415`
 - **Verified Timestamp Timezone:**
   - **UTC.** Explicitly established in dataset archive `README.md` (line 17: `"All date and time are reported in UTC"`) and ISO 8601 `"Z"` suffix in `sites.json`.
-- **Threshold Justification & Distinctions:**
-  - **Experimentally Calibrated Sensor Benchmark (50.0%):** Filipescu et al. (2024) calibrated the capacitive sensor in laboratory water immersion tests (25%, 50%, 75%) and reported seasonal field leaf-wetness duration using a 50% threshold.
-  - **Research-Selected Sensitivity Threshold (20.0%):** A 20.0% threshold is evaluated as a research-selected sensitivity threshold for comparative protocol analysis.
-  - **Candidate Selection Invariance:** In both evaluations, Site 2 is decisively isolated as candidate Node A:
+- **Threshold Interpretation & Sensitivity Choices:**
+  - **Published Analysis Cutoff (50.0%):** Filipescu et al. (2024) reported seasonal field leaf-wetness comparisons using a 50% cutoff alongside sensor immersion experiments. However, the published cutoff was not established as an experimentally validated wet/dry decision boundary for all field conditions or across the separate seven-site dataset.
+  - **Research-Selected Sensitivity Threshold (20.0%):** A 20.0% threshold is evaluated as a research-selected sensitivity threshold for comparative protocol analysis. Neither threshold is claimed to be a universal experimentally calibrated wet/dry boundary.
+  - **Candidate Selection Invariance:** Across analytical thresholds, Site 2 is decisively isolated as candidate Node A:
     - At 20%: Max $P_{90} = 12.0\text{ h/night}$, mean $= 11.23\text{ h/night}$.
     - At 50%: Max $P_{90} = 12.0\text{ h/night}$, mean $= 9.49\text{ h/night}$.
 - **Cadence-Aware Gap Detection:**
