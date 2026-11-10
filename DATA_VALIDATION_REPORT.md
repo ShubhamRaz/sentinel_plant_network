@@ -130,7 +130,7 @@ Protocol v2.0 selects Node A using nocturnal leaf-wetness duration ($\text{LWD}_
   - *Secondary Criterion:* Highest mean nocturnal LWD among max-$P_{90}$ tied candidates decisively isolates **Site 2** (seasonal mean 11.23 h/night at 20%; 9.49 h/night at 50%), far exceeding Site 1 (8.58 h/night) and Site 3 (5.98 h/night).
   - *Tertiary Criterion:* Deterministic alphabetical site name ordering applied if both $P_{90}$ and mean tie.
   - *Order Independence:* Candidate selection is 100% deterministic and invariant to input file ordering.
-- **Microclimatic Contrast:** In contrast to the humid Sardinian plain, high-elevation Piedmont stations (Sites 6 and 7) exhibit mean nocturnal LWD of only 0.98 and 2.43 h/night, demonstrating pronounced multi-station microclimatic diversity.
+- **Between-Station Variability:** High-elevation Piedmont stations (Sites 6 and 7) exhibit mean nocturnal LWD of only 0.98 and 2.43 h/night, showing substantial between-station differences in nocturnal leaf-wetness measurements across the regional datasets, with geographic and temporal differences limiting direct spatial interpretation.
 
 ### 4.3 Daily Wallin DSV vs. LWS-Modified DSV Progression
 The adapter computed daily Wallin Disease Severity Values ($\mathrm{DSV}_{\text{Wallin}}$ based solely on $\mathrm{RH} \ge 90\%$) and leaf-wetness-modified values ($\mathrm{DSV}_{\mathrm{LWS}}$ integrating physical surface wetness):

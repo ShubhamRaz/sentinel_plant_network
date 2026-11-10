@@ -1,5 +1,7 @@
 \documentclass[10pt,twocolumn,a4paper]{article}
 
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
 \usepackage[a4paper,top=18mm,bottom=18mm,left=15mm,right=15mm,columnsep=7mm]{geometry}
 \usepackage{mathptmx}
 \usepackage{amsmath,amssymb}
@@ -12,6 +14,8 @@
 \usepackage{subcaption}
 \usepackage{fancyhdr}
 \usepackage{microtype}
+\usepackage{url}
+\def\UrlBreaks{\do\/\do-\do\_}
 \usepackage[numbers,sort&compress]{natbib}
 \usepackage{hyperref}
 
@@ -91,7 +95,7 @@ To investigate these coupled challenges, this work proposes and digitally evalua
 
 \subsection{Four-Layer Edge-Autonomous Architecture}
 
-The Sentinel Plant Network is structured into four functional layers designed to operate without reliance on cloud connectivity: (i)~a dual-pole field sensing layer (`Node A` and `Node B`, plus an optional adaptive intermediate `Node C`), (ii)~a sub-GHz LoRa telemetry layer operating in the 865--867~MHz Indian ISM band, (iii)~a local edge gateway executing packet plausibility validation, hydro-epidemiological index computation, spatial sufficiency checks, and state-machine arbitration, and (iv)~an actuation and advisory layer driving a 12~V latching solenoid valve with closed-loop Hall-effect flow verification and SMS/WhatsApp scouting alerts.
+The Sentinel Plant Network is structured into four functional layers designed to operate without reliance on cloud connectivity: (i)~a dual-pole field sensing layer (Node~A and Node~B, plus an optional adaptive intermediate Node~C), (ii)~a sub-GHz LoRa telemetry layer operating in the 865--867~MHz Indian ISM band, (iii)~a local edge gateway executing packet plausibility validation, hydro-epidemiological index computation, spatial sufficiency checks, and state-machine arbitration, and (iv)~an actuation and advisory layer driving a 12~V latching solenoid valve with closed-loop Hall-effect flow verification and SMS/WhatsApp scouting alerts.
 
 \begin{table*}[t!]
 \centering
@@ -121,7 +125,7 @@ Local Gateway \& Actuation & Latching Valve + YF-S201 & GPIO15/16 (H-bridge), GP
 
 \subsection{ESP32-S3 Signal Allocation and Power-Gated Duty Cycling}
 
-Table~\ref{tab:hardware} details the hardware components, exact `ESP32-S3-WROOM-1` pin mappings, and cost structure. To eliminate galvanic corrosion and quiescent current drain across analog dielectric probes, both the capacitive leaf-wetness sensor (`GPIO4`) and dual-depth soil-moisture probes (`GPIO5`) are switched via a high-side P-channel MOSFET controlled by `GPIO7` (active-low). During each 10-minute ($T_{\text{cycle}} = 600\text{ s}$) telemetry cycle, the node wakes from deep sleep, asserts `GPIO7 = LOW` for a 150~ms stabilization window, averages 16 oversampled 12-bit ADC readings per channel, polls the `BME280` and `MLX90614ESF-BCF` ($10^\circ$ field-of-view optical filter) over the shared 100~kHz $\mathrm{I^2C}$ bus (`GPIO8`/`GPIO9`), de-asserts `GPIO7 = HIGH`, transmits a 24-byte `CRC-16-CCITT` protected packet over `SX1262` LoRa (`SPI2` on `GPIO10`--`GPIO14`), and re-enters deep sleep.
+Table~\ref{tab:hardware} details the hardware components, exact \texttt{ESP32-S3-WROOM-1} pin mappings, and cost structure. To eliminate galvanic corrosion and quiescent current drain across analog dielectric probes, both the capacitive leaf-wetness sensor (\texttt{GPIO4}) and dual-depth soil-moisture probes (\texttt{GPIO5}) are switched via a high-side P-channel MOSFET controlled by \texttt{GPIO7} (active-low). During each 10-minute ($T_{\text{cycle}} = 600\text{ s}$) telemetry cycle, the node wakes from deep sleep, asserts \texttt{GPIO7 = LOW} for a 150~ms stabilization window, averages 16 oversampled 12-bit ADC readings per channel, polls the \texttt{BME280} and \texttt{MLX90614ESF-BCF} ($10^\circ$ field-of-view optical filter) over the shared 100~kHz $\mathrm{I^2C}$ bus (\texttt{GPIO8}/\texttt{GPIO9}), de-asserts \texttt{GPIO7 = HIGH}, transmits a 24-byte \texttt{CRC-16-CCITT} protected packet over \texttt{SX1262} LoRa (\texttt{SPI2} on \texttt{GPIO10}--\texttt{GPIO14}), and re-enters deep sleep.
 
 Under the protocol's nominal system current budget ($I_{\text{avg}} = 25.50\text{ mA}$, accounting for regulator quiescent losses, solar charger leakage, sensor warm-up, and radio transmission), the single-cell 3.2~V, $C_{\text{bat}} = 6000\text{ mAh}$ $\mathrm{LiFePO_4}$ battery provides a theoretical zero-sunlight blackout autonomy of:
 \begin{equation}
@@ -175,7 +179,7 @@ At Node~A, two parallel daily severity indices for \textit{P.\ infestans} are ac
 
 At every 10-minute cycle, the gateway evaluates packet age $\tau_{\text{pkt}}$, sensor plausibility, flow-meter feedback, drought indicators ($\mathcal{S}_{\text{drought}} = \mathbb{I}[\mathrm{CWSI}_B \ge 0.40 \lor \theta_B \le 22.0\%]$), emergency wilting limits ($\mathcal{S}_{\text{emerg}} = \mathbb{I}[\mathrm{CWSI}_B \ge 0.65 \lor \theta_B \le 16.0\%]$), and blight risk ($\mathcal{S}_{\text{blight}} = \mathbb{I}[\mathrm{DSV}_{\text{cum}} \ge 18 \lor (\mathrm{RH}_A \ge 90\% \land \mathrm{LWS}_A \ge 50\%)]$), transitioning across six mutually exclusive operational states:
 \begin{enumerate}\setlength{\itemsep}{1pt}\setlength{\parskip}{0pt}
-  \item \texttt{FAULT\_FALLBACK}: Triggered if $\tau_{\text{pkt}} > 30\text{ min}$, any critical channel is $\mathrm{NaN}$, or the `YF-S201` flow meter registers zero pulses while the valve is commanded open. Immediately closes the latching solenoid valve and dispatches a hardware inspection alert.
+  \item \texttt{FAULT\_FALLBACK}: Triggered if $\tau_{\text{pkt}} > 30\text{ min}$, any critical channel is $\mathrm{NaN}$, or the \texttt{YF-S201} flow meter registers zero pulses while the valve is commanded open. Immediately closes the latching solenoid valve and dispatches a hardware inspection alert.
   \item \texttt{EMERGENCY\_DRIP}: Triggered if $\mathcal{S}_{\text{emerg}} = 1$. Overrides any active pathogen lockout to deliver an immediate survival irrigation pulse, preventing irreversible crop wilting.
   \item \texttt{CONFLICT\_MICRO\_PULSE}: Triggered when $\mathcal{S}_{\text{drought}} = 1 \land \mathcal{S}_{\text{blight}} = 1$ and continuous lockout duration is $< 36\text{ h}$. Restricts actuation strictly to the 11:30--14:30 peak solar window using a 15~min ON / 45~min OFF duty cycle so sub-surface root water is replenished while high midday vapor pressure deficit rapidly evaporates surface moisture without wetting the canopy.
   \item \texttt{PATHOGEN\_LOCKOUT}: Triggered when $\mathcal{S}_{\text{blight}} = 1$ and $\mathcal{S}_{\text{drought}} = 0$ (or outside 11:30--14:30 during a conflict state with lockout $< 36\text{ h}$). Holds the valve closed and issues a scouting advisory.
@@ -297,7 +301,7 @@ Key findings from the Phase~2 evaluation include:
   \label{fig:hw_autonomy}
 \end{figure*}
 
-The synthetic digital-twin output in Figure~\ref{fig:hw_autonomy}a illustrates the $\mathrm{LiFePO_4}$ state-of-charge ($\mathrm{SoC}$) trajectory, confirming the 9.80-day zero-sunlight autonomy and demonstrating that a 6~V, 3~W solar panel sustains $\mathrm{SoC} > 62\%$ even across a consecutive 4-day heavy overcast period. Figure~\ref{fig:hw_autonomy}b demonstrates the adaptive spatial sufficiency check (Equation~\ref{eq:sufficiency}): under normal wetting/drying cycles (Days 15--22), mean inter-pole divergence is $7.93\%$~VWC and Spearman rank correlation is $r_s = 0.89$ ($\mathcal{F}_{\text{insuff}} = 0$). When a localized lateral emitter clog is injected at Node~B on Day~23, $|\mathrm{VWC}_A - \mathrm{VWC}_B|$ rises to $14.1\%$~VWC and $r_s$ drops to $0.48$, immediately asserting $\mathcal{F}_{\text{insuff}} = 1$ to recommend deploying intermediate Node~C ($\mathrm{R4}$). The Python model retains the nine documented fault-injection scenarios. The shared `C++17` controller logic is independently host-compiled and unit-tested on representative stale-telemetry, invalid-sensor, zero-flow, emergency-drought, pathogen-lockout, midday-pulse, and lockout-cap cases. The three ESP32-S3 PlatformIO targets are compile-checked in CI. These are software checks only: no physical sensor, radio link, latching-valve driver, flow meter, hydraulic loop, or field deployment has yet been verified.
+The synthetic digital-twin output in Figure~\ref{fig:hw_autonomy}a illustrates the $\mathrm{LiFePO_4}$ state-of-charge ($\mathrm{SoC}$) trajectory, confirming the 9.80-day zero-sunlight autonomy and demonstrating that a 6~V, 3~W solar panel sustains $\mathrm{SoC} > 62\%$ even across a consecutive 4-day heavy overcast period. Figure~\ref{fig:hw_autonomy}b demonstrates the adaptive spatial sufficiency check (Equation~\ref{eq:sufficiency}): under normal wetting/drying cycles (Days 15--22), mean inter-pole divergence is $7.93\%$~VWC and Spearman rank correlation is $r_s = 0.89$ ($\mathcal{F}_{\text{insuff}} = 0$). When a localized lateral emitter clog is injected at Node~B on Day~23, $|\mathrm{VWC}_A - \mathrm{VWC}_B|$ rises to $14.1\%$~VWC and $r_s$ drops to $0.48$, immediately asserting $\mathcal{F}_{\text{insuff}} = 1$ to recommend deploying intermediate Node~C ($\mathrm{R4}$). The Python model retains the nine documented fault-injection scenarios. The shared \texttt{C++17} controller logic is independently host-compiled and unit-tested on representative stale-telemetry, invalid-sensor, zero-flow, emergency-drought, pathogen-lockout, midday-pulse, and lockout-cap cases. The three ESP32-S3 PlatformIO targets are compile-checked in CI. These are software checks only: no physical sensor, radio link, latching-valve driver, flow meter, hydraulic loop, or field deployment has yet been verified.
 
 \section{External Public-Dataset Empirical Validation}
 
@@ -329,7 +333,7 @@ Across 55,550 hourly records, nocturnal wetness distributions exhibit pronounced
 \begin{itemize}\setlength{\itemsep}{1pt}\setlength{\parskip}{0pt}
   \item \textbf{Site 2 (Sardinia, Plain, 33m):} Under the 12-hour nocturnal ceiling, five sites (Sites 1--5) reach the saturation ceiling of $P_{90} = 12.0\text{ h/night}$. To resolve this tie deterministically and independently of input ordering, Protocol v2.0 applies a multi-tier ranking rule: (1) highest $P_{90}$ nocturnal LWD, (2) highest seasonal mean nocturnal LWD among max-$P_{90}$ tied candidates, and (3) alphabetically smallest station identifier as a deterministic tertiary tie-breaker. This uniquely isolates Site~2 with a mean nocturnal duration of \textbf{11.23~h/night} (348 nights, std = 2.54~h) as the highest-ranked humid station in the regional multi-site dataset under the protocol (candidate Node~A). Candidate selection is invariant across both the 20\% research-selected threshold (mean 11.23~h/night) and the 50\% published analysis cutoff (mean 9.49~h/night).
   \item \textbf{Sites 1, 3--5:} Exhibit persistent saturation ($P_{90} = 12.0\text{ h/night}$) with intermediate seasonal mean nocturnal wetness: Site~1 (8.58~h/night), Site~3 (5.98~h/night), Site~5 (4.69~h/night), and Site~4 (3.87~h/night).
-  \item \textbf{Sites 6--7 (High-Elevation Piedmont):} Driest microclimates, with Site~7 ($P_{90} = 10.2\text{ h/night}$, mean 2.43~h/night) and Site~6 ($P_{90} = 3.8\text{ h/night}$, mean \textbf{0.98~h/night}), confirming severe regional microclimatic tail-risk diversity.
+  \item \textbf{Sites 6--7 (High-Elevation Piedmont):} Driest monitoring stations, with Site~7 ($P_{90} = 10.2\text{ h/night}$, mean 2.43~h/night) and Site~6 ($P_{90} = 3.8\text{ h/night}$, mean \textbf{0.98~h/night}), showing substantial between-station differences in nocturnal leaf-wetness measurements across the regional datasets, with geographic and temporal differences limiting direct spatial interpretation.
 \end{itemize}
 Comparing standard Wallin Disease Severity Values ($\mathrm{DSV}_{\text{Wallin}}$, based solely on ambient $\mathrm{RH} \ge 90\%$) against leaf-wetness-sensor modified values ($\mathrm{DSV}_{\mathrm{LWS}}$) demonstrated that ambient relative humidity metrics can miss extended foliar wetness periods during nights when ambient RH drops between 80\% and 89\% while dew remains on the canopy. At Site~2, daily $\mathrm{DSV}_{\mathrm{LWS}}$ reached the maximum rating of 4 on 41.2\% of days (compared to 19.3\% under $\mathrm{DSV}_{\text{Wallin}}$). This divergence demonstrates that in humid microclimates, direct sensor measurement of foliar wetness detects disease-conducive conditions that ambient RH proxies overlook, providing empirical support for the proposed rationale of monitoring foliar wetness directly. This comparison reflects between-index behavior on regional agrometeorological data and does not represent an in-situ experimental comparison between an actual field-mean weather station and a deployed Sentinel network.
 
@@ -352,7 +356,7 @@ These external dataset results validate the computational algorithms, data pipel
 
 While the digital-twin experiments validate the mathematical consistency, firmware state machine, and statistical power of the Sentinel Plant Network, physical field trials remain essential before claiming realized agronomic water savings or biological disease suppression:
 \begin{enumerate}\setlength{\itemsep}{1pt}\setlength{\parskip}{0pt}
-  \item \textbf{Site-Specific Dielectric Calibration:} Capacitive soil-moisture (`GPIO5`) and leaf-wetness (`GPIO4`) probes must undergo two-point gravimetric and filter-paper wetness calibration in the target field soil prior to Phase~1 deployment.
+  \item \textbf{Site-Specific Dielectric Calibration:} Capacitive soil-moisture (\texttt{GPIO5}) and leaf-wetness (\texttt{GPIO4}) probes must undergo two-point gravimetric and filter-paper wetness calibration in the target field soil prior to Phase~1 deployment.
   \item \textbf{Natural Inoculum Pressure Contingency:} As stipulated in Protocol Section~10, if natural \textit{P.\ infestans} incidence in untreated check strips remains below 5\% during the Phase~2 field trial, the trial will report sensor placement accuracy, water productivity, and canopy microclimate ($\mathrm{LWD}$) outcomes without claiming biological disease suppression.
 \end{enumerate}
 
@@ -379,7 +383,7 @@ The one-sided statistic is $t_{NI}=(\Delta_r-M_r)/SED$ with 9 residual degrees o
 \]
 Non-inferiority is supported only when $L_{95}>M_r$. This model-based contrast uses the RCBD residual error term; it is not an unpaired or plant-subsample $t$-test. The script \texttt{src/statistical\_diagnostics.py} regenerates the assumptions and contrast outputs from the 16 plot-level rows. Outputs must be recomputed whenever seeds, configuration, or input data change. In the current synthetic baseline run, the marketable-yield residual Shapiro--Wilk statistic is $W=0.9507$ ($p=0.5002$), and the median-centred Levene residual-variance statistic across treatment groups is $W_{\mathrm{Levene}}=1.5489$ ($p=0.2528$). These non-significant tests do not demonstrate that the normality or homoscedasticity assumptions are true; residual plots and sensitivity analyses remain necessary.
 
-\begin{thebibliography}{99}\small\setlength{\itemsep}{2pt}
+\begin{thebibliography}{99}\footnotesize\setlength{\itemsep}{1.5pt plus 0.5pt}
 
 \bibitem{vachaud1985_iwa}
 G.~Vachaud, A.~Passerat De Silans, P.~Balabanis, and M.~Vauclin, ``Temporal stability of spatially measured soil water probability density function,'' \textit{Soil Science Society of America Journal}, vol.~49, no.~4, pp.~822--828, 1985. Verified application in agricultural hydrology: \href{https://iwaponline.com/ws/article/22/5/5070/88251/Temporal-stability-of-soil-water-content-in}{IWA Water Supply 22(5):5070 (2022)}.
@@ -388,7 +392,7 @@ G.~Vachaud, A.~Passerat De Silans, P.~Balabanis, and M.~Vauclin, ``Temporal stab
 J.~R. Wallin, ``Summary of recent progress in predicting late blight epidemics in United States and Canada,'' \textit{American Potato Journal}, vol.~39, pp.~306--312, 1962. Model specification: \href{https://ipm.ucanr.edu/DISEASE/DATABASE/potatolateblight.html}{UC IPM Potato Late Blight Severity Value Database}.
 
 \bibitem{msu_svalue}
-Michigan State University Potato and Sugar Beet Pathology Program, ``Wallin Disease Severity Value (SValue) Explanation and Thresholds,'' 2024. Available: \href{https://www.canr.msu.edu/psbp/resources/svalue}{ MSU SValue Resource}.
+Michigan State University Potato and Sugar Beet Pathology Program, ``Wallin Disease Severity Value (SValue) Explanation and Thresholds,'' 2024. Available: \href{https://www.canr.msu.edu/psbp/resources/svalue}{MSU SValue Resource}.
 
 \bibitem{idso1981_usda}
 S.~B. Idso, R.~D. Jackson, P.~J. Pinter, R.~J. Reginato, and J.~L. Hatfield, ``Normalizing the stress-degree-day parameter for environmental variability,'' \textit{Agricultural Meteorology}, vol.~24, pp.~45--55, 1981. USDA ARS Technical Reference: \href{https://www.ars.usda.gov/ARSUserFiles/30100000/1990-1999documents/266%201992%20GardnerJPA.pdf}{USDA ARS CWSI Thermometry Report}.
@@ -406,7 +410,7 @@ G.~P.~Colucci, E.~Filipescu, F.~Scatozza, and D.~Trinchero, ``Leaf Wetness and A
 E.~Filipescu, G.~P.~Colucci, and D.~Trinchero, ``Design and Implementation of a Capacitive Leaf Wetness Sensor Based on Capacitance-to-Digital Conversion,'' \textit{IEEE Transactions on AgriFood Electronics}, vol.~2, no.~2, pp.~244--251, Sept.~2024, doi: 10.1109/TAFE.2024.3401252.
 
 \bibitem{mendeley_libelium}
-A.~Jesku, E.~Papalilo, and G.~Rexha, ``A Libelium-Based Multisensor Dataset for Precision Soil, Microclimate, and Plant Monitoring in an Olive Grove in Goraj, Ku\c{c}ov\"{e}, Albania,'' \textit{Mendeley Data}, v2, 2026, doi: 10.17632/cnfh4stzzx.2. Available: \href{https://data.mendeley.com/datasets/cnfh4stzzx/2}{Mendeley Data cnfh4stzzx/2}.
+A.~Jesku, E.~Papalilo, and G.~Rexha, ``A Libelium-Based Multisensor Dataset for Precision Soil, Microclimate, and Plant Monitoring in an Olive Grove in Goraj, Ku\c{c}ov{\"{e}}, Albania,'' \textit{Mendeley Data}, v2, 2026, doi: 10.17632/cnfh4stzzx.2. Available: \href{https://data.mendeley.com/datasets/cnfh4stzzx/2}{Mendeley Data cnfh4stzzx/2}.
 
 \bibitem{hiwater2017}
 X.~Li, S.~Liu, Q.~Xiao, M.~Ma, R.~Jin, T.~Che, W.~Wang, X.~Hu, Z.~Xu, J.~Wen, and L.~Wang, ``A multiscale dataset for understanding complex eco-hydrological processes in a heterogeneous oasis system,'' \textit{Scientific Data}, vol.~4, art.~170083, 2017. Available: \href{https://pmc.ncbi.nlm.nih.gov/articles/PMC5501970/}{PMC5501970} and \href{https://onlinelibrary.wiley.com/doi/10.1002/2015WR018182}{Wiley WRR 10.1002/2015WR018182}.
