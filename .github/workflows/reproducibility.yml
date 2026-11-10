@@ -60,7 +60,7 @@ jobs:
       - name: Install LaTeX toolchain
         run: |
           sudo apt-get update
-          sudo apt-get install -y latexmk texlive-latex-extra texlive-fonts-recommended
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends latexmk texlive-latex-extra texlive-fonts-recommended
       - name: Compile journal manuscript
         run: |
           mkdir -p "$RUNNER_TEMP/manuscript"
