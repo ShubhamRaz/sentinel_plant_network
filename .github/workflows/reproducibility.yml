@@ -16,6 +16,8 @@ jobs:
           cache: pip
       - run: python -m pip install -r requirements.txt
       - run: pytest -q
+      - name: Verify supplementary materials and manifest checksums
+        run: python scripts/verify_checksums.py
       - name: Reproduce digital-twin outputs twice and compare
         run: |
           python src/run_experiments.py --seed 20261106 --config config.json --output-dir "$RUNNER_TEMP/sentinel_run_a" > "$RUNNER_TEMP/run_a.log"

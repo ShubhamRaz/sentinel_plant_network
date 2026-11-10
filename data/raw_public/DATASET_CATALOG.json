@@ -19,7 +19,7 @@
       "licence": "CC BY-NC 4.0",
       "source_url": "https://data.mendeley.com/datasets/sd4b8vpvyb/1",
       "intended_scope": "Site-level nocturnal leaf-wetness duration and weather-risk evaluation",
-      "timestamp_handling": "Verified UTC from archive README.md ('All date and time are reported in UTC') and ISO 8601 'Z' suffix. Nocturnal 18:00–06:00 UTC window enforced. Calibrated sensor benchmark threshold established as 50.0% in Filipescu et al. (2024, IEEE Trans. AgriFood Electronics, DOI: 10.1109/TAFE.2024.3401252); 20.0% evaluated as protocol high-sensitivity dew-onset threshold. Invariant Node A candidate selection (Site 2) under both thresholds."
+      "timestamp_handling": "Verified UTC from archive README.md ('All date and time are reported in UTC') and ISO 8601 'Z' suffix. Nocturnal 18:00–06:00 UTC window enforced. Calibrated sensor benchmark threshold established as 50.0% in Filipescu et al. (2024, IEEE Trans. AgriFood Electronics, DOI: 10.1109/TAFE.2024.3401252); 20.0% evaluated as research-selected sensitivity threshold for comparative protocol analysis. Candidate Node A selection (Site 2) is invariant across both thresholds."
     },
     {
       "id": "libelium",

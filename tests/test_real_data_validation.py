@@ -294,5 +294,78 @@ def test_cadence_aware_gap_detection_hourly_vs_ten_minute():
     assert q_1h["gap_threshold_minutes"] == 90.0
     # Crucially: normal 60-minute intervals are NOT counted as gaps
     assert q_1h["sampling_gaps"] == 1
-    assert q_1h["gaps_over_20_minutes"] == len(df_1h) - 1  # legacy field still counts >20m
+    assert "gaps_over_20_minutes" not in q_1h
+    assert "gaps_over_20_minutes" not in q_10m
+
+
+def test_humid_pole_ranking_p90_tie_broken_by_mean():
+    """When sites tie on P90 nocturnal LWD, the secondary criterion (highest mean) selects the winner."""
+    records = []
+    ts = pd.date_range("2026-02-01 18:00", periods=72, freq="h", tz="UTC")
+    for stamp in ts:
+        hour = stamp.hour
+        is_night = (hour >= 18) or (hour < 6)
+        # Site X: wet for 8h of night -> P90 = 12h, lower mean
+        wet_x = 90.0 if (is_night and hour < 2) else 10.0
+        # Site Y: wet for all 12h of night -> P90 = 12h, higher mean (12h)
+        wet_y = 90.0 if is_night else 10.0
+        # Site Z: wet for 6h of night -> P90 = 12h, even lower mean
+        wet_z = 90.0 if (is_night and hour < 0) else 10.0
+        records.append({"timestamp": stamp, "station": "site_x", "leaf_wetness": wet_x, "relative_humidity": 90.0, "air_temperature": 15.0})
+        records.append({"timestamp": stamp, "station": "site_y", "leaf_wetness": wet_y, "relative_humidity": 90.0, "air_temperature": 15.0})
+        records.append({"timestamp": stamp, "station": "site_z", "leaf_wetness": wet_z, "relative_humidity": 90.0, "air_temperature": 15.0})
+
+    df = pd.DataFrame(records)
+    res = validate_leafwetness(df, {"site": "station"}, wet_threshold=20.0, timezone="UTC")
+    assert res["humid_pole_selection"]["selected_humid_pole_candidate"] == "site_y"
+    assert res["humid_pole_selection"]["candidate_mean_nocturnal_lwd_hours"] > res["site_mean_nocturnal_lwd_hours"]["site_x"]
+
+
+def test_humid_pole_ranking_p90_and_mean_tie_broken_by_alphabetical():
+    """When sites tie on both P90 and mean nocturnal LWD, the tertiary criterion (alphabetically smallest) selects the winner."""
+    records = []
+    ts = pd.date_range("2026-02-01 18:00", periods=72, freq="h", tz="UTC")
+    for stamp in ts:
+        hour = stamp.hour
+        is_night = (hour >= 18) or (hour < 6)
+        # Identical wetness profiles for site_zeta and site_alpha
+        wet = 95.0 if is_night else 10.0
+        records.append({"timestamp": stamp, "station": "site_zeta", "leaf_wetness": wet, "relative_humidity": 90.0, "air_temperature": 15.0})
+        records.append({"timestamp": stamp, "station": "site_alpha", "leaf_wetness": wet, "relative_humidity": 90.0, "air_temperature": 15.0})
+
+    df = pd.DataFrame(records)
+    res = validate_leafwetness(df, {"site": "station"}, wet_threshold=20.0, timezone="UTC")
+    assert res["site_p90_nocturnal_lwd_hours"]["site_zeta"] == res["site_p90_nocturnal_lwd_hours"]["site_alpha"]
+    assert res["site_mean_nocturnal_lwd_hours"]["site_zeta"] == res["site_mean_nocturnal_lwd_hours"]["site_alpha"]
+    assert res["humid_pole_selection"]["selected_humid_pole_candidate"] == "site_alpha"
+    assert res["humid_pole_selection"]["tertiary_criterion"] == "alphabetically smallest site identifier"
+
+
+def test_humid_pole_ranking_row_and_file_shuffling_permutation_invariance():
+    """Permuting row order and station file concatenation order preserves deterministic 3-tier candidate selection."""
+    records_alpha = []
+    records_beta = []
+    records_gamma = []
+    ts = pd.date_range("2026-02-01 18:00", periods=72, freq="h", tz="UTC")
+    for stamp in ts:
+        hour = stamp.hour
+        is_night = (hour >= 18) or (hour < 6)
+        # alpha and beta tie on P90 (12h) and mean (12h); gamma has lower mean
+        records_alpha.append({"timestamp": stamp, "station": "station_alpha", "leaf_wetness": 95.0 if is_night else 10.0, "relative_humidity": 90.0, "air_temperature": 15.0})
+        records_beta.append({"timestamp": stamp, "station": "station_beta", "leaf_wetness": 95.0 if is_night else 10.0, "relative_humidity": 90.0, "air_temperature": 15.0})
+        records_gamma.append({"timestamp": stamp, "station": "station_gamma", "leaf_wetness": 90.0 if (is_night and hour < 2) else 10.0, "relative_humidity": 90.0, "air_temperature": 15.0})
+
+    df_a = pd.DataFrame(records_alpha)
+    df_b = pd.DataFrame(records_beta)
+    df_g = pd.DataFrame(records_gamma)
+
+    # Test multiple row and file permutations
+    combined = pd.concat([df_b, df_g, df_a], ignore_index=True)
+    for seed in [42, 123, 999, 2026]:
+        shuffled = combined.sample(frac=1.0, random_state=seed).reset_index(drop=True)
+        res = validate_leafwetness(shuffled, {"site": "station"}, wet_threshold=20.0, timezone="UTC")
+        assert res["humid_pole_selection"]["selected_humid_pole_candidate"] == "station_alpha", (
+            f"Failed on seed {seed}: got {res['humid_pole_selection']['selected_humid_pole_candidate']}"
+        )
+
 

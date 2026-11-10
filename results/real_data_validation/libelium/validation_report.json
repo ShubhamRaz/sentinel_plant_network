@@ -9,7 +9,6 @@
     "median_sampling_interval_minutes": 10.36811965,
     "gap_threshold_minutes": 20.0,
     "sampling_gaps": 105,
-    "gaps_over_20_minutes": 105,
     "gap_definition": "intervals strictly exceeding 20.0 minutes, indicating missing observation cycles"
   },
   "gap_threshold_minutes": 20.0,

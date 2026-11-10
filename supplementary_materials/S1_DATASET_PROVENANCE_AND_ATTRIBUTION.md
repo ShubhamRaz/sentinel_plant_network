@@ -55,7 +55,7 @@ None of the original raw datasets are redistributed directly within this reposit
   - **UTC.** Explicitly established in dataset archive `README.md` (line 17: `"All date and time are reported in UTC"`) and ISO 8601 `"Z"` suffix in `sites.json`.
 - **Threshold Justification & Distinctions:**
   - **Experimentally Calibrated Sensor Benchmark (50.0%):** Filipescu et al. (2024) calibrated the capacitive sensor in laboratory water immersion tests (25%, 50%, 75%) and reported seasonal field leaf-wetness duration using a 50% threshold.
-  - **High-Sensitivity Dew-Onset Protocol Threshold (20.0%):** A 20.0% threshold is utilized in microclimatic early-warning systems to register initial microscopic droplet condensation prior to complete droplet coalescence.
+  - **Research-Selected Sensitivity Threshold (20.0%):** A 20.0% threshold is evaluated as a research-selected sensitivity threshold for comparative protocol analysis.
   - **Candidate Selection Invariance:** In both evaluations, Site 2 is decisively isolated as candidate Node A:
     - At 20%: Max $P_{90} = 12.0\text{ h/night}$, mean $= 11.23\text{ h/night}$.
     - At 50%: Max $P_{90} = 12.0\text{ h/night}$, mean $= 9.49\text{ h/night}$.
@@ -66,7 +66,7 @@ None of the original raw datasets are redistributed directly within this reposit
 - **Humid-Pole Ranking & Tie Handling:**
   - Saturation Ceiling: Five sites (Sites 1, 2, 3, 4, 5) achieve the maximum $P_{90} = 12.0\text{ h/night}$ saturation ceiling under the 12-hour nocturnal window (18:00–06:00 UTC).
   - Secondary Criterion: Highest mean nocturnal LWD among max-$P_{90}$ candidates decisively selects **Site 2** (mean 11.23 h/night vs Site 1 at 8.58 h/night, Site 3 at 5.98 h/night).
-  - Tertiary Deterministic Rule: Alphanumeric site name sort guarantees complete order-invariance.
+  - Tertiary Deterministic Rule: Alphabetically smallest site identifier guarantees complete order-invariance if both $P_{90}$ and mean tie.
 - **Temporal Scope:**
   - Nocturnal 18:00–06:00 UTC window (12.0 hours nominal) used strictly for humid-pole selection.
   - Daily (24h) data used for Wallin and LWS-modified Disease Severity Values (DSV).

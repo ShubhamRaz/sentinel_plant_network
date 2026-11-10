@@ -41,9 +41,9 @@ Every ingested telemetry series is subjected to automated data-cleaning and qual
   $$\theta_{\% \text{ VWC}} = 100.0 \times \theta_{\text{m}^3/\text{m}^3}$$
 - **Leaf Wetness Capacitive Normalization & Threshold Justification:** The Seven-Site sensors output a percentage scale from 0.0 (dry) to 100.0 (fully wetted):
   - **Calibrated Benchmark Threshold (50.0%):** Filipescu et al. (2024, *IEEE Trans. AgriFood Electronics*, DOI: 10.1109/TAFE.2024.3401252) calibrated the sensor under controlled water immersion and evaluated seasonal leaf-wetness duration at $\text{LWS} \ge 50\%$.
-  - **High-Sensitivity Dew-Onset Protocol Threshold (20.0%):** In our microclimatic early-warning protocol, a lower threshold of 20.0% is applied to register initial microscopic droplet condensation prior to full droplet coalescence:
+  - **Research-Selected Sensitivity Threshold (20.0%):** In our comparative analysis, a lower threshold of 20.0% is evaluated as a research-selected sensitivity threshold:
     $$W(t) = \begin{cases} 1 & \text{if } \text{LWS}(t) \ge 20.0\% \\ 0 & \text{otherwise} \end{cases}$$
-  - **Candidate Selection Invariance:** Site 2 is uniquely selected as candidate Node A under both thresholds (mean 11.23 h/night at 20%, 9.49 h/night at 50%), confirming robustness against threshold choice.
+  - **Candidate Selection Invariance:** Site 2 is selected as candidate Node A under both thresholds (mean 11.23 h/night at 20%, 9.49 h/night at 50%), confirming robustness against threshold choice.
 
 ---
 
@@ -57,7 +57,7 @@ To ensure rigorous biological alignment, two separate temporal aggregation pipel
    - **Multi-Tier Deterministic Ranking:**
      * *Primary criterion:* Maximum $P_{90}$ nocturnal LWD. Under the 12-hour ceiling, five sites (Sites 1, 2, 3, 4, 5) hit $P_{90} = 12.0\text{ h/night}$.
      * *Secondary criterion:* Highest mean nocturnal LWD among max-$P_{90}$ tied candidates decisively isolates **Site 2** (mean 11.23 h/night vs Site 1 at 8.58 h/night, Site 3 at 5.98 h/night, Site 5 at 4.69 h/night, Site 4 at 3.87 h/night).
-     * *Tertiary tie-break:* Deterministic alphanumeric site name order guarantees order-invariance.
+     * *Tertiary tie-break:* Alphabetically smallest site identifier guarantees complete order-invariance if both $P_{90}$ and mean tie.
 2. **Daily Disease Severity Values (DSV):**
    - Window: Full 24-hour diurnal cycle (00:00:00 to 23:59:59 UTC).
    - Models:

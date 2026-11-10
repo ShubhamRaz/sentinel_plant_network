@@ -10,7 +10,7 @@
 ## 1. Executive Summary
 
 > **Validation Status Update (November 2026):** All corrective reruns on the original public benchmark datasets have been completed with verified metadata:
-> - **Leaf Wetness:** Verified as UTC from archive `README.md` (`"All date and time are reported in UTC"`) and ISO8601 `"Z"` timestamps; sensor calibrated benchmark established as 50.0% from Filipescu et al. (IEEE Trans. AgriFood Electronics, 2024, DOI: 10.1109/TAFE.2024.3401252); protocol high-sensitivity dew-onset threshold evaluated at 20.0%; nocturnal 18:00–06:00 UTC window enforced; exactly 153 missing hourly observation gaps detected across all 7 sites under a 90-min threshold.
+> - **Leaf Wetness:** Verified as UTC from archive `README.md` (`"All date and time are reported in UTC"`) and ISO8601 `"Z"` timestamps; sensor calibrated benchmark established as 50.0% from Filipescu et al. (IEEE Trans. AgriFood Electronics, 2024, DOI: 10.1109/TAFE.2024.3401252); research-selected sensitivity threshold evaluated at 20.0%; nocturnal 18:00–06:00 UTC window enforced; exactly 153 missing hourly observation gaps detected across all 7 sites under a 90-min threshold.
 > - **Tomato Precision Irrigation:** 144-step (24-hour) embargo purge applied across chronological train/validation/test splits to eliminate horizon leakage; forward-looking target tokens purged; non-cumulative rolling nature of `water_vol_past_4h` flagged. GBDT and Ridge reduce RMSE by 23.6% and 13.9%, but persistence yields lower MAE; $R^2$ values are modest (+0.028, +0.165); 100% drought recall is an artifact of class imbalance (all test labels $\le 22.0\%$ VWC).
 > - **Libelium Telemetry:** Fractional $m^3/m^3$ scaled to % VWC; Protocol v2.0 `ProtocolConfig` threshold of $r_s < 0.70$ enforced for adaptive spatial sufficiency.
 >
@@ -57,7 +57,7 @@ The audited codebase contains:
          token in c.lower() for token in leakage_tokens
      )]
      ```
-   - *Verification:* Verified via `test_temporal_leakage_features_excluded` in `tests/test_real_data_validation.py`. Genuine 24h VWC forecast RMSE is 0.917% VWC (GBDT) in Zone 1 and 0.572% VWC (Ridge) in Zone 2 without any access to future data.
+   - *Verification:* Verified via `test_temporal_leakage_features_excluded` in `tests/test_real_data_validation.py`. Genuine 24h VWC forecast RMSE is 0.914% VWC (GBDT) in Zone 1 and 0.593% VWC (Ridge) in Zone 2 without any access to future data.
 
 2. **Libelium VWC Fractional Scaling (`src/real_data_validation.py`):**
    - *Issue:* The Mendeley Libelium dataset records soil volumetric water content in $m^3/m^3$ (`teros11_vwc_m3_m3`, mean ~0.29 $m^3/m^3$). Protocol v2.0's spatial divergence threshold is defined in percentage points (`10.0% VWC`). Comparing $m^3/m^3$ directly against 10.0 meant divergence would never exceed the trigger threshold.
@@ -74,7 +74,7 @@ The audited codebase contains:
 
 ### 3.1 Unit Test Suite
 Ran `.venv\Scripts\pytest.exe -v`:
-- Total tests: 17 passed in 4.20s.
+- Total tests: 25 passed in 26.47s (local suite passing 25/25).
 - Covered areas:
   - Adaptive spatial sufficiency trigger under divergence and low rank correlation.
   - Chronological split non-overlapping temporal separation.
@@ -87,6 +87,9 @@ Ran `.venv\Scripts\pytest.exe -v`:
   - Real dataset validation adapters (Tomato, Leaf Wetness, Libelium).
   - Temporal leakage prevention test.
   - Fractional VWC scaling test.
+  - Multi-tier deterministic humid-pole candidate ranking (primary $P_{90}$, secondary mean nocturnal LWD, tertiary alphabetical tie-breaker).
+  - Invariance of candidate selection under input row and file shuffling permutations.
+  - Cadence-aware gap detection differentiating 10-minute series from hourly series.
 
 ### 3.2 Digital-Twin Simulation Reproducibility
 The simulation script `src/run_experiments.py` was executed with fixed seed `20261106`. All derived data, summary metrics, and figures were generated deterministically. In the GitHub Actions workflow `reproducibility.yml`, the pipeline is executed twice into independent runner directories and all CSV/JSON outputs are byte-compared via SHA-256; zero mismatches are permitted.
@@ -99,7 +102,7 @@ The corrected validation pipeline was executed on the original downloaded files 
 
 ### 4.1 Tomato Precision Irrigation Dataset — Verified Purged Rerun
 - **Source:** Mendeley Data `10.17632/c837v6p8ph.2` (Version 2, CC BY 4.0).
-- **Files Validated:** `dataset_zone_1_preprocessed.csv` (9,531 rows, 762.6 KB, SHA-256: `a93caea2...`), `dataset_zone_2_preprocessed.csv` (11,929 rows, 955.1 KB, SHA-256: `91cb5ee3...`). Total: 21,460 records.
+- **Files Validated:** `dataset_zone_1_preprocessed.csv` (9,531 rows, 1.76 MB, SHA-256: `e3c8ce709e...`), `dataset_zone_2_preprocessed.csv` (11,929 rows, 2.16 MB, SHA-256: `7436f9d1b0...`). Total: 21,460 records.
 - **Verification Details:**
   - Raw un-preprocessed files (`dataset_zone_1.csv`) possess intermittent gaps (maximum contiguous run of 10-minute intervals was only 65 steps = 10.8 h), which precludes unbroken 24-hour lag/horizon construction without imputation; preprocessed open-field files were evaluated.
   - Chronological splits (70% train, 15% validation, 15% test) strictly enforce a 144-step ($24.0\text{ h}$) embargo purge at partition boundaries, completely eliminating future label leakage into preceding sets.
@@ -116,7 +119,7 @@ The corrected validation pipeline was executed on the original downloaded files 
 - **Verification Details:**
   - Archive `README.md` explicitly specifies: `"All date and time are reported in UTC"`, confirmed by ISO8601 `"Z"` timestamp strings in `sites.json`.
   - Authoritative sensor publication: Filipescu, E., Colucci, G. P., & Trinchero, D. (2024). *Design and Implementation of a Capacitive Leaf Wetness Sensor Based on Capacitance-to-Digital Conversion*. IEEE Transactions on AgriFood Electronics, vol. 2, no. 2, pp. 244–251, doi: 10.1109/TAFE.2024.3401252.
-  - Sensor's calibrated benchmark threshold established at 50.0% in published field trials; 20.0% evaluated as protocol high-sensitivity dew-onset early-warning threshold. Candidate Node A selection (Site 2) is invariant across both 20% and 50% thresholds.
+  - Sensor's calibrated benchmark threshold established at 50.0% in published field trials (Filipescu et al., 2024); 20.0% evaluated as research-selected sensitivity threshold for comparative protocol analysis. Candidate Node A selection (Site 2) is invariant across both 20% and 50% thresholds.
   - Cadence-aware gap threshold: 90.0 minutes applied to 60-minute data detects exactly 153 missing observation gaps across all 7 sites (Site 1: 5, Site 2: 23, Site 3: 35, Site 4: 71, Site 5: 12, Site 6: 2, Site 7: 5). The earlier figure of 55,543 was an artifact of applying a 20-minute gap threshold to 60-minute data.
   - Nocturnal evaluation window: 18:00 to 06:00 UTC (12.0 hours nominal).
 - **Verified Nocturnal LWD Distribution, Saturation Ceiling, and Tie Handling:**

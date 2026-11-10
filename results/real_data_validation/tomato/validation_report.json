@@ -9,7 +9,6 @@
     "median_sampling_interval_minutes": 10.0,
     "gap_threshold_minutes": 20.0,
     "sampling_gaps": 1534,
-    "gaps_over_20_minutes": 1534,
     "gap_definition": "intervals strictly exceeding 20.0 minutes, indicating missing observation cycles"
   },
   "grouping_column": "__source_file",
@@ -56,12 +55,12 @@
           {
             "model": "random_forest",
             "split": "test",
-            "rmse": 0.9718783539128213,
-            "mae": 0.450961930005944,
-            "r2": -0.09751686529447534,
+            "rmse": 0.9718783539128212,
+            "mae": 0.45096193000594387,
+            "r2": -0.09751686529447512,
             "drought_crossing_recall": 1.0,
             "drought_events": 652,
-            "validation_rmse": 1.1487242462148226
+            "validation_rmse": 1.1487242462148224
           },
           {
             "model": "gradient_boosting",
@@ -125,12 +124,12 @@
           {
             "model": "random_forest",
             "split": "test",
-            "rmse": 0.756960461584822,
-            "mae": 0.47495164358825925,
-            "r2": -0.35920225351544066,
+            "rmse": 0.7569604615848221,
+            "mae": 0.4749516435882593,
+            "r2": -0.3592022535154409,
             "drought_crossing_recall": 1.0,
             "drought_events": 1030,
-            "validation_rmse": 0.4706318580164828
+            "validation_rmse": 0.4706318580164827
           },
           {
             "model": "gradient_boosting",
@@ -193,12 +192,12 @@
           {
             "model": "random_forest",
             "split": "test",
-            "rmse": 0.9718783539128213,
-            "mae": 0.450961930005944,
-            "r2": -0.09751686529447534,
+            "rmse": 0.9718783539128212,
+            "mae": 0.45096193000594387,
+            "r2": -0.09751686529447512,
             "drought_crossing_recall": 1.0,
             "drought_events": 652,
-            "validation_rmse": 1.1487242462148226
+            "validation_rmse": 1.1487242462148224
           },
           {
             "model": "gradient_boosting",
@@ -249,12 +248,12 @@
           {
             "model": "random_forest",
             "split": "test",
-            "rmse": 0.756960461584822,
-            "mae": 0.47495164358825925,
-            "r2": -0.35920225351544066,
+            "rmse": 0.7569604615848221,
+            "mae": 0.4749516435882593,
+            "r2": -0.3592022535154409,
             "drought_crossing_recall": 1.0,
             "drought_events": 1030,
-            "validation_rmse": 0.4706318580164828
+            "validation_rmse": 0.4706318580164827
           },
           {
             "model": "gradient_boosting",
