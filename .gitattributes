@@ -1,0 +1,9 @@
+# Ensure consistent LF line endings across Windows, Linux, and macOS
+* text=auto eol=lf
+
+# Explicit binary assets
+*.png binary
+*.pdf binary
+*.zip binary
+*.tar binary
+*.gz binary

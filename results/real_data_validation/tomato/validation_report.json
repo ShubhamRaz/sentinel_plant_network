@@ -55,12 +55,12 @@
           {
             "model": "random_forest",
             "split": "test",
-            "rmse": 0.9718783539128212,
-            "mae": 0.45096193000594387,
-            "r2": -0.09751686529447512,
+            "rmse": 0.9718783539128213,
+            "mae": 0.4509619300059438,
+            "r2": -0.09751686529447534,
             "drought_crossing_recall": 1.0,
             "drought_events": 652,
-            "validation_rmse": 1.1487242462148224
+            "validation_rmse": 1.1487242462148226
           },
           {
             "model": "gradient_boosting",
@@ -129,7 +129,7 @@
             "r2": -0.3592022535154409,
             "drought_crossing_recall": 1.0,
             "drought_events": 1030,
-            "validation_rmse": 0.4706318580164827
+            "validation_rmse": 0.4706318580164828
           },
           {
             "model": "gradient_boosting",
@@ -192,12 +192,12 @@
           {
             "model": "random_forest",
             "split": "test",
-            "rmse": 0.9718783539128212,
-            "mae": 0.45096193000594387,
-            "r2": -0.09751686529447512,
+            "rmse": 0.9718783539128213,
+            "mae": 0.4509619300059438,
+            "r2": -0.09751686529447534,
             "drought_crossing_recall": 1.0,
             "drought_events": 652,
-            "validation_rmse": 1.1487242462148224
+            "validation_rmse": 1.1487242462148226
           },
           {
             "model": "gradient_boosting",
@@ -253,7 +253,7 @@
             "r2": -0.3592022535154409,
             "drought_crossing_recall": 1.0,
             "drought_events": 1030,
-            "validation_rmse": 0.4706318580164827
+            "validation_rmse": 0.4706318580164828
           },
           {
             "model": "gradient_boosting",
@@ -285,12 +285,12 @@
   },
   "input_files": [
     {
-      "path": "data\\raw_public\\tomato\\Soil Moisture, Irrigation Actuator and Weather Dat\\02_processed_data\\preprocessed\\dataset_zone_1_preprocessed.csv",
+      "path": "data/raw_public/tomato/Soil Moisture, Irrigation Actuator and Weather Dat/02_processed_data/preprocessed/dataset_zone_1_preprocessed.csv",
       "sha256": "e3c8ce709e89d1a7944bfbcfc0120a2f0166b4198cdf390efad659fd3acb9a89",
       "size_bytes": 1760164
     },
     {
-      "path": "data\\raw_public\\tomato\\Soil Moisture, Irrigation Actuator and Weather Dat\\02_processed_data\\preprocessed\\dataset_zone_2_preprocessed.csv",
+      "path": "data/raw_public/tomato/Soil Moisture, Irrigation Actuator and Weather Dat/02_processed_data/preprocessed/dataset_zone_2_preprocessed.csv",
       "sha256": "7436f9d1b03da0dd4a76cf2005e9ded38881d88d6b85c7f20cf7a3dc561ee5ac",
       "size_bytes": 2164170
     }

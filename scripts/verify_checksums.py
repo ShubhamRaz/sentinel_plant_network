@@ -15,13 +15,29 @@ import sys
 from pathlib import Path
 
 
-def compute_sha256(filepath: Path) -> str:
-    """Compute SHA-256 hexadecimal digest of a file in 1MB chunks."""
+def compute_sha256_raw(filepath: Path) -> str:
+    """Compute raw binary SHA-256 hexadecimal digest of a file in 1MB chunks."""
     digest = hashlib.sha256()
     with filepath.open("rb") as stream:
         for chunk in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def compute_sha256(filepath: Path) -> str:
+    """Compute SHA-256 digest of a repository file.
+
+    For text files (.md, .json, .csv, .txt, .tsv, .tex), line endings are normalized
+    to LF (\n) so that checksums are deterministic and invariant across operating systems
+    (Linux, macOS, Windows) and git checkout core.autocrlf configurations.
+    For binary files (.png, .pdf, etc.), raw bytes are read directly.
+    """
+    binary_suffixes = {".png", ".pdf", ".zip", ".tar", ".gz", ".7z", ".bin"}
+    if filepath.suffix.lower() in binary_suffixes:
+        return compute_sha256_raw(filepath)
+    else:
+        content = filepath.read_bytes().replace(b"\r\n", b"\n")
+        return hashlib.sha256(content).hexdigest()
 
 
 def verify_supplementary_materials(supp_dir: Path) -> int:
@@ -80,12 +96,12 @@ def verify_datasets_manifest(manifest_path: Path) -> int:
     for ds_name, ds_info in datasets.items():
         inputs = ds_info.get("input_files", [])
         for item in inputs:
-            p = Path(item["path"])
+            p = Path(item["path"].replace("\\", "/"))
             expected = item.get("sha256")
             if not p.exists():
                 missing += 1
                 continue
-            actual = compute_sha256(p)
+            actual = compute_sha256_raw(p)
             checked += 1
             if expected and actual.lower() != expected.lower():
                 print(f"  [MISMATCH] {p}")

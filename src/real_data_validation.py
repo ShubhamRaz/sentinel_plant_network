@@ -570,7 +570,7 @@ def main(argv=None):
             pd.DataFrame(rows).to_csv(output / "tomato_vwc_forecasting_metrics.csv", index=False)
     result["source"] = DATASETS[args.dataset]
     input_files = [
-        {"path": str(p), "sha256": file_sha256(p), "size_bytes": p.stat().st_size}
+        {"path": p.as_posix(), "sha256": file_sha256(p), "size_bytes": p.stat().st_size}
         for p in args.input
     ]
     result["input_files"] = input_files
@@ -600,7 +600,7 @@ def main(argv=None):
         "input_files": input_files,
         "mapping": mapping,
         "validation_parameters": parameters,
-        "report": str(output / "validation_report.json"),
+        "report": (output / "validation_report.json").as_posix(),
     }
     manifest_path.parent.mkdir(parents=True, exist_ok=True)
     manifest_path.write_text(json.dumps(manifest, indent=2, default=str), encoding="utf-8")
